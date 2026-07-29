@@ -14,7 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dives: {
+        Row: {
+          buddy_name: string | null
+          buddy_role: Database["public"]["Enums"]["buddy_role"] | null
+          country: string
+          created_at: string
+          dive_date: string
+          dive_type: Database["public"]["Enums"]["dive_type"]
+          duration_min: number | null
+          id: string
+          max_depth: number | null
+          notes: string | null
+          photo_urls: string[]
+          site_name: string
+          surface_temp: number | null
+          updated_at: string
+          user_id: string
+          water_temp: number | null
+          weather: string | null
+        }
+        Insert: {
+          buddy_name?: string | null
+          buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
+          country: string
+          created_at?: string
+          dive_date: string
+          dive_type?: Database["public"]["Enums"]["dive_type"]
+          duration_min?: number | null
+          id?: string
+          max_depth?: number | null
+          notes?: string | null
+          photo_urls?: string[]
+          site_name: string
+          surface_temp?: number | null
+          updated_at?: string
+          user_id: string
+          water_temp?: number | null
+          weather?: string | null
+        }
+        Update: {
+          buddy_name?: string | null
+          buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
+          country?: string
+          created_at?: string
+          dive_date?: string
+          dive_type?: Database["public"]["Enums"]["dive_type"]
+          duration_min?: number | null
+          id?: string
+          max_depth?: number | null
+          notes?: string | null
+          photo_urls?: string[]
+          site_name?: string
+          surface_temp?: number | null
+          updated_at?: string
+          user_id?: string
+          water_temp?: number | null
+          weather?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +100,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      buddy_role: "instructor" | "buddy"
+      dive_type: "recreational" | "freediving" | "technical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +228,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      buddy_role: ["instructor", "buddy"],
+      dive_type: ["recreational", "freediving", "technical"],
+    },
   },
 } as const
