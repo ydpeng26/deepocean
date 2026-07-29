@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -29,6 +30,7 @@ type Props = { dive?: Dive };
 
 export function DiveForm({ dive }: Props) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [country, setCountry] = useState(dive?.country ?? "");
   const [siteName, setSiteName] = useState(dive?.site_name ?? "");
@@ -96,11 +98,14 @@ export function DiveForm({ dive }: Props) {
       if (dive) {
         const { error } = await supabase.from("dives").update(payload).eq("id", dive.id);
         if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ["dives"] });
+        await queryClient.invalidateQueries({ queryKey: ["dive", dive.id] });
         toast.success("记录已更新");
         navigate({ to: "/dives/$id", params: { id: dive.id } });
       } else {
         const { data, error } = await supabase.from("dives").insert(payload).select("id").single();
         if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ["dives"] });
         toast.success("记录已保存");
         navigate({ to: "/dives/$id", params: { id: data.id } });
       }
