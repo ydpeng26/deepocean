@@ -6,13 +6,13 @@ import logo from "../../../public/logo.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "潜迹 · 潜水日志 | 记录每一次下潜" },
+      { title: "深蓝 · 潜水日志 | 记录每一次下潜" },
       {
         name: "description",
         content:
-          "潜迹是给潜水员的极简潜水日志：记录潜水国家、潜点、日期、天气、水温、潜水类型、潜伴、照片与心得。",
+          "深蓝是给潜水员的极简潜水日志：记录潜水国家、潜点、日期、天气、水温、潜水类型、潜伴、照片与心得。",
       },
-      { property: "og:title", content: "潜迹 · 潜水日志" },
+      { property: "og:title", content: "深蓝 · 潜水日志" },
       {
         property: "og:description",
         content: "极简潜水日志，记录每一次下潜的潜点、水温、潜伴与照片。",
