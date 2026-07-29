@@ -80,7 +80,9 @@ export async function signedPhotoUrls(paths: string[]): Promise<string[]> {
     .from(PHOTO_BUCKET)
     .createSignedUrls(paths, 60 * 60);
   if (error) throw error;
-  return (data ?? []).map((d) => d.signedUrl).filter(Boolean);
+  return (data ?? [])
+    .map((d) => d.signedUrl)
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
 }
 
 export function formatDate(value: string) {
