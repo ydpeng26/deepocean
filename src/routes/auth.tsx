@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Waves } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import logo from "../../public/logo.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "登录 · 潜迹潜水日志" },
-      { name: "description", content: "登录或注册潜迹，开始记录你的潜水日志。" },
-      { property: "og:title", content: "登录 · 潜迹潜水日志" },
-      { property: "og:description", content: "登录或注册潜迹，开始记录你的潜水日志。" },
+      { title: "登录 · 深蓝潜水日志" },
+      { name: "description", content: "登录或注册深蓝，开始记录你的潜水日志。" },
+      { property: "og:title", content: "登录 · 深蓝潜水日志" },
+      { property: "og:description", content: "登录或注册深蓝，开始记录你的潜水日志。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -78,8 +78,8 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="mx-auto w-full max-w-5xl px-6 py-6">
         <Link to="/" className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-          <Waves className="h-4 w-4" />
-          潜迹 DIVE LOG
+          <img src={logo} alt="深蓝" className="h-6 w-6" />
+          深蓝 DIVE LOG
         </Link>
       </header>
 

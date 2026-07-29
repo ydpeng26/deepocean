@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Waves, NotebookPen, Images, ShieldCheck } from "lucide-react";
+import { NotebookPen, Images, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "../../../public/logo.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "潜迹 · 潜水日志 | 记录每一次下潜" },
+      { title: "深蓝 · 潜水日志 | 记录每一次下潜" },
       {
         name: "description",
         content:
-          "潜迹是给潜水员的极简潜水日志：记录潜水国家、潜点、日期、天气、水温、潜水类型、潜伴、照片与心得。",
+          "深蓝是给潜水员的极简潜水日志：记录潜水国家、潜点、日期、天气、水温、潜水类型、潜伴、照片与心得。",
       },
-      { property: "og:title", content: "潜迹 · 潜水日志" },
+      { property: "og:title", content: "深蓝 · 潜水日志" },
       {
         property: "og:description",
         content: "极简潜水日志，记录每一次下潜的潜点、水温、潜伴与照片。",
@@ -34,8 +35,8 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-          <Waves className="h-4 w-4" />
-          潜迹 DIVE LOG
+          <img src={logo} alt="深蓝" className="h-6 w-6" />
+          深蓝 DIVE LOG
         </span>
         <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary">
           登录
@@ -70,7 +71,7 @@ function Landing() {
         </section>
 
         <footer className="border-t border-border py-10 text-xs text-muted-foreground">
-          潜迹 · 潜水日志
+          深蓝 · 潜水日志
         </footer>
       </main>
     </div>
