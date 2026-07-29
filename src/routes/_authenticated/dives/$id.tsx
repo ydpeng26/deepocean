@@ -18,9 +18,9 @@ import {
 export const Route = createFileRoute("/_authenticated/dives/$id")({
   head: () => ({
     meta: [
-      { title: "潜水记录详情 · 潜迹" },
+      { title: "潜水记录详情 · 深蓝" },
       { name: "description", content: "查看这一次下潜的潜点、天气、水温、潜伴、照片与备注。" },
-      { property: "og:title", content: "潜水记录详情 · 潜迹" },
+      { property: "og:title", content: "潜水记录详情 · 深蓝" },
       { property: "og:description", content: "查看这一次下潜的潜点、天气、水温、潜伴、照片与备注。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

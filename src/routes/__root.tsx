@@ -78,12 +78,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "潜迹 · 潜水日志" },
+      { title: "深蓝 · 潜水日志" },
       {
         name: "description",
         content: "给潜水员的极简潜水日志：记录潜点、日期、天气、水温、潜伴与照片。",
       },
-      { property: "og:title", content: "潜迹 · 潜水日志" },
+      { property: "og:title", content: "深蓝 · 潜水日志" },
       {
         property: "og:description",
         content: "给潜水员的极简潜水日志：记录潜点、日期、天气、水温、潜伴与照片。",
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/logo.png", type: "image/png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Waves, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import logo from "../../public/logo.png";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -16,8 +17,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <Link to="/dives" className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-            <Waves className="h-4 w-4" />
-            潜迹 DIVE LOG
+            <img src={logo} alt="深蓝" className="h-5 w-5" />
+            深蓝 DIVE LOG
           </Link>
           <Button variant="ghost" size="sm" className="rounded-none text-muted-foreground" onClick={signOut}>
             <LogOut className="mr-1 h-4 w-4" />

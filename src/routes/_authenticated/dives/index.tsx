@@ -8,9 +8,9 @@ import { DIVE_TYPE_LABELS, formatDate, listDives } from "@/lib/dives";
 export const Route = createFileRoute("/_authenticated/dives/")({
   head: () => ({
     meta: [
-      { title: "我的潜水日志 · 潜迹" },
+      { title: "我的潜水日志 · 深蓝" },
       { name: "description", content: "查看你记录的全部潜水：潜点、日期、水温与潜伴。" },
-      { property: "og:title", content: "我的潜水日志 · 潜迹" },
+      { property: "og:title", content: "我的潜水日志 · 深蓝" },
       { property: "og:description", content: "查看你记录的全部潜水：潜点、日期、水温与潜伴。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

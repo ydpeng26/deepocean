@@ -6,9 +6,9 @@ import { DiveForm } from "@/components/DiveForm";
 export const Route = createFileRoute("/_authenticated/dives/new")({
   head: () => ({
     meta: [
-      { title: "新增潜水记录 · 潜迹" },
+      { title: "新增潜水记录 · 深蓝" },
       { name: "description", content: "填写潜水国家、潜点、日期、天气、水温、潜水类型、潜伴与照片。" },
-      { property: "og:title", content: "新增潜水记录 · 潜迹" },
+      { property: "og:title", content: "新增潜水记录 · 深蓝" },
       { property: "og:description", content: "填写潜水国家、潜点、日期、天气、水温、潜水类型、潜伴与照片。" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
