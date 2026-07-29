@@ -35,7 +35,7 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-          <img src={logo} alt="深蓝" className="h-5 w-5" />
+          <img src={logo} alt="深蓝" className="h-6 w-6" />
           深蓝 DIVE LOG
         </span>
         <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary">

@@ -78,7 +78,7 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="mx-auto w-full max-w-5xl px-6 py-6">
         <Link to="/" className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-          <img src={logo} alt="深蓝" className="h-5 w-5" />
+          <img src={logo} alt="深蓝" className="h-6 w-6" />
           深蓝 DIVE LOG
         </Link>
       </header>

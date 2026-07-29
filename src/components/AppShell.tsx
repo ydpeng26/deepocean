@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <Link to="/dives" className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
-            <img src={logo} alt="深蓝" className="h-5 w-5" />
+            <img src={logo} alt="深蓝" className="h-6 w-6" />
             深蓝 DIVE LOG
           </Link>
           <Button variant="ghost" size="sm" className="rounded-none text-muted-foreground" onClick={signOut}>
