@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesNewRouteImport } from './routes/_authenticated/dives/new'
+import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,16 +40,23 @@ const AuthenticatedDivesNewRoute = AuthenticatedDivesNewRouteImport.update({
   path: '/dives/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDivesIdRoute = AuthenticatedDivesIdRouteImport.update({
+  id: '/dives/$id',
+  path: '/dives/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives/': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives': typeof AuthenticatedDivesIndexRoute
 }
@@ -57,19 +65,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
   '/_authenticated/dives/new': typeof AuthenticatedDivesNewRoute
   '/_authenticated/dives/': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dives/new' | '/dives/'
+  fullPaths: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dives/new' | '/dives'
+  to: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/dives/$id'
     | '/_authenticated/dives/new'
     | '/_authenticated/dives/'
   fileRoutesById: FileRoutesById
@@ -117,15 +127,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDivesNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dives/$id': {
+      id: '/_authenticated/dives/$id'
+      path: '/dives/$id'
+      fullPath: '/dives/$id'
+      preLoaderRoute: typeof AuthenticatedDivesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
   AuthenticatedDivesNewRoute: typeof AuthenticatedDivesNewRoute
   AuthenticatedDivesIndexRoute: typeof AuthenticatedDivesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
   AuthenticatedDivesNewRoute: AuthenticatedDivesNewRoute,
   AuthenticatedDivesIndexRoute: AuthenticatedDivesIndexRoute,
 }
