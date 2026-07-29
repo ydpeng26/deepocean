@@ -9,38 +9,103 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
+import { Route as AuthenticatedDivesNewRouteImport } from './routes/_authenticated/dives/new'
+import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDivesIndexRoute = AuthenticatedDivesIndexRouteImport.update({
+  id: '/dives/',
+  path: '/dives/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDivesNewRoute = AuthenticatedDivesNewRouteImport.update({
+  id: '/dives/new',
+  path: '/dives/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDivesIdRoute = AuthenticatedDivesIdRouteImport.update({
+  id: '/dives/$id',
+  path: '/dives/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/dives/new': typeof AuthenticatedDivesNewRoute
+  '/dives/': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/dives/new': typeof AuthenticatedDivesNewRoute
+  '/dives': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/_authenticated/dives/new': typeof AuthenticatedDivesNewRoute
+  '/_authenticated/dives/': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/dives/$id'
+    | '/_authenticated/dives/new'
+    | '/_authenticated/dives/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +113,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dives/': {
+      id: '/_authenticated/dives/'
+      path: '/dives'
+      fullPath: '/dives/'
+      preLoaderRoute: typeof AuthenticatedDivesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dives/new': {
+      id: '/_authenticated/dives/new'
+      path: '/dives/new'
+      fullPath: '/dives/new'
+      preLoaderRoute: typeof AuthenticatedDivesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dives/$id': {
+      id: '/_authenticated/dives/$id'
+      path: '/dives/$id'
+      fullPath: '/dives/$id'
+      preLoaderRoute: typeof AuthenticatedDivesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
+  AuthenticatedDivesNewRoute: typeof AuthenticatedDivesNewRoute
+  AuthenticatedDivesIndexRoute: typeof AuthenticatedDivesIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
+  AuthenticatedDivesNewRoute: AuthenticatedDivesNewRoute,
+  AuthenticatedDivesIndexRoute: AuthenticatedDivesIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
