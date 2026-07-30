@@ -168,8 +168,8 @@ const features = [
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <header className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
           <img src={logo} alt="深蓝" className="h-6 w-6" />
           深蓝 DIVE LOG
@@ -179,8 +179,8 @@ function Landing() {
         </Link>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6">
-        <section className="border-t border-border py-24">
+      <main className="relative mx-auto max-w-5xl px-6">
+        <section className="relative border-t border-border py-24">
           <h1 className="max-w-2xl text-4xl font-normal leading-tight tracking-tight text-primary sm:text-5xl">
             把每一次下潜，
             <br />
@@ -210,6 +210,21 @@ function Landing() {
           深蓝 · 潜水日志
         </footer>
       </main>
+
+      {/* 左侧装饰：鲸、水母、气泡 */}
+      <div className="pointer-events-none absolute left-6 top-32 hidden flex-col items-center gap-10 text-primary/[0.15] lg:flex">
+        <WhaleIcon className="h-28 w-40" />
+        <JellyfishIcon className="h-28 w-20" />
+        <BubbleGroup className="h-32 w-14" />
+      </div>
+
+      {/* 右侧装饰：海龟、鱼、珊瑚 */}
+      <div className="pointer-events-none absolute right-6 top-44 hidden flex-col items-center gap-12 text-primary/[0.15] lg:flex">
+        <TurtleIcon className="h-28 w-28" />
+        <FishIcon className="h-20 w-32" />
+        <CoralIcon className="h-28 w-20" />
+      </div>
     </div>
   );
 }
+
