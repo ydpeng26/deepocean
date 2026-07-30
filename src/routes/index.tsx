@@ -3,6 +3,142 @@ import { NotebookPen, Images, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "../../public/logo.png";
 
+function WhaleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 120 80"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M100 45c-5 12-22 18-42 18-28 0-48-15-48-33 0-20 24-30 48-30 24 0 44 12 48 30" />
+      <path d="M98 30c8-6 16-4 20 2-2 10-8 16-20 14" />
+      <circle cx="28" cy="28" r="3" fill="currentColor" />
+      <path d="M16 48c8 6 22 8 36 4" />
+    </svg>
+  );
+}
+
+function TurtleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <ellipse cx="50" cy="52" rx="26" ry="20" />
+      <path d="M50 32v-14" />
+      <path d="M36 38l-14-10" />
+      <path d="M64 38l14-10" />
+      <path d="M34 64l-12 12" />
+      <path d="M66 64l12 12" />
+      <circle cx="50" cy="18" r="8" />
+      <circle cx="46" cy="16" r="1.5" fill="currentColor" />
+      <path d="M32 26c-6 2-10 8-10 14" />
+      <path d="M68 26c6 2 10 8 10 14" />
+      <path d="M42 50h16M50 44v16" />
+    </svg>
+  );
+}
+
+function JellyfishIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 80 100"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M40 12c-22 0-34 14-34 28h68c0-14-12-28-34-28z" />
+      <path d="M24 40c-2 18-4 34-8 50" />
+      <path d="M40 40c0 18 2 34 6 50" />
+      <path d="M56 40c2 18 4 34 8 50" />
+      <path d="M16 28c4-8 12-12 24-12" />
+      <circle cx="40" cy="24" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function FishIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 60"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M76 30c-6 16-26 22-48 22-12 0-20-8-20-18 0-12 12-20 28-20 22 0 40 8 48 22z" />
+      <path d="M76 30l16-12v34l-16-12" />
+      <path d="M28 24c-4 0-8 4-8 10" />
+      <path d="M24 30c6 4 12 4 18 0" />
+      <circle cx="22" cy="28" r="2" fill="currentColor" />
+      <path d="M8 34c-2 6 2 10 8 10" />
+    </svg>
+  );
+}
+
+function CoralIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 80 100"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M40 92V60" />
+      <path d="M40 72c-10-10-18-8-22 2" />
+      <path d="M40 64c10-10 18-8 22 2" />
+      <path d="M40 52c-12-14-26-12-30 2" />
+      <path d="M40 52c12-14 26-12 30 2" />
+      <path d="M40 92c-6 4-12 4-18 0" />
+      <path d="M40 92c6 4 12 4 18 0" />
+      <circle cx="18" cy="54" r="2" fill="currentColor" />
+      <circle cx="62" cy="54" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function BubbleGroup({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 60 120"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="30" cy="105" r="8" />
+      <circle cx="20" cy="80" r="5" />
+      <circle cx="42" cy="60" r="6" />
+      <circle cx="28" cy="38" r="4" />
+      <circle cx="36" cy="18" r="3" />
+    </svg>
+  );
+}
+
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -32,8 +168,8 @@ const features = [
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <header className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <span className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
           <img src={logo} alt="深蓝" className="h-6 w-6" />
           深蓝 DIVE LOG
@@ -43,8 +179,8 @@ function Landing() {
         </Link>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6">
-        <section className="border-t border-border py-24">
+      <main className="relative mx-auto max-w-5xl px-6">
+        <section className="relative border-t border-border py-24">
           <h1 className="max-w-2xl text-4xl font-normal leading-tight tracking-tight text-primary sm:text-5xl">
             把每一次下潜，
             <br />
@@ -74,6 +210,21 @@ function Landing() {
           深蓝 · 潜水日志
         </footer>
       </main>
+
+      {/* 左侧装饰：鲸、水母、气泡 */}
+      <div className="pointer-events-none absolute left-6 top-32 hidden flex-col items-center gap-10 text-primary/[0.15] lg:flex">
+        <WhaleIcon className="h-28 w-40" />
+        <JellyfishIcon className="h-28 w-20" />
+        <BubbleGroup className="h-32 w-14" />
+      </div>
+
+      {/* 右侧装饰：海龟、鱼、珊瑚 */}
+      <div className="pointer-events-none absolute right-6 top-44 hidden flex-col items-center gap-12 text-primary/[0.15] lg:flex">
+        <TurtleIcon className="h-28 w-28" />
+        <FishIcon className="h-20 w-32" />
+        <CoralIcon className="h-28 w-20" />
+      </div>
     </div>
   );
 }
+
