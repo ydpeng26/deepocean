@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/useProfile";
 import { DIVE_TYPE_LABELS, formatDate, listDives } from "@/lib/dives";
 
 export const Route = createFileRoute("/_authenticated/dives/")({
@@ -21,14 +23,35 @@ export const Route = createFileRoute("/_authenticated/dives/")({
 
 function DiveList() {
   const { data: dives = [], isPending } = useQuery({ queryKey: ["dives"], queryFn: listDives });
+  const { profile, avatarUrl } = useProfile();
 
   const total = dives.length;
   const maxDepth = dives.reduce((m, d) => Math.max(m, Number(d.max_depth ?? 0)), 0);
   const totalMin = dives.reduce((m, d) => m + Number(d.duration_min ?? 0), 0);
+  const name = profile?.display_name ?? "潜水员";
 
   return (
     <AppShell>
+      <section className="mb-10 flex flex-wrap items-center gap-4 border border-border px-5 py-5">
+        <Avatar className="h-14 w-14 rounded-none">
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} className="rounded-none" /> : null}
+          <AvatarFallback className="rounded-none bg-primary/10 text-base text-primary">
+            {name.slice(0, 1)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="text-lg text-primary">{name}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            潜水证级别：{profile?.cert_level ?? "未填写"} · 现有瓶数：{profile?.tank_count ?? 0}
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="rounded-none">
+          <Link to="/profile">编辑资料</Link>
+        </Button>
+      </section>
+
       <div className="flex items-end justify-between">
+
         <div>
           <h1 className="text-3xl font-normal tracking-tight text-primary">潜水日志</h1>
           <p className="mt-2 text-sm text-muted-foreground">按日期倒序排列</p>
