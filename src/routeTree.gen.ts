@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesNewRouteImport } from './routes/_authenticated/dives/new'
 import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDivesIndexRoute = AuthenticatedDivesIndexRouteImport.update({
   id: '/dives/',
@@ -49,6 +55,7 @@ const AuthenticatedDivesIdRoute = AuthenticatedDivesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives/': typeof AuthenticatedDivesIndexRoute
@@ -56,6 +63,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives': typeof AuthenticatedDivesIndexRoute
@@ -65,20 +73,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
   '/_authenticated/dives/new': typeof AuthenticatedDivesNewRoute
   '/_authenticated/dives/': typeof AuthenticatedDivesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/profile'
+    | '/dives/$id'
+    | '/dives/new'
+    | '/dives/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dives/$id' | '/dives/new' | '/dives'
+  to: '/' | '/auth' | '/profile' | '/dives/$id' | '/dives/new' | '/dives'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/profile'
     | '/_authenticated/dives/$id'
     | '/_authenticated/dives/new'
     | '/_authenticated/dives/'
@@ -113,6 +129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dives/': {
       id: '/_authenticated/dives/'
       path: '/dives'
@@ -138,12 +161,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
   AuthenticatedDivesNewRoute: typeof AuthenticatedDivesNewRoute
   AuthenticatedDivesIndexRoute: typeof AuthenticatedDivesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
   AuthenticatedDivesNewRoute: AuthenticatedDivesNewRoute,
   AuthenticatedDivesIndexRoute: AuthenticatedDivesIndexRoute,

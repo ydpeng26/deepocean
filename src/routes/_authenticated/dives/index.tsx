@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/useProfile";
 import { DIVE_TYPE_LABELS, formatDate, listDives } from "@/lib/dives";
 
 export const Route = createFileRoute("/_authenticated/dives/")({
