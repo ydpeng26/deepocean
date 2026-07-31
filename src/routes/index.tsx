@@ -6,7 +6,7 @@ import logo from "../../public/logo.png";
 function WhaleIcon({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 120 80"
+      viewBox="0 0 140 90"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
@@ -15,10 +15,18 @@ function WhaleIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M100 45c-5 12-22 18-42 18-28 0-48-15-48-33 0-20 24-30 48-30 24 0 44 12 48 30" />
-      <path d="M98 30c8-6 16-4 20 2-2 10-8 16-20 14" />
-      <circle cx="28" cy="28" r="3" fill="currentColor" />
-      <path d="M16 48c8 6 22 8 36 4" />
+      <path d="M118 46c-6 16-28 24-52 24-34 0-58-18-58-42 0-24 30-38 60-38 30 0 54 16 60 40" />
+      <path d="M116 28c12-8 22-6 26 4-2 14-12 22-26 18" />
+      <path d="M38 32c-2 8-2 16 0 24" />
+      <path d="M50 34c-2 8-4 16 0 22" />
+      <path d="M62 34c-2 8-2 14 0 20" />
+      <path d="M74 32c-2 6-2 12 0 18" />
+      <path d="M18 44c-10 8-8 18 2 22" />
+      <path d="M108 48c4 8 12 12 22 10" />
+      <path d="M96 20c-2-6-8-10-14-10" />
+      <path d="M92 18c4-2 8-2 12 0" />
+      <circle cx="40" cy="28" r="3" fill="currentColor" />
+      <path d="M78 60c12 4 28 2 40-6" />
     </svg>
   );
 }
@@ -35,17 +43,27 @@ function TurtleIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <ellipse cx="50" cy="52" rx="26" ry="20" />
-      <path d="M50 32v-14" />
-      <path d="M36 38l-14-10" />
-      <path d="M64 38l14-10" />
-      <path d="M34 64l-12 12" />
-      <path d="M66 64l12 12" />
-      <circle cx="50" cy="18" r="8" />
-      <circle cx="46" cy="16" r="1.5" fill="currentColor" />
-      <path d="M32 26c-6 2-10 8-10 14" />
-      <path d="M68 26c6 2 10 8 10 14" />
-      <path d="M42 50h16M50 44v16" />
+      <ellipse cx="50" cy="54" rx="28" ry="22" />
+      <path d="M34 40c-2-4-2-8 0-12" />
+      <path d="M42 38c-2-4-2-8 0-12" />
+      <path d="M50 36c0-6 0-10 0-14" />
+      <path d="M58 38c2-4 2-8 0-12" />
+      <path d="M66 40c2-4 2-8 0-12" />
+      <path d="M30 48c-4-2-6-6-4-10" />
+      <path d="M70 48c4-2 6-6 4-10" />
+      <path d="M50 36v36" />
+      <path d="M34 48c8 6 24 6 32 0" />
+      <path d="M24 58l-16 12" />
+      <path d="M76 58l16 12" />
+      <path d="M24 52l-18-8" />
+      <path d="M76 52l18-8" />
+      <path d="M50 32v-16" />
+      <circle cx="50" cy="16" r="9" />
+      <circle cx="46" cy="14" r="1.5" fill="currentColor" />
+      <path d="M42 20c-8 2-12 10-12 18" />
+      <path d="M58 20c8 2 12 10 12 18" />
+      <path d="M44 80c-2 6-6 10-10 10" />
+      <path d="M56 80c2 6 6 10 10 10" />
     </svg>
   );
 }
@@ -62,11 +80,17 @@ function JellyfishIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M40 12c-22 0-34 14-34 28h68c0-14-12-28-34-28z" />
-      <path d="M24 40c-2 18-4 34-8 50" />
-      <path d="M40 40c0 18 2 34 6 50" />
-      <path d="M56 40c2 18 4 34 8 50" />
-      <path d="M16 28c4-8 12-12 24-12" />
+      <path d="M40 12c-24 0-38 14-38 32h76c0-18-14-32-38-32z" />
+      <path d="M10 32c6-10 18-16 30-16" />
+      <path d="M70 32c-6-10-18-16-30-16" />
+      <path d="M20 20c8-8 22-8 30 0" />
+      <path d="M24 40c-3 16-6 34-10 54" />
+      <path d="M40 40c-1 18-2 38-4 58" />
+      <path d="M56 40c3 16 6 34 10 54" />
+      <path d="M32 48c-2 14-5 28-8 40" />
+      <path d="M48 48c2 14 5 28 8 40" />
+      <path d="M22 28c2 2 6 2 8 0" />
+      <path d="M38 26c2 2 6 2 8 0" />
       <circle cx="40" cy="24" r="2" fill="currentColor" />
     </svg>
   );
@@ -84,12 +108,19 @@ function FishIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M76 30c-6 16-26 22-48 22-12 0-20-8-20-18 0-12 12-20 28-20 22 0 40 8 48 22z" />
-      <path d="M76 30l16-12v34l-16-12" />
-      <path d="M28 24c-4 0-8 4-8 10" />
-      <path d="M24 30c6 4 12 4 18 0" />
+      <path d="M76 30c-6 18-28 24-50 24-12 0-22-8-22-20 0-12 12-22 28-22 24 0 42 10 50 26z" />
+      <path d="M76 30l20-14v36l-20-14" />
+      <path d="M26 24c-6 0-12 6-12 14" />
+      <path d="M26 30c8 4 16 4 24 0" />
+      <path d="M30 36c6 4 14 4 20 0" />
+      <path d="M56 22c-2 6-2 12 0 18" />
+      <path d="M64 24c-2 6-2 12 0 18" />
+      <path d="M72 26c-2 6-2 12 0 18" />
+      <path d="M42 18c-2 8-2 16 0 24" />
+      <path d="M84 22c4-4 8-2 10 2" />
+      <path d="M84 38c4 4 8 2 10-2" />
       <circle cx="22" cy="28" r="2" fill="currentColor" />
-      <path d="M8 34c-2 6 2 10 8 10" />
+      <path d="M8 34c-2 8 4 12 12 10" />
     </svg>
   );
 }
@@ -107,14 +138,21 @@ function CoralIcon({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="M40 92V60" />
-      <path d="M40 72c-10-10-18-8-22 2" />
-      <path d="M40 64c10-10 18-8 22 2" />
-      <path d="M40 52c-12-14-26-12-30 2" />
-      <path d="M40 52c12-14 26-12 30 2" />
-      <path d="M40 92c-6 4-12 4-18 0" />
-      <path d="M40 92c6 4 12 4 18 0" />
-      <circle cx="18" cy="54" r="2" fill="currentColor" />
-      <circle cx="62" cy="54" r="2" fill="currentColor" />
+      <path d="M40 74c-12-10-20-8-24 4" />
+      <path d="M40 66c12-10 20-8 24 4" />
+      <path d="M40 56c-16-14-30-12-34 4" />
+      <path d="M40 56c16-14 30-12 34 4" />
+      <path d="M40 88c-10 6-20 6-28 0" />
+      <path d="M40 88c10 6 20 6 28 0" />
+      <path d="M28 62c-4-8-10-6-14 2" />
+      <path d="M52 62c4-8 10-6 14 2" />
+      <path d="M40 48c-8-12-18-10-22 0" />
+      <path d="M40 48c8-12 18-10 22 0" />
+      <circle cx="14" cy="60" r="2" fill="currentColor" />
+      <circle cx="66" cy="60" r="2" fill="currentColor" />
+      <circle cx="20" cy="50" r="2" fill="currentColor" />
+      <circle cx="60" cy="50" r="2" fill="currentColor" />
+      <circle cx="40" cy="40" r="2" fill="currentColor" />
     </svg>
   );
 }
@@ -129,11 +167,18 @@ function BubbleGroup({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <circle cx="30" cy="105" r="8" />
-      <circle cx="20" cy="80" r="5" />
-      <circle cx="42" cy="60" r="6" />
-      <circle cx="28" cy="38" r="4" />
-      <circle cx="36" cy="18" r="3" />
+      <circle cx="30" cy="105" r="10" />
+      <path d="M26 101c2-2 6-2 8 0" />
+      <circle cx="20" cy="80" r="6" />
+      <path d="M17 77c2-1 4-1 6 0" />
+      <circle cx="42" cy="60" r="7" />
+      <path d="M39 57c2-1 4-1 6 0" />
+      <circle cx="28" cy="38" r="5" />
+      <path d="M25 35c2-1 4-1 6 0" />
+      <circle cx="36" cy="18" r="4" />
+      <path d="M34 16c1-1 3-1 4 0" />
+      <circle cx="14" cy="20" r="3" />
+      <circle cx="48" cy="28" r="2" />
     </svg>
   );
 }
@@ -182,10 +227,13 @@ function Landing() {
       <main className="relative mx-auto max-w-5xl px-6">
         <section className="relative border-t border-border py-24">
           <h1 className="max-w-2xl text-4xl font-normal leading-tight tracking-tight text-primary sm:text-5xl">
-            把每一次下潜，
+            记录每一次下潜，
             <br />
-            留在纸一样干净的日志里。
+            珍藏每一次深蓝
           </h1>
+          <p className="mt-4 max-w-xl text-sm font-normal italic leading-relaxed text-primary/70">
+            Log every dive. Cherish every deep blue.
+          </p>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
             为潜水员而做的潜水日志。填几个字段，就能长期保存你去过的海、见过的水温和一起下水的人。
           </p>
