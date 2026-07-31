@@ -108,12 +108,19 @@ function FishIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M76 30c-6 16-26 22-48 22-12 0-20-8-20-18 0-12 12-20 28-20 22 0 40 8 48 22z" />
-      <path d="M76 30l16-12v34l-16-12" />
-      <path d="M28 24c-4 0-8 4-8 10" />
-      <path d="M24 30c6 4 12 4 18 0" />
+      <path d="M76 30c-6 18-28 24-50 24-12 0-22-8-22-20 0-12 12-22 28-22 24 0 42 10 50 26z" />
+      <path d="M76 30l20-14v36l-20-14" />
+      <path d="M26 24c-6 0-12 6-12 14" />
+      <path d="M26 30c8 4 16 4 24 0" />
+      <path d="M30 36c6 4 14 4 20 0" />
+      <path d="M56 22c-2 6-2 12 0 18" />
+      <path d="M64 24c-2 6-2 12 0 18" />
+      <path d="M72 26c-2 6-2 12 0 18" />
+      <path d="M42 18c-2 8-2 16 0 24" />
+      <path d="M84 22c4-4 8-2 10 2" />
+      <path d="M84 38c4 4 8 2 10-2" />
       <circle cx="22" cy="28" r="2" fill="currentColor" />
-      <path d="M8 34c-2 6 2 10 8 10" />
+      <path d="M8 34c-2 8 4 12 12 10" />
     </svg>
   );
 }
@@ -131,14 +138,21 @@ function CoralIcon({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="M40 92V60" />
-      <path d="M40 72c-10-10-18-8-22 2" />
-      <path d="M40 64c10-10 18-8 22 2" />
-      <path d="M40 52c-12-14-26-12-30 2" />
-      <path d="M40 52c12-14 26-12 30 2" />
-      <path d="M40 92c-6 4-12 4-18 0" />
-      <path d="M40 92c6 4 12 4 18 0" />
-      <circle cx="18" cy="54" r="2" fill="currentColor" />
-      <circle cx="62" cy="54" r="2" fill="currentColor" />
+      <path d="M40 74c-12-10-20-8-24 4" />
+      <path d="M40 66c12-10 20-8 24 4" />
+      <path d="M40 56c-16-14-30-12-34 4" />
+      <path d="M40 56c16-14 30-12 34 4" />
+      <path d="M40 88c-10 6-20 6-28 0" />
+      <path d="M40 88c10 6 20 6 28 0" />
+      <path d="M28 62c-4-8-10-6-14 2" />
+      <path d="M52 62c4-8 10-6 14 2" />
+      <path d="M40 48c-8-12-18-10-22 0" />
+      <path d="M40 48c8-12 18-10 22 0" />
+      <circle cx="14" cy="60" r="2" fill="currentColor" />
+      <circle cx="66" cy="60" r="2" fill="currentColor" />
+      <circle cx="20" cy="50" r="2" fill="currentColor" />
+      <circle cx="60" cy="50" r="2" fill="currentColor" />
+      <circle cx="40" cy="40" r="2" fill="currentColor" />
     </svg>
   );
 }
@@ -153,11 +167,18 @@ function BubbleGroup({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <circle cx="30" cy="105" r="8" />
-      <circle cx="20" cy="80" r="5" />
-      <circle cx="42" cy="60" r="6" />
-      <circle cx="28" cy="38" r="4" />
-      <circle cx="36" cy="18" r="3" />
+      <circle cx="30" cy="105" r="10" />
+      <path d="M26 101c2-2 6-2 8 0" />
+      <circle cx="20" cy="80" r="6" />
+      <path d="M17 77c2-1 4-1 6 0" />
+      <circle cx="42" cy="60" r="7" />
+      <path d="M39 57c2-1 4-1 6 0" />
+      <circle cx="28" cy="38" r="5" />
+      <path d="M25 35c2-1 4-1 6 0" />
+      <circle cx="36" cy="18" r="4" />
+      <path d="M34 16c1-1 3-1 4 0" />
+      <circle cx="14" cy="20" r="3" />
+      <circle cx="48" cy="28" r="2" />
     </svg>
   );
 }
