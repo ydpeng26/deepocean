@@ -182,10 +182,13 @@ function Landing() {
       <main className="relative mx-auto max-w-5xl px-6">
         <section className="relative border-t border-border py-24">
           <h1 className="max-w-2xl text-4xl font-normal leading-tight tracking-tight text-primary sm:text-5xl">
-            把每一次下潜，
+            记录每一次下潜，
             <br />
-            留在纸一样干净的日志里。
+            珍藏每一次深蓝
           </h1>
+          <p className="mt-4 max-w-xl text-sm font-normal italic leading-relaxed text-primary/70">
+            Log every dive. Cherish every deep blue.
+          </p>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
             为潜水员而做的潜水日志。填几个字段，就能长期保存你去过的海、见过的水温和一起下水的人。
           </p>
