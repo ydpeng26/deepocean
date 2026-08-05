@@ -80,11 +80,8 @@ export async function uploadAvatar(file: File): Promise<string> {
   return path;
 }
 
-export async function signedAvatarUrl(path: string | null): Promise<string | null> {
+export function publicAvatarUrl(path: string | null): string | null {
   if (!path) return null;
-  const { data, error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .createSignedUrl(path, 60 * 60);
-  if (error) return null;
-  return data?.signedUrl ?? null;
+  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
 }
