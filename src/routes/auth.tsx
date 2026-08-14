@@ -19,11 +19,22 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
+      ? { next: search.next }
+      : {},
+
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
+  function goNext() {
+    if (next) window.location.href = next;
+    else navigate({ to: "/dives" });
+  }
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +52,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: `${window.location.origin}/dives` },
+          options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
         });
         if (error) throw error;
         toast.success("注册成功，正在进入日志");
@@ -53,7 +64,7 @@ function AuthPage() {
         if (error) throw error;
       }
       const { data } = await supabase.auth.getSession();
-      if (data.session) navigate({ to: "/dives" });
+      if (data.session) goNext();
       else toast.info("请查收邮箱完成验证后再登录");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "操作失败，请重试");
@@ -64,14 +75,14 @@ function AuthPage() {
 
   async function handleGoogle() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${next ?? "/dives"}`,
     });
     if (result.error) {
       toast.error("Google 登录失败，请重试");
       return;
     }
     if (result.redirected) return;
-    navigate({ to: "/dives" });
+    goNext();
   }
 
   return (

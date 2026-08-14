@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://oqgopkwsdrygvmjrmnyb.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "speak-chinese-now",
+      "version": "0.1.0",
+      "title": "Speak Chinese Now"
+    },
+    "tools": [
+      {
+        "name": "list_dives",
+        "title": "List dives",
+        "description": "List the signed-in diver's dive log entries, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "default": 20,
+              "description": "Maximum number of dives to return.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "country": {
+              "description": "Filter by country name.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_dive",
+        "title": "Get dive",
+        "description": "Fetch one dive log entry of the signed-in diver by its id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Dive id."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_dive",
+        "title": "Create dive",
+        "description": "Add a new dive log entry for the signed-in diver.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "country": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Country of the dive."
+            },
+            "site_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Dive site name."
+            },
+            "dive_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Dive date, YYYY-MM-DD."
+            },
+            "dive_type": {
+              "default": "recreational",
+              "description": "Dive type.",
+              "type": "string",
+              "enum": [
+                "recreational",
+                "freediving",
+                "technical"
+              ]
+            },
+            "weather": {
+              "description": "Weather on the day.",
+              "type": "string"
+            },
+            "surface_temp": {
+              "description": "Surface temperature in Celsius.",
+              "type": "number"
+            },
+            "water_temp": {
+              "description": "Water temperature in Celsius.",
+              "type": "number"
+            },
+            "max_depth": {
+              "description": "Maximum depth in meters.",
+              "type": "number"
+            },
+            "duration_min": {
+              "description": "Dive duration in minutes.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "buddy_role": {
+              "description": "Role of the dive partner.",
+              "type": "string",
+              "enum": [
+                "instructor",
+                "buddy"
+              ]
+            },
+            "buddy_name": {
+              "description": "Dive partner name.",
+              "type": "string"
+            },
+            "notes": {
+              "description": "Personal notes.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "country",
+            "site_name",
+            "dive_date"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_dive_stats",
+        "title": "Get dive stats",
+        "description": "Summarize the signed-in diver's log: total dives, max depth, total minutes, countries.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_diver_profile",
+        "title": "Get diver profile",
+        "description": "Read the signed-in diver's profile: display name, certification level, tank count.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
