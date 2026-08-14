@@ -19,11 +19,11 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    next: typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
-      ? search.next
-      : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
+      ? { next: search.next }
+      : {},
+
   component: AuthPage,
 });
 
