@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CloudOff, Languages } from "lucide-react";
 import { toast } from "sonner";
+import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
@@ -126,12 +127,15 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth` },
-    });
-    if (error) {
-      toast.error(copy.googleError);
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth`,
+      });
+      if (result.error) throw result.error;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : copy.googleError);
+      setLoading(false);
     }
   }
 
@@ -174,7 +178,7 @@ function AuthPage() {
           </form>
 
           <div className="do-auth-divider"><span />{copy.or}<span /></div>
-          <button type="button" className="do-auth-google" onClick={handleGoogle}><span className="do-google-mark" aria-hidden="true">G</span>{copy.continueGoogle}</button>
+          <button type="button" className="do-auth-google" onClick={handleGoogle} disabled={loading}><span className="do-google-mark" aria-hidden="true">G</span>{copy.continueGoogle}</button>
         </section>
 
       </main>
