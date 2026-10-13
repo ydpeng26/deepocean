@@ -66,11 +66,16 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
+      ? { next: search.next }
+      : {},
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { language, toggleLanguage } = useLanguage();
   const copy = authCopy[language];
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -78,20 +83,25 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function goNext() {
+    if (next) window.location.href = next;
+    else navigate({ to: "/dives" });
+  }
+
   useEffect(() => {
     if (!navigator.onLine) return;
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) navigate({ to: "/dives" });
+      if (active && data.session) goNext();
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) navigate({ to: "/dives" });
+      if (active && session) goNext();
     });
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, next]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,7 +115,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: `${window.location.origin}/dives` },
+          options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
         });
         if (error) throw error;
         toast.success(copy.signupSuccess);
@@ -117,7 +127,7 @@ function AuthPage() {
         if (error) throw error;
       }
       const { data } = await supabase.auth.getSession();
-      if (data.session) navigate({ to: "/dives" });
+      if (data.session) goNext();
       else toast.info(copy.verifyEmail);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.genericError);
@@ -130,9 +140,11 @@ function AuthPage() {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth`,
+        redirect_uri: `${window.location.origin}${next ?? "/dives"}`,
       });
       if (result.error) throw result.error;
+      if (result.redirected) return;
+      goNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.googleError);
       setLoading(false);
