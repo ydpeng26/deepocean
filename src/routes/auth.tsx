@@ -24,7 +24,6 @@ const authCopy = {
     continueGoogle: "使用 Google 继续",
     or: "或者",
     emailError: "请填写邮箱，密码至少 6 位",
-    signupSuccess: "注册成功，正在进入日志",
     verifyEmail: "请查收邮箱完成验证后再登录",
     genericError: "操作失败，请重试",
     googleError: "Google 登录失败，请重试",
@@ -47,7 +46,6 @@ const authCopy = {
     continueGoogle: "Continue with Google",
     or: "or",
     emailError: "Enter an email and a password of at least 6 characters",
-    signupSuccess: "Account created. Opening your dive log",
     verifyEmail: "Check your email to confirm your account, then sign in",
     genericError: "Something went wrong. Please try again",
     googleError: "Google sign-in failed. Please try again",
@@ -118,7 +116,6 @@ function AuthPage() {
           options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
         });
         if (error) throw error;
-        toast.success(copy.signupSuccess);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
