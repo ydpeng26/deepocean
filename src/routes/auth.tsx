@@ -1,0 +1,183 @@
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, CloudOff, Languages } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageProvider";
+
+const authCopy = {
+  "zh-CN": {
+    back: "返回首页",
+    signin: "登录",
+    signup: "注册",
+    welcome: "欢迎回来",
+    create: "从这里开始",
+    signinIntro: "继续记录你的下潜，重温属于你的海洋人生",
+    signupIntro: "创建账号，让每一次与大海的相遇都有迹可循",
+    email: "邮箱",
+    emailPlaceholder: "请输入邮箱地址",
+    password: "密码",
+    passwordPlaceholder: "请输入密码",
+    passwordNewPlaceholder: "设置至少 6 位密码",
+    processing: "处理中…",
+    continueGoogle: "使用 Google 继续",
+    or: "或者",
+    emailError: "请填写邮箱，密码至少 6 位",
+    signupSuccess: "注册成功，正在进入日志",
+    verifyEmail: "请查收邮箱完成验证后再登录",
+    genericError: "操作失败，请重试",
+    googleError: "Google 登录失败，请重试",
+    offline: "无信号模式",
+  },
+  en: {
+    back: "Back to home",
+    signin: "Sign in",
+    signup: "Sign up",
+    welcome: "Welcome back",
+    create: "Begin here",
+    signinIntro: "Pick up your dive log and relive your ocean life",
+    signupIntro: "Create an account to remember every encounter with the sea",
+    email: "Email",
+    emailPlaceholder: "Enter your email address",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    passwordNewPlaceholder: "Set a password of at least 6 characters",
+    processing: "Working…",
+    continueGoogle: "Continue with Google",
+    or: "or",
+    emailError: "Enter an email and a password of at least 6 characters",
+    signupSuccess: "Account created. Opening your dive log",
+    verifyEmail: "Check your email to confirm your account, then sign in",
+    genericError: "Something went wrong. Please try again",
+    googleError: "Google sign-in failed. Please try again",
+    offline: "Offline mode",
+  },
+} as const;
+
+export const Route = createFileRoute("/auth")({
+  head: () => ({
+    meta: [
+      { title: "登录 · SupDiver" },
+      { name: "description", content: "登录或注册 SupDiver，开始记录你的潜水日志。" },
+      { property: "og:title", content: "登录 · SupDiver" },
+      { property: "og:description", content: "登录或注册 SupDiver，开始记录你的潜水日志。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: AuthPage,
+});
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const { language, toggleLanguage } = useLanguage();
+  const copy = authCopy[language];
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.onLine) return;
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active && data.session) navigate({ to: "/dives" });
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active && session) navigate({ to: "/dives" });
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || password.length < 6) {
+      toast.error(copy.emailError);
+      return;
+    }
+    setLoading(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/dives` },
+        });
+        if (error) throw error;
+        toast.success(copy.signupSuccess);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+      }
+      const { data } = await supabase.auth.getSession();
+      if (data.session) navigate({ to: "/dives" });
+      else toast.info(copy.verifyEmail);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : copy.genericError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth` },
+    });
+    if (error) {
+      toast.error(copy.googleError);
+    }
+  }
+
+  return (
+    <div className="do-auth">
+      <div className="do-auth-bg" aria-hidden="true" />
+      <div className="do-auth-overlay" aria-hidden="true" />
+      <header className="do-auth-header">
+        <Link to="/" className="do-brand" aria-label="SupDiver home">
+          <span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span>
+          <b>SupDiver</b>
+        </Link>
+        <div className="do-auth-header-actions">
+          <Link to="/offline-sync" className="do-auth-offline"><CloudOff /><span>{copy.offline}</span></Link>
+          <button type="button" className="do-language" onClick={toggleLanguage} aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}>
+            <Languages /><span>{language === "zh-CN" ? "EN" : "中文"}</span>
+          </button>
+          <Link to="/" className="do-auth-back"><ArrowLeft />{copy.back}</Link>
+        </div>
+      </header>
+
+      <main className="do-auth-main">
+        <section className="do-auth-panel" aria-label={mode === "signin" ? copy.signin : copy.signup}>
+          <div className="do-auth-tabs" role="tablist" aria-label={language === "zh-CN" ? "账号操作" : "Account action"}>
+            <button type="button" role="tab" aria-selected={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>{copy.signin}</button>
+            <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>{copy.signup}</button>
+          </div>
+          <div className="do-auth-intro">
+            <p className="do-auth-kicker">SUPDIVER</p>
+            <h1>{mode === "signin" ? copy.welcome : copy.create}</h1>
+            <p>{mode === "signin" ? copy.signinIntro : copy.signupIntro}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="do-auth-form">
+            <label htmlFor="email">{copy.email}</label>
+            <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={copy.emailPlaceholder} maxLength={255} required />
+            <label htmlFor="password">{copy.password}</label>
+            <input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder} maxLength={72} minLength={6} required />
+            <button type="submit" disabled={loading} className="do-auth-submit">{loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}<ArrowRight /></button>
+          </form>
+
+          <div className="do-auth-divider"><span />{copy.or}<span /></div>
+          <button type="button" className="do-auth-google" onClick={handleGoogle}><span className="do-google-mark" aria-hidden="true">G</span>{copy.continueGoogle}</button>
+        </section>
+
+      </main>
+    </div>
+  );
+}

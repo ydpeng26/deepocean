@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 300" role="img" aria-labelledby="title">
+  <title id="title">SupDiver 海浪线条标志独立预览</title>
+  <defs>
+    <linearGradient id="ocean" x1="13" y1="74" x2="78" y2="20" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#138BFA"/>
+      <stop offset="0.52" stop-color="#39BEFF"/>
+      <stop offset="1" stop-color="#86EAFF"/>
+    </linearGradient>
+    <g id="wave" fill="none" stroke="url(#ocean)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 56.5C23 55.5 31 47.5 38 34.5C45 21.5 56 17 66 22.5C75 27.5 81 38 79 48.5C73 42.5 67 40.5 61 42C53 44 49 51.5 41 57.5C33 64 24 67 13 65.5" stroke-width="5.2"/>
+      <path d="M16 74C27 77 35 73.5 44 69.5C52 66 59 67 67 71C73 74 78 74.5 84 71.5" stroke-width="4.4"/>
+    </g>
+  </defs>
+  <rect width="840" height="300" rx="24" fill="#001126"/>
+  <path d="M38 220H802" stroke="#1C416A" stroke-width="1"/>
+  <use href="#wave" transform="translate(55 66) scale(1.42)"/>
+  <text x="196" y="161" fill="#F6FBFF" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="56" font-weight="700" letter-spacing="1.2">SupDiver</text>
+  <text x="198" y="190" fill="#9DB5CD" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="15" letter-spacing="2">YOUR OCEAN. YOUR STORY.</text>
+  <use href="#wave" transform="translate(52 229) scale(.54)"/>
+  <text x="106" y="263" fill="#9DB5CD" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="14">小尺寸图标示意</text>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "name": "SupDiver",
+  "short_name": "SupDiver",
+  "description": "记录每一次下潜，包括无信号时的临时记录。",
+  "start_url": "/auth",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#001126",
+  "theme_color": "#001126",
+  "icons": [
+    { "src": "/images/supdiver-wave-mark.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

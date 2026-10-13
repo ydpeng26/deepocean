@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 280" role="img" aria-labelledby="title">
+  <title id="title">SupDiver 新海浪标志独立预览</title>
+  <defs>
+    <linearGradient id="ocean" x1="10" y1="78" x2="80" y2="18" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#087DE0"/>
+      <stop offset="0.55" stop-color="#229EE7"/>
+      <stop offset="1" stop-color="#7BDBED"/>
+    </linearGradient>
+    <g id="wave" fill="url(#ocean)">
+      <path d="M8 61C25 59 35 48 43 33C51 18 62 13 72 18C82 23 88 36 84 47C81 38 75 30 68 27C60 24 54 31 47 43C38 59 27 68 10 66C7 66 6 63 8 61Z"/>
+      <path d="M11 75C27 73 39 66 49 54C59 42 67 39 74 43C81 47 85 55 83 61C79 54 75 50 70 50C64 50 60 55 54 62C44 74 29 81 14 79C11 79 10 77 11 75Z"/>
+    </g>
+  </defs>
+  <rect width="840" height="280" rx="24" fill="#001126"/>
+  <use href="#wave" transform="translate(61 49) scale(1.38)"/>
+  <text x="201" y="147" fill="#F6FBFF" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="56" font-weight="700" letter-spacing="1.2">SupDiver</text>
+  <path d="M50 199H790" stroke="#21476B" stroke-width="1"/>
+  <use href="#wave" transform="translate(52 208) scale(.48)"/>
+  <text x="103" y="242" fill="#9DB5CD" font-family="Avenir Next, Inter, Arial, sans-serif" font-size="14">缩小后的图标示意</text>
+</svg>

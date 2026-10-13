@@ -1,0 +1,4380 @@
+Cannot exec 'zsh': No such file or directory
+Cannot exec '/bin/zsh': Operation not permitted
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+  VITE v8.2.1  ready in 690 ms
+
+  ➜  Local:   http://127.0.0.1:8179/
+  ➜  press h + enter to show help
+10:02:53 AM [vite] (ssr) connected.
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:03:38 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:03:38 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:03:38 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:03:38 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:03:38 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:03:38 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x4)
+10:03:38 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+The above error occurred in the <AuthPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+10:03:38 AM [vite] (client) [console.warn] Warning: Error in route match: __root__/
+10:04:19 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:04:19 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:04:19 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:04:19 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:04:19 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:04:19 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x4)
+10:04:19 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+The above error occurred in the <AuthPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+10:04:19 AM [vite] (client) [console.warn] Warning: Error in route match: __root__/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/auth.tsx, /src/routes/auth.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (ssr) page reload src/routes/auth.tsx
+10:08:02 AM [vite] (ssr) program reload
+10:08:02 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x4)
+10:08:02 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+The above error occurred in the <AuthPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+10:08:02 AM [vite] (client) [console.warn] Warning: Error in route match: __root__/
+10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6) (x4)
+10:08:02 AM [vite] (client) [console.error] Error: Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+    at createSupabaseClient (http://127.0.0.1:8179/src/integrations/supabase/client.ts:32:9)
+    at Object.get (http://127.0.0.1:8179/src/integrations/supabase/client.ts:47:30)
+    at http://127.0.0.1:8179/src/routes/auth.tsx?tsr-split=component:72:45
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12900:13)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at commitHookEffectListMount (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6615:153)
+    at commitHookPassiveMountEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6650:55)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7699:6)
+    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7686:5)
+    at reconnectPassiveEffects (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:7698:6)
+
+The above error occurred in the <AuthPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+10:08:02 AM [vite] (client) [console.warn] Warning: Error in route match: __root__/
+10:08:52 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:08:53 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:14:32 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:14:32 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (ssr) page reload src/styles.css
+10:17:41 AM [vite] (ssr) program reload
+10:17:41 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/auth.tsx, /src/routes/auth.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:41 AM [vite] (ssr) page reload src/routes/auth.tsx
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:17:42 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+10:17:42 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:17:42 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x4)
+10:18:30 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+10:19:27 AM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/offline-sync-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (ssr) page reload src/routes/offline-sync-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/auth.tsx, /src/routes/auth.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (ssr) page reload src/routes/auth.tsx
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x5)
+10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:27 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+10:19:27 AM [vite] (client) hmr invalidate /src/routes/offline-sync-preview.tsx Could not Fast Refresh (new export)
+10:19:27 AM [vite] (client) page reload src/routes/offline-sync-preview.tsx
+10:19:28 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:28 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:28 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:28 AM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:28 AM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+10:19:28 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:19:28 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+Error: aborted
+    at abortIncoming (node:_http_server:911:17)
+    at socketOnClose (node:_http_server:904:3)
+    at Socket.emit (node:events:521:24)
+    at TCP.<anonymous> (node:net:355:12) (status 500)
+caused by: Error: aborted
+    at abortIncoming (node:_http_server:911:17)
+    at socketOnClose (node:_http_server:904:3)
+    at Socket.emit (node:events:521:24)
+    at TCP.<anonymous> (node:net:355:12)
+Error: aborted
+    at abortIncoming (node:_http_server:911:17)
+    at socketOnClose (node:_http_server:904:3)
+    at Socket.emit (node:events:521:24)
+    at TCP.<anonymous> (node:net:355:12) (status 500)
+caused by: Error: aborted
+    at abortIncoming (node:_http_server:911:17)
+    at socketOnClose (node:_http_server:904:3)
+    at Socket.emit (node:events:521:24)
+    at TCP.<anonymous> (node:net:355:12)
+10:19:30 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:30 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:30 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:30 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:31 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:19:31 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:31 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:31 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:19:32 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:32 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:32 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:19:32 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:32 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:32 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:19:57 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:19:57 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:20:24 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:20:24 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:20:24 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:25:00 AM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:25:00 AM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+10:25:00 AM [vite] (ssr) program reload
+10:25:02 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:02 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:02 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:25:03 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:25:03 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:26:07 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J10:26:07 AM [vite] (ssr) page reload src/styles.css
+10:26:07 AM [vite] (ssr) program reload
+10:26:43 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+10:26:43 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:07:20 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:07:20 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:11:08 AM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:11:08 AM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+11:11:08 AM [vite] (ssr) program reload
+11:11:10 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:10 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:11 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:11:12 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:11:12 AM [vite] (client) [console.error] [Supabase] Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY. Connect Supabase in Lovable Cloud. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:11:21 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:11:21 AM [vite] (ssr) page reload src/routes/forum-preview.tsx
+11:11:21 AM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:12:53 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:12:53 AM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:14:40 AM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J11:14:40 AM [vite] (ssr) page reload src/styles.css
+11:15:48 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:15:48 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:16:37 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+11:16:37 AM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:06 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:06 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+1:07:06 PM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:07:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:08:24 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:08:24 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:09:20 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:09:20 PM [vite] (ssr) page reload src/styles.css
+1:10:40 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:10:40 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:44 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:44 PM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+1:11:44 PM [vite] (ssr) program reload
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:11:45 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x10)
+1:19:59 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:19:59 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:16 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:16 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+1:25:16 PM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:16 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:16 PM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+[tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x9)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:25:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file. (x10)
+1:26:26 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:26:26 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:27:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:27:17 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:30:16 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:30:16 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+1:30:16 PM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:30:17 PM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:30:17 PM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:31:18 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:31:18 PM [vite] (ssr) page reload src/styles.css
+1:32:11 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:32:11 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:41:54 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:41:54 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:17 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:17 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+1:49:17 PM [vite] (ssr) program reload
+1:49:17 PM [vite] (client) [console.error] ReferenceError: MoreHorizontal is not defined
+    at http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:899:50
+    at Array.map (<anonymous>)
+    at ForumPreview (http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:838:34)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12864:12)
+    at renderWithHooks (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:4211:19)
+    at updateFunctionComponent (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:5567:16)
+    at beginWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6138:20)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at performUnitOfWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8427:92)
+    at workLoopSync (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8323:37)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:17 PM [vite] (client) [console.error] ReferenceError: MoreHorizontal is not defined
+    at http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:899:50
+    at Array.map (<anonymous>)
+    at ForumPreview (http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:838:34)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12864:12)
+    at renderWithHooks (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:4211:19)
+    at updateFunctionComponent (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:5567:16)
+    at beginWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6138:20)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at performUnitOfWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8427:92)
+    at workLoopSync (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8323:37) (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:17 PM [vite] (client) [console.error] ReferenceError: MoreHorizontal is not defined
+    at http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:899:50
+    at Array.map (<anonymous>)
+    at ForumPreview (http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:838:34)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12864:12)
+    at renderWithHooks (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:4211:19)
+    at updateFunctionComponent (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:5567:16)
+    at beginWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6138:20)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at performUnitOfWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8427:92)
+    at workLoopSync (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8323:37) (x3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:17 PM [vite] (client) [console.error] ReferenceError: MoreHorizontal is not defined
+    at http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:899:50
+    at Array.map (<anonymous>)
+    at ForumPreview (http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:838:34)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12864:12)
+    at renderWithHooks (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:4211:19)
+    at updateFunctionComponent (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:5567:16)
+    at beginWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6138:20)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at performUnitOfWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8427:92)
+    at workLoopSync (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8323:37) (x4)
+1:49:17 PM [vite] (client) [console.error] ReferenceError: MoreHorizontal is not defined
+    at http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:899:50
+    at Array.map (<anonymous>)
+    at ForumPreview (http://127.0.0.1:8179/src/routes/forum-preview.tsx?t=1791870557375&tsr-split=component:838:34)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:12864:12)
+    at renderWithHooks (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:4211:19)
+    at updateFunctionComponent (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:5567:16)
+    at beginWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:6138:20)
+    at runWithFiberInDEV (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:850:66)
+    at performUnitOfWork (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8427:92)
+    at workLoopSync (http://127.0.0.1:8179/node_modules/.vite/deps/react-dom_client.js?v=aeef6767:8323:37)
+
+The above error occurred in the <ForumPreview> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+1:49:17 PM [vite] (client) [console.warn] Warning: Error in route match: __root__/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:31 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:31 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:45 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:49:45 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:50:07 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:50:07 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:50:35 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:50:35 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:51:00 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-post-preview.tsx, /src/routes/forum-post-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:51:00 PM [vite] (ssr) page reload src/routes/forum-post-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:51:46 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-post-preview.tsx, /src/routes/forum-post-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:51:46 PM [vite] (ssr) page reload src/routes/forum-post-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:52:49 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J1:52:49 PM [vite] (ssr) page reload src/styles.css
+1:54:58 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:54:58 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:56:26 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:56:26 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:58:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:58:57 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:59:00 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/offline-sync-preview.tsx" will not be code-split and will increase your bundle size:
+- OfflineSyncWorkspace
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+1:59:00 PM [vite] (client) [console.warn] [tanstack-router] These exports from "/Users/ydpeng/Documents/Codex/2026-08-13/referenced-chatgpt-conversation-this-is-an/work/photo-background-preview/src/routes/_authenticated/dives/index.tsx" will not be code-split and will increase your bundle size:
+- OceanPassport
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:02:07 PM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:02:07 PM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+2:02:07 PM [vite] (ssr) program reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:03:36 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:03:36 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:04:22 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-preview.tsx, /src/routes/forum-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:04:22 PM [vite] (ssr) page reload src/routes/forum-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:04:22 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/forum-post-preview.tsx, /src/routes/forum-post-preview.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:04:22 PM [vite] (ssr) page reload src/routes/forum-post-preview.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:13:08 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:13:08 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:19:02 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:19:02 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:43:29 PM [vite] (client) page reload src/routeTree.gen.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:43:29 PM [vite] (ssr) page reload src/routeTree.gen.ts (x2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:10 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:10 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:43 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:43 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:43 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:44:43 PM [vite] (ssr) page reload src/routes/_authenticated/dives/index.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:47:14 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/__root.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J2:47:14 PM [vite] (ssr) page reload src/styles.css
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J4:08:02 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/auth.tsx, /src/routes/auth.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J4:08:02 PM [vite] (ssr) page reload src/routes/auth.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J4:09:36 PM [vite] (client) hmr update /src/styles.css?direct, /src/routes/auth.tsx, /src/routes/auth.tsx?tsr-split=component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J4:09:36 PM [vite] (ssr) page reload src/routes/auth.tsx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1;1H[0J4:15:37 PM [vite] .env.local changed, restarting server...
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+4:15:38 PM [vite] server restarted.

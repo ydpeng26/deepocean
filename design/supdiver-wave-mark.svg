@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SupDiver 海浪标志</title>
+  <desc id="desc">两道流动的蓝色线条勾勒出一朵卷起的海浪，没有外框。</desc>
+  <defs>
+    <linearGradient id="ocean" x1="13" y1="74" x2="78" y2="20" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#138BFA"/>
+      <stop offset="0.52" stop-color="#39BEFF"/>
+      <stop offset="1" stop-color="#86EAFF"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M10 56.5C23 55.5 31 47.5 38 34.5C45 21.5 56 17 66 22.5C75 27.5 81 38 79 48.5C73 42.5 67 40.5 61 42C53 44 49 51.5 41 57.5C33 64 24 67 13 65.5"
+    stroke="url(#ocean)" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"
+  />
+  <path
+    d="M16 74C27 77 35 73.5 44 69.5C52 66 59 67 67 71C73 74 78 74.5 84 71.5"
+    stroke="url(#ocean)" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"
+  />
+</svg>
