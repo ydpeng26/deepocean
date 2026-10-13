@@ -1,7 +1,7 @@
 {
   "name": "SupDiver",
   "short_name": "SupDiver",
-  "description": "记录每一次下潜，包括无信号时的临时记录。",
+  "description": "记录独属于你的海洋人生，支持无信号日志记录、证书与装备记录管理、深蓝论坛等等。SupDiver让你在每一刻都能与大海相遇。",
   "start_url": "/auth",
   "scope": "/",
   "display": "standalone",

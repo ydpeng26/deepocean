@@ -82,12 +82,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "SupDiver · 潜水与海洋记忆" },
       {
         name: "description",
-        content: "SupDiver，珍藏每一次下潜，记录属于你的海洋故事。",
+        content:
+          "记录独属于你的海洋人生，支持无信号日志记录、证书与装备记录管理、深蓝论坛等等。SupDiver让你在每一刻都能与大海相遇。",
       },
       { property: "og:title", content: "SupDiver · 潜水与海洋记忆" },
       {
         property: "og:description",
-        content: "SupDiver，珍藏每一次下潜，记录属于你的海洋故事。",
+        content:
+          "记录独属于你的海洋人生，支持无信号日志记录、证书与装备记录管理、深蓝论坛等等。SupDiver让你在每一刻都能与大海相遇。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

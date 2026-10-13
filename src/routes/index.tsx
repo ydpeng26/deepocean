@@ -3,7 +3,19 @@ import { ArrowRight, CalendarDays, Gauge, Languages, MapPin, Radio, Timer, Waves
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { landingCopy } from "@/i18n/translations";
 
-export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "SupDiver" }, { name: "description", content: "Your ocean story, to be rediscovered across countless days and nights." }] }), component: Landing });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "SupDiver" },
+      {
+        name: "description",
+        content:
+          "记录独属于你的海洋人生，支持无信号日志记录、证书与装备记录管理、深蓝论坛等等。SupDiver让你在每一刻都能与大海相遇。",
+      },
+    ],
+  }),
+  component: Landing,
+});
 
 function Brand() {
   return <Link to="/" className="do-brand" aria-label="SupDiver home"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>;
