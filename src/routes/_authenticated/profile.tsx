@@ -1,164 +1,425 @@
-import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { AppShell } from "@/components/AppShell";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Award,
+  Camera,
+  Check,
+  Languages,
+  LogOut,
+  Save,
+  ShieldCheck,
+  UserRound,
+  Waves,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { listDives } from "@/lib/dives";
 import { CERT_LEVELS, updateMyProfile, uploadAvatar } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "个人信息 · 深蓝潜水日志" },
-      { name: "description", content: "维护你的用户名、头像、潜水证级别与现有瓶数。" },
-      { property: "og:title", content: "个人信息 · 深蓝潜水日志" },
-      { property: "og:description", content: "维护你的用户名、头像、潜水证级别与现有瓶数。" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { title: "个人资料 · SupDiver" },
+      { name: "description", content: "编辑你的 SupDiver 潜水员身份与公开资料。" },
     ],
   }),
   component: ProfilePage,
 });
 
+const copy = {
+  "zh-CN": {
+    passport: "海洋护照",
+    logs: "潜水日志",
+    profile: "个人资料",
+    logout: "退出",
+    eyebrow: "DIVER PROFILE",
+    title: "个人资料",
+    intro: "让每一次被记录的下潜，都带着属于你的名字。",
+    userId: "用户 ID",
+    accountNote: "用户 ID 是你的唯一身份，邮箱和登录安全信息不会公开显示。",
+    changeAvatar: "更换头像",
+    uploading: "上传中…",
+    identity: "基础资料",
+    diveProfile: "潜水资料",
+    displayName: "显示名称",
+    cert: "当前最高证书",
+    tanks: "累计潜水瓶数",
+    save: "保存个人资料",
+    saving: "保存中…",
+    saved: "更改已保存",
+    publicPreview: "公开资料预览",
+    publicHint: "这些资料会显示在你的海洋护照中。",
+    certified: "认证等级",
+    dives: "潜水记录",
+    countries: "到访海域",
+    privacy: "隐私说明",
+    privacyText: "邮箱、登录方式和账号安全信息不会出现在公开资料中。",
+    complete: "资料完整度",
+    identityComplete: "你的潜水员身份已准备就绪",
+    load: "正在载入你的资料…",
+    avatarHint: "支持常见图片格式，建议使用清晰的正方形头像。",
+  },
+  en: {
+    passport: "Ocean Passport",
+    logs: "Dive Logs",
+    profile: "Profile",
+    logout: "Sign out",
+    eyebrow: "DIVER PROFILE",
+    title: "Your profile",
+    intro: "Let every logged descent carry a name that feels like yours.",
+    userId: "User ID",
+    accountNote: "Your user ID is unique. Email and account security details are never public.",
+    changeAvatar: "Change photo",
+    uploading: "Uploading…",
+    identity: "Basic profile",
+    diveProfile: "Diving profile",
+    displayName: "Display name",
+    cert: "Highest certification",
+    tanks: "Total logged tanks",
+    save: "Save profile",
+    saving: "Saving…",
+    saved: "Changes saved",
+    publicPreview: "Public profile preview",
+    publicHint: "These details appear in your Ocean Passport.",
+    certified: "Certification",
+    dives: "Dive logs",
+    countries: "Places visited",
+    privacy: "Privacy",
+    privacyText:
+      "Your email, sign-in method and account security details are never shown publicly.",
+    complete: "Profile complete",
+    identityComplete: "Your diver identity is ready",
+    load: "Loading your profile…",
+    avatarHint: "Common image formats are supported. A clear square photo works best.",
+  },
+} as const;
+
 function ProfilePage() {
-  const { profile, avatarUrl, isPending } = useProfile();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
-
+  const { language, toggleLanguage } = useLanguage();
+  const c = copy[language];
+  const { profile, avatarUrl, isPending } = useProfile();
+  const { data: dives = [] } = useQuery({ queryKey: ["dives"], queryFn: listDives });
   const [name, setName] = useState("");
-  const [cert, setCert] = useState<string>("");
+  const [cert, setCert] = useState("");
   const [tanks, setTanks] = useState("0");
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!profile) return;
-    setName(profile.display_name ?? "");
-    setCert(profile.cert_level ?? "");
-    setTanks(String(profile.tank_count ?? 0));
+    if (profile) {
+      setName(profile.display_name ?? "");
+      setCert(profile.cert_level ?? "");
+      setTanks(String(profile.tank_count ?? 0));
+    }
   }, [profile]);
-
   const save = useMutation({
     mutationFn: () =>
       updateMyProfile({
-        display_name: name.trim() || "潜水员",
+        display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
         cert_level: cert || null,
-        tank_count: Number(tanks) || 0,
+        tank_count: Math.max(0, Number(tanks) || 0),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("个人信息已保存");
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      setSaved(true);
+      toast.success(language === "zh-CN" ? "个人资料已保存" : "Profile saved");
     },
-    onError: () => toast.error("保存失败，请重试"),
+    onError: () =>
+      toast.error(language === "zh-CN" ? "保存失败，请重试" : "Couldn't save. Please try again."),
   });
-
   const upload = useMutation({
     mutationFn: (file: File) => uploadAvatar(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("头像已更新");
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success(language === "zh-CN" ? "头像已更新" : "Photo updated");
     },
-    onError: () => toast.error("头像上传失败"),
+    onError: () => toast.error(language === "zh-CN" ? "头像上传失败" : "Photo upload failed"),
   });
-
-  const display = name || "潜水员";
+  const display = name.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
+  const initials = display.slice(0, 1).toUpperCase();
+  const countries = useMemo(
+    () => new Set(dives.map((dive) => dive.country.trim()).filter(Boolean)).size,
+    [dives],
+  );
+  const complete = Math.round(
+    ([name.trim(), cert, Number(tanks) > 0, avatarUrl].filter(Boolean).length / 4) * 100,
+  );
+  function changed(setter: (value: string) => void, value: string) {
+    setter(value);
+    setSaved(false);
+  }
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
 
   return (
-    <AppShell>
-      <h1 className="text-3xl font-normal tracking-tight text-primary">个人信息</h1>
-      <p className="mt-2 text-sm text-muted-foreground">这些信息会显示在你的日志首页。</p>
-
-      {isPending ? (
-        <p className="mt-10 text-sm text-muted-foreground">加载中…</p>
-      ) : (
-        <div className="mt-10 max-w-md space-y-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16 rounded-none">
-              {avatarUrl ? <AvatarImage src={avatarUrl} alt={display} className="rounded-none" /> : null}
-              <AvatarFallback className="rounded-none bg-primary/10 text-lg text-primary">
-                {display.slice(0, 1)}
-              </AvatarFallback>
+    <div className="do-profile-page">
+      <header className="do-passport-header do-profile-header">
+        <Link to="/dives" className="do-brand" aria-label="SupDiver">
+          <span className="do-brand-mark">
+            <img src="/images/supdiver-wave-mark.svg" alt="" />
+          </span>
+          <b>SupDiver</b>
+        </Link>
+        <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>
+          <Link to="/dives">{c.passport}</Link>
+          <Link to="/dives/logs">{c.logs}</Link>
+          <a href="#profile-editor" aria-current="page">
+            {c.profile}
+          </a>
+        </nav>
+        <div className="do-passport-header-actions">
+          <button type="button" className="do-passport-language" onClick={toggleLanguage}>
+            <Languages aria-hidden="true" />
+            {language === "zh-CN" ? "EN" : "中文"}
+          </button>
+          <span className="do-passport-account">
+            <Avatar>
+              <AvatarImage src={avatarUrl ?? undefined} alt={display} />
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
-            <div>
+            <span>{display}</span>
+          </span>
+          <button
+            type="button"
+            className="do-passport-logout"
+            onClick={signOut}
+            aria-label={c.logout}
+          >
+            <LogOut aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+      <main id="profile-editor" className="do-profile-main">
+        <section className="do-profile-intro">
+          <span>{c.eyebrow}</span>
+          <h1>{c.title}</h1>
+          <p>{c.intro}</p>
+        </section>
+        {isPending ? (
+          <div className="do-profile-loading">{c.load}</div>
+        ) : (
+          <div className="do-profile-layout">
+            <aside className="do-profile-identity-card">
+              <div className="do-profile-avatar-wrap">
+                <Avatar className="do-profile-avatar">
+                  <AvatarImage src={avatarUrl ?? undefined} alt={display} />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  aria-label={c.changeAvatar}
+                  disabled={upload.isPending}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Camera aria-hidden="true" />
+                </button>
+              </div>
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
                   if (file) upload.mutate(file);
-                  e.target.value = "";
+                  event.target.value = "";
                 }}
               />
-              <Button
-                variant="outline"
-                className="rounded-none"
-                disabled={upload.isPending}
-                onClick={() => fileRef.current?.click()}
-              >
-                {upload.isPending ? "上传中…" : "更换头像"}
-              </Button>
-            </div>
+              <div className="do-profile-identity-copy">
+                <small>SUPDIVER / PROFILE</small>
+                <strong>{display}</strong>
+                <span>@{profile?.id?.slice(0, 8) ?? "diver"}</span>
+              </div>
+              <dl className="do-profile-account-data">
+                <div>
+                  <dt>{c.userId}</dt>
+                  <dd>{profile?.id?.slice(0, 8) ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt>{c.changeAvatar}</dt>
+                  <dd>{upload.isPending ? c.uploading : c.changeAvatar}</dd>
+                </div>
+              </dl>
+              <p className="do-profile-account-note">
+                <ShieldCheck aria-hidden="true" />
+                {c.accountNote}
+              </p>
+            </aside>
+            <section className="do-profile-editor-panel">
+              <div className="do-profile-section-heading">
+                <div>
+                  <span>01 / IDENTITY</span>
+                  <h2>{c.identity}</h2>
+                </div>
+                <UserRound aria-hidden="true" />
+              </div>
+              <div className="do-profile-cover-upload">
+                <div
+                  className="do-profile-cover-upload-photo"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, rgba(0,16,38,.12), rgba(0,14,34,.5)), url('/images/user-cave-photo-hero-preview.jpg')",
+                  }}
+                >
+                  <span>SUPDIVER</span>
+                </div>
+                <div>
+                  <strong>{c.changeAvatar}</strong>
+                  <p>{c.avatarHint}</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={upload.isPending}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Camera aria-hidden="true" />
+                  {upload.isPending ? c.uploading : c.changeAvatar}
+                </button>
+              </div>
+              <div className="do-profile-fields">
+                <label className="do-profile-wide">
+                  <span>{c.displayName}</span>
+                  <input
+                    value={name}
+                    maxLength={40}
+                    onChange={(event) => changed(setName, event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="do-profile-section-heading do-profile-dive-heading">
+                <div>
+                  <span>02 / DIVER</span>
+                  <h2>{c.diveProfile}</h2>
+                </div>
+                <Waves aria-hidden="true" />
+              </div>
+              <div className="do-profile-fields">
+                <label>
+                  <span>{c.cert}</span>
+                  <select value={cert} onChange={(event) => changed(setCert, event.target.value)}>
+                    <option value="">—</option>
+                    {CERT_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{c.tanks}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={tanks}
+                    onChange={(event) => changed(setTanks, event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="do-profile-editor-footer">
+                <span className="do-profile-save-status">
+                  {saved && (
+                    <>
+                      <Check aria-hidden="true" />
+                      {c.saved}
+                    </>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="do-profile-save"
+                  disabled={save.isPending}
+                  onClick={() => save.mutate()}
+                >
+                  {save.isPending ? (
+                    <Waves aria-hidden="true" />
+                  ) : saved ? (
+                    <Check aria-hidden="true" />
+                  ) : (
+                    <Save aria-hidden="true" />
+                  )}
+                  {save.isPending ? c.saving : c.save}
+                </button>
+              </div>
+            </section>
+            <aside className="do-profile-preview-column">
+              <section className="do-profile-public-card">
+                <div
+                  className="do-profile-public-photo"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(0deg, rgba(0,12,31,.9), rgba(0,11,29,.06) 68%), url('/images/user-cave-photo-hero-preview.jpg')",
+                  }}
+                >
+                  <span>{c.publicPreview}</span>
+                  <div>
+                    <small>@{profile?.id?.slice(0, 8) ?? "diver"}</small>
+                    <strong>{display}</strong>
+                    <p>{c.publicHint}</p>
+                  </div>
+                </div>
+                <div className="do-profile-public-stats">
+                  <div>
+                    <strong>{dives.length}</strong>
+                    <small>{c.dives}</small>
+                  </div>
+                  <div>
+                    <strong>{countries}</strong>
+                    <small>{c.countries}</small>
+                  </div>
+                  <div>
+                    <strong>{Math.max(0, Number(tanks) || 0)}</strong>
+                    <small>{c.tanks}</small>
+                  </div>
+                </div>
+                <div className="do-profile-cert-preview">
+                  <Award aria-hidden="true" />
+                  <span>
+                    <small>{c.certified}</small>
+                    <strong>{cert || "—"}</strong>
+                  </span>
+                </div>
+                <p className="do-profile-public-hint">{c.publicHint}</p>
+              </section>
+              <section className="do-profile-completeness">
+                <div
+                  className="do-profile-complete-ring"
+                  style={{
+                    background: `conic-gradient(#54c9f7 0 ${complete}%, rgba(80,173,215,.12) ${complete}% 100%)`,
+                  }}
+                >
+                  <span>
+                    {complete}
+                    <small>%</small>
+                  </span>
+                </div>
+                <div>
+                  <strong>{c.complete}</strong>
+                  <p>{c.identityComplete}</p>
+                </div>
+              </section>
+              <section className="do-profile-privacy">
+                <ShieldCheck aria-hidden="true" />
+                <div>
+                  <strong>{c.privacy}</strong>
+                  <p>{c.privacyText}</p>
+                </div>
+              </section>
+            </aside>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">用户名</Label>
-            <Input
-              id="name"
-              value={name}
-              maxLength={40}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cert">潜水证级别</Label>
-            <Select value={cert} onValueChange={setCert}>
-              <SelectTrigger id="cert" className="rounded-none">
-                <SelectValue placeholder="选择级别" />
-              </SelectTrigger>
-              <SelectContent>
-                {CERT_LEVELS.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tanks">现有瓶数</Label>
-            <Input
-              id="tanks"
-              type="number"
-              min={0}
-              value={tanks}
-              onChange={(e) => setTanks(e.target.value)}
-              className="rounded-none"
-            />
-          </div>
-
-          <Button
-            className="rounded-none"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? "保存中…" : "保存"}
-          </Button>
-        </div>
-      )}
-    </AppShell>
+        )}
+      </main>
+      <footer className="do-passport-footer">
+        <span>SupDiver</span>
+        <small>YOUR OCEAN. YOUR STORY.</small>
+      </footer>
+    </div>
   );
 }

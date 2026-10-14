@@ -32,6 +32,7 @@ import { Route as ShareCardPreviewRouteImport } from './routes/share-card-previe
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
+import { Route as AuthenticatedDivesLogsRouteImport } from './routes/_authenticated/dives/logs'
 import { Route as AuthenticatedDivesNewRouteImport } from './routes/_authenticated/dives/new'
 
 const IndexRoute = IndexRouteImport.update({
@@ -148,6 +149,11 @@ const AuthenticatedDivesIdRoute = AuthenticatedDivesIdRouteImport.update({
   path: '/dives/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDivesLogsRoute = AuthenticatedDivesLogsRouteImport.update({
+  id: '/dives/logs',
+  path: '/dives/logs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDivesNewRoute = AuthenticatedDivesNewRouteImport.update({
   id: '/dives/new',
   path: '/dives/new',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives/': typeof AuthenticatedDivesIndexRoute
 }
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
   '/dives': typeof AuthenticatedDivesIndexRoute
 }
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
+  '/_authenticated/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/_authenticated/dives/new': typeof AuthenticatedDivesNewRoute
   '/_authenticated/dives/': typeof AuthenticatedDivesIndexRoute
 }
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/profile'
     | '/dives/$id'
+    | '/dives/logs'
     | '/dives/new'
     | '/dives/'
   fileRoutesByTo: FileRoutesByTo
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/profile'
     | '/dives/$id'
+    | '/dives/logs'
     | '/dives/new'
     | '/dives'
   id:
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/_authenticated/profile'
     | '/_authenticated/dives/$id'
+    | '/_authenticated/dives/logs'
     | '/_authenticated/dives/new'
     | '/_authenticated/dives/'
   fileRoutesById: FileRoutesById
@@ -496,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDivesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dives/logs': {
+      id: '/_authenticated/dives/logs'
+      path: '/dives/logs'
+      fullPath: '/dives/logs'
+      preLoaderRoute: typeof AuthenticatedDivesLogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dives/new': {
       id: '/_authenticated/dives/new'
       path: '/dives/new'
@@ -509,6 +528,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
+  AuthenticatedDivesLogsRoute: typeof AuthenticatedDivesLogsRoute
   AuthenticatedDivesNewRoute: typeof AuthenticatedDivesNewRoute
   AuthenticatedDivesIndexRoute: typeof AuthenticatedDivesIndexRoute
 }
@@ -516,6 +536,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
+  AuthenticatedDivesLogsRoute: AuthenticatedDivesLogsRoute,
   AuthenticatedDivesNewRoute: AuthenticatedDivesNewRoute,
   AuthenticatedDivesIndexRoute: AuthenticatedDivesIndexRoute,
 }

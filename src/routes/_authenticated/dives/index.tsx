@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dives/")({
   head: () => ({ meta: [
@@ -84,7 +85,6 @@ function countryFlag(country: string) {
   const code = countryCodes[country.trim().toLowerCase()];
   return code ? String.fromCodePoint(...[...code].map((letter) => 127397 + letter.charCodeAt(0))) : "🌐";
 }
-
 function WorldMap() {
   return <svg className="do-passport-world-map" viewBox="0 0 780 350" role="img" aria-label="Stylized world map" preserveAspectRatio="xMidYMid meet">
     <g className="do-passport-map-grid"><path d="M0 87H780M0 175H780M0 263H780M130 0V350M260 0V350M390 0V350M520 0V350M650 0V350" /></g>
@@ -142,9 +142,9 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     <header className="do-passport-header">
       <Link to="/dives" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
       <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>
-        <a href="#passport-overview" aria-current="page">{c.navPassport}</a>
-        <a href="#passport-logs">{c.navLogs}</a>
-        <Link to="/forum-preview">{c.navForum}</Link>
+        <Link to="/dives" aria-current="page">{c.navPassport}</Link>
+        <Link to="/dives/logs">{c.navLogs}</Link>
+        <button type="button" onClick={() => toast.info(language === "zh-CN" ? "深蓝论坛正在建设中" : "The Deep Blue Forum is coming soon")}>{c.navForum}</button>
         <Link to={profileHref}>{c.navProfile}</Link>
       </nav>
       <div className="do-passport-header-actions">
@@ -191,7 +191,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             </div>
           </section>
           <section className="do-passport-gear-panel" aria-labelledby="passport-gear-title"><div className="do-passport-panel-heading"><span>04 / {c.gear}</span><Waves aria-hidden="true" /></div><div className="do-passport-gear-body"><div className="do-passport-gear-symbol"><Waves aria-hidden="true" /></div><div><h2 id="passport-gear-title">{c.gear}</h2><p>{c.gearEmpty}</p><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div></div></section>
-          <section className="do-passport-saved-panel" aria-labelledby="passport-saved-title"><div className="do-passport-panel-heading"><span>05 / {c.favorites}</span><Bookmark aria-hidden="true" /></div><div className="do-passport-saved-heading"><div><h2 id="passport-saved-title">{c.favorites}</h2><p>{c.favoritesIntro}</p><Link to="/saved-preview" className="do-passport-saved-link">{c.viewAllFavorites}<ChevronRight aria-hidden="true" /></Link></div><strong>{preview ? "12" : "0"}</strong></div>{preview ? <div className="do-passport-saved-grid"><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-fish-hero-preview.jpg')" }}><span>Crystal Bay</span></div><h3>在冷水里遇见一只慢吞吞的 Mola mola</h3><small>ydpeng7 · 286 {c.likesReceived}</small></article><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-cave-photo-hero-preview.jpg')" }}><span>Moalboal</span></div><h3>沙丁鱼群遮住阳光的十秒钟</h3><small>lanhai_02 · 194 {c.likesReceived}</small></article></div> : <div className="do-passport-saved-empty"><Bookmark aria-hidden="true" /><p>{c.favoritesEmpty}</p><Link to="/forum-preview">{c.viewForum}<ChevronRight aria-hidden="true" /></Link></div>}</section>
+          <section className="do-passport-saved-panel" aria-labelledby="passport-saved-title"><div className="do-passport-panel-heading"><span>05 / {c.favorites}</span><Bookmark aria-hidden="true" /></div><div className="do-passport-saved-heading"><div><h2 id="passport-saved-title">{c.favorites}</h2><p>{c.favoritesIntro}</p>{preview ? <Link to="/saved-preview" className="do-passport-saved-link">{c.viewAllFavorites}<ChevronRight aria-hidden="true" /></Link> : <button type="button" className="do-passport-saved-link" onClick={() => toast.info(language === "zh-CN" ? "收藏功能正在建设中" : "Saved stories are coming soon")}>{c.viewAllFavorites}<ChevronRight aria-hidden="true" /></button>}</div><strong>{preview ? "12" : "0"}</strong></div>{preview ? <div className="do-passport-saved-grid"><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-fish-hero-preview.jpg')" }}><span>Crystal Bay</span></div><h3>在冷水里遇见一只慢吞吞的 Mola mola</h3><small>ydpeng7 · 286 {c.likesReceived}</small></article><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-cave-photo-hero-preview.jpg')" }}><span>Moalboal</span></div><h3>沙丁鱼群遮住阳光的十秒钟</h3><small>lanhai_02 · 194 {c.likesReceived}</small></article></div> : <div className="do-passport-saved-empty"><Bookmark aria-hidden="true" /><p>{c.favoritesEmpty}</p><button type="button" onClick={() => toast.info(language === "zh-CN" ? "深蓝论坛正在建设中" : "The Deep Blue Forum is coming soon")}>{c.viewForum}<ChevronRight aria-hidden="true" /></button></div>}</section>
         </div>
 
         <aside className="do-passport-right-column">
