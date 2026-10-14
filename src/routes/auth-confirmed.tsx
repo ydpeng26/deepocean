@@ -72,17 +72,17 @@ function AuthConfirmedPage() {
       }
 
       const tokenHash = query.get("token_hash");
-            if (tokenHash) {
-                      const verified = await supabase.auth.verifyOtp({
-                                  token_hash: tokenHash,
-                                  type: "signup",
-                      });
-                      if (verified.data.session) finish("success");
-                      else finish("error");
-                      return;
-            }
-      
-            const current = await supabase.auth.getSession();
+      if (tokenHash) {
+        const verified = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "signup",
+        });
+        if (verified.data.session) finish("success");
+        else finish("error");
+        return;
+      }
+
+      const current = await supabase.auth.getSession();
       if (current.data.session) {
         finish("success");
         return;
