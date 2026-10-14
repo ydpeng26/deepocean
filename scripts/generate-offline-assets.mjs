@@ -1,8 +1,27 @@
 import { createHash } from "node:crypto";
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const publicDirectory = join(process.cwd(), ".output", "public");
+const publicDirectoryCandidates = [
+  join(process.cwd(), ".output", "public"),
+  join(process.cwd(), ".vercel", "output", "static"),
+];
+let publicDirectory;
+
+for (const candidate of publicDirectoryCandidates) {
+  try {
+    await access(join(candidate, "assets"));
+    publicDirectory = candidate;
+    break;
+  } catch {
+    // Try the next supported build target.
+  }
+}
+
+if (!publicDirectory) {
+  throw new Error("Unable to locate the generated public assets directory");
+}
+
 const assetDirectory = join(publicDirectory, "assets");
 const assetNames = (await readdir(assetDirectory)).filter((name) => /\.(js|css)$/.test(name)).sort();
 const assets = assetNames.map((name) => `/assets/${name}`);
