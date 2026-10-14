@@ -920,6 +920,17 @@
   .do-auth-divider { display: flex; align-items: center; gap: 16px; margin: 18px 0; color: rgba(225,240,252,.45); font-size: 11px; }.do-auth-divider span { height: 1px; flex: 1; background: rgba(255,255,255,.16); }
   .do-auth-google { width: 100%; min-height: 47px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid rgba(189,220,250,.29); border-radius: 999px; background: rgba(5,27,58,.46); color: #fff; font-size: 13px; font-weight: 650; transition: background .2s ease, border-color .2s ease; }
   .do-auth-google:hover { border-color: rgba(195,228,255,.62); background: rgba(18,53,89,.64); }.do-google-mark { font-family: Arial, sans-serif; font-size: 18px; font-weight: 750; background: conic-gradient(from -42deg, #4285f4 0 100deg, #34a853 100deg 185deg, #fbbc05 185deg 255deg, #ea4335 255deg 315deg, #4285f4 315deg); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .do-auth-result-main { grid-template-columns: minmax(360px, 500px); justify-content: center; }
+  .do-auth-result { text-align: center; }
+  .do-auth-result-icon { width: 62px; height: 62px; margin: 4px auto 24px; display: grid; place-items: center; border: 1px solid rgba(105,189,255,.28); border-radius: 50%; background: rgba(20,78,126,.24); color: #79c7ff; }
+  .do-auth-result-icon svg { width: 31px; height: 31px; }
+  .do-auth-result-icon.checking svg { animation: do-auth-spin 1s linear infinite; }
+  .do-auth-result-icon.success { border-color: rgba(91,224,167,.36); background: rgba(29,123,88,.22); color: #70e2ae; }
+  .do-auth-result-icon.error { border-color: rgba(255,141,141,.36); background: rgba(145,45,45,.2); color: #ff9d9d; }
+  .do-auth-result h1 { font-size: clamp(30px, 3vw, 40px); font-weight: 730; line-height: 1.16; letter-spacing: -.045em; }
+  .do-auth-result > p:not(.do-auth-kicker) { margin: 14px auto 28px; max-width: 390px; color: rgba(232,244,255,.7); font-size: 14px; line-height: 1.75; }
+  .do-auth-result-link { display: flex; align-items: center; justify-content: center; }
+  @keyframes do-auth-spin { to { transform: rotate(360deg); } }
   @media (max-width: 900px) {
     .do-auth-bg { background-position: 62% center; }.do-auth-main { grid-template-columns: minmax(0, 500px); justify-content: center; }
   }

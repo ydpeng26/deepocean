@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthConfirmedRouteImport } from './routes/auth-confirmed'
 import { Route as CertificatesPreviewRouteImport } from './routes/certificates-preview'
 import { Route as DiveDetailPreviewRouteImport } from './routes/dive-detail-preview'
 import { Route as ForumComposePreviewRouteImport } from './routes/forum-compose-preview'
@@ -45,6 +46,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmedRoute = AuthConfirmedRouteImport.update({
+  id: '/auth-confirmed',
+  path: '/auth-confirmed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CertificatesPreviewRoute = CertificatesPreviewRouteImport.update({
@@ -151,6 +157,7 @@ const AuthenticatedDivesNewRoute = AuthenticatedDivesNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/auth-confirmed'
     | '/certificates-preview'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/auth-confirmed'
     | '/certificates-preview'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/auth-confirmed'
     | '/certificates-preview'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
@@ -302,6 +314,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  AuthConfirmedRoute: typeof AuthConfirmedRoute
   CertificatesPreviewRoute: typeof CertificatesPreviewRoute
   DiveDetailPreviewRoute: typeof DiveDetailPreviewRoute
   ForumComposePreviewRoute: typeof ForumComposePreviewRoute
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth-confirmed': {
+      id: '/auth-confirmed'
+      path: '/auth-confirmed'
+      fullPath: '/auth-confirmed'
+      preLoaderRoute: typeof AuthConfirmedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/certificates-preview': {
@@ -507,6 +527,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  AuthConfirmedRoute: AuthConfirmedRoute,
   CertificatesPreviewRoute: CertificatesPreviewRoute,
   DiveDetailPreviewRoute: DiveDetailPreviewRoute,
   ForumComposePreviewRoute: ForumComposePreviewRoute,

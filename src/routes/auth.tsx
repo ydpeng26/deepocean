@@ -95,8 +95,14 @@ function AuthPage() {
     (import.meta.env.PROD ? "https://deepocean-six.vercel.app" : window.location.origin)
   ).replace(/\/$/, "");
 
-  function getAuthRedirectUrl() {
+  function getPostLoginUrl() {
     return `${publicSiteUrl}${next ?? "/dives"}`;
+  }
+
+  function getEmailConfirmationUrl() {
+    const confirmationUrl = new URL("/auth-confirmed", publicSiteUrl);
+    if (next) confirmationUrl.searchParams.set("next", next);
+    return confirmationUrl.toString();
   }
 
   function goNext() {
@@ -138,7 +144,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: getAuthRedirectUrl() },
+          options: { emailRedirectTo: getEmailConfirmationUrl() },
         });
         if (error) throw error;
         setAwaitingConfirmation(true);
@@ -168,7 +174,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim(),
-        options: { emailRedirectTo: getAuthRedirectUrl() },
+        options: { emailRedirectTo: getEmailConfirmationUrl() },
       });
       if (error) throw error;
       toast.success(copy.resendSent, { id: "auth-status" });
@@ -183,7 +189,7 @@ function AuthPage() {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: getAuthRedirectUrl(),
+        redirect_uri: getPostLoginUrl(),
       });
       if (result.error) throw result.error;
       if (result.redirected) return;
