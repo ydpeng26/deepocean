@@ -113,6 +113,7 @@ function AuthPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submittingRef.current) return;
+    toast.dismiss();
     if (!email.trim() || password.length < 6) {
       toast.error(copy.emailError, { id: "auth-status" });
       return;
@@ -137,7 +138,7 @@ function AuthPage() {
       }
       const { data } = await supabase.auth.getSession();
       if (data.session) goNext();
-      else toast.info(copy.verifyEmail, { id: "auth-status" });
+      else if (mode === "signin") toast.info(copy.verifyEmail, { id: "auth-status" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
     } finally {
@@ -148,6 +149,7 @@ function AuthPage() {
 
   async function handleResendConfirmation() {
     if (!email.trim() || resendLoading) return;
+    toast.dismiss();
     setResendLoading(true);
     try {
       const { error } = await supabase.auth.resend({
