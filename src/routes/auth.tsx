@@ -90,10 +90,23 @@ function AuthPage() {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const submittingRef = useRef(false);
 
+  const publicSiteUrl = (
+    (import.meta.env.VITE_SITE_URL as string | undefined) ||
+    (import.meta.env.PROD ? "https://deepocean-six.vercel.app" : window.location.origin)
+  ).replace(/\/$/, "");
+
+  function getAuthRedirectUrl() {
+    return `${publicSiteUrl}${next ?? "/dives"}`;
+  }
+
   function goNext() {
     if (next) window.location.href = next;
     else navigate({ to: "/dives" });
   }
+
+  useEffect(() => {
+    toast.dismiss();
+  }, [mode]);
 
   useEffect(() => {
     if (!navigator.onLine) return;
@@ -125,7 +138,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
+          options: { emailRedirectTo: getAuthRedirectUrl() },
         });
         if (error) throw error;
         setAwaitingConfirmation(true);
@@ -155,7 +168,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
+        options: { emailRedirectTo: getAuthRedirectUrl() },
       });
       if (error) throw error;
       toast.success(copy.resendSent, { id: "auth-status" });
@@ -170,7 +183,7 @@ function AuthPage() {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}${next ?? "/dives"}`,
+        redirect_uri: getAuthRedirectUrl(),
       });
       if (result.error) throw result.error;
       if (result.redirected) return;
