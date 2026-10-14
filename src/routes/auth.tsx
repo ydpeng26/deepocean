@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CloudOff, Languages } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +25,9 @@ const authCopy = {
     or: "或者",
     emailError: "请填写邮箱，密码至少 6 位",
     verifyEmail: "请查收邮箱完成验证后再登录",
+    resendConfirmation: "重新发送确认邮件",
+    resending: "正在重新发送…",
+    resendSent: "确认邮件已重新发送，请检查收件箱和垃圾邮件",
     genericError: "操作失败，请重试",
     googleError: "Google 登录失败，请重试",
     offline: "无信号模式",
@@ -47,6 +50,9 @@ const authCopy = {
     or: "or",
     emailError: "Enter an email and a password of at least 6 characters",
     verifyEmail: "Check your email to confirm your account, then sign in",
+    resendConfirmation: "Resend confirmation email",
+    resending: "Resending…",
+    resendSent: "Confirmation email resent. Check your inbox and spam folder",
     genericError: "Something went wrong. Please try again",
     googleError: "Google sign-in failed. Please try again",
     offline: "Offline mode",
@@ -80,6 +86,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const submittingRef = useRef(false);
 
   function goNext() {
     if (next) window.location.href = next;
@@ -103,10 +112,12 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!email.trim() || password.length < 6) {
-      toast.error(copy.emailError);
+      toast.error(copy.emailError, { id: "auth-status" });
       return;
     }
+    submittingRef.current = true;
     setLoading(true);
     try {
       if (mode === "signup") {
@@ -116,6 +127,7 @@ function AuthPage() {
           options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
         });
         if (error) throw error;
+        setAwaitingConfirmation(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -125,11 +137,30 @@ function AuthPage() {
       }
       const { data } = await supabase.auth.getSession();
       if (data.session) goNext();
-      else toast.info(copy.verifyEmail);
+      else toast.info(copy.verifyEmail, { id: "auth-status" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.genericError);
+      toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
     } finally {
+      submittingRef.current = false;
       setLoading(false);
+    }
+  }
+
+  async function handleResendConfirmation() {
+    if (!email.trim() || resendLoading) return;
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: { emailRedirectTo: `${window.location.origin}${next ?? "/dives"}` },
+      });
+      if (error) throw error;
+      toast.success(copy.resendSent, { id: "auth-status" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -143,7 +174,7 @@ function AuthPage() {
       if (result.redirected) return;
       goNext();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.googleError);
+      toast.error(err instanceof Error ? err.message : copy.googleError, { id: "auth-status" });
       setLoading(false);
     }
   }
@@ -169,7 +200,7 @@ function AuthPage() {
       <main className="do-auth-main">
         <section className="do-auth-panel" aria-label={mode === "signin" ? copy.signin : copy.signup}>
           <div className="do-auth-tabs" role="tablist" aria-label={language === "zh-CN" ? "账号操作" : "Account action"}>
-            <button type="button" role="tab" aria-selected={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>{copy.signin}</button>
+            <button type="button" role="tab" aria-selected={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setAwaitingConfirmation(false); }}>{copy.signin}</button>
             <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>{copy.signup}</button>
           </div>
           <div className="do-auth-intro">
@@ -185,6 +216,15 @@ function AuthPage() {
             <input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder} maxLength={72} minLength={6} required />
             <button type="submit" disabled={loading} className="do-auth-submit">{loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}<ArrowRight /></button>
           </form>
+
+          {mode === "signup" && awaitingConfirmation ? (
+            <div className="do-auth-confirmation" role="status">
+              <span>{copy.verifyEmail}</span>
+              <button type="button" onClick={handleResendConfirmation} disabled={resendLoading}>
+                {resendLoading ? copy.resending : copy.resendConfirmation}
+              </button>
+            </div>
+          ) : null}
 
           <div className="do-auth-divider"><span />{copy.or}<span /></div>
           <button type="button" className="do-auth-google" onClick={handleGoogle} disabled={loading}><span className="do-google-mark" aria-hidden="true">G</span>{copy.continueGoogle}</button>
