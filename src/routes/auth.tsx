@@ -92,7 +92,7 @@ function AuthPage() {
 
   const publicSiteUrl = (
     (import.meta.env.VITE_SITE_URL as string | undefined) ||
-    (import.meta.env.PROD ? "https://deepocean-six.vercel.app" : window.location.origin)
+    (import.meta.env.PROD ? "https://www.supdiver.com" : window.location.origin)
   ).replace(/\/$/, "");
 
   function getPostLoginUrl() {
