@@ -469,6 +469,9 @@
   .do-forum-composer-author > span:first-child { width: 36px; height: 36px; }
   .do-forum-composer-author strong { font-size: 11px; }
   .do-forum-composer-author > span:last-child { justify-self: start; padding: 4px 7px; border-radius: 999px; background: rgba(87, 206, 232, .09); color: #60d4eb; font-size: 7px; }
+  .do-forum-composer-fields { display: grid; grid-template-columns: 1fr 1fr 150px; gap: 8px; margin-top: 16px; }
+  .do-forum-composer-fields input, .do-forum-composer-fields select { min-width: 0; height: 39px; padding: 0 12px; outline: none; border: 1px solid rgba(116, 202, 230, .13); border-radius: 11px; background: rgba(1, 19, 34, .48); color: #eefaff; font-size: 10px; }
+  .do-forum-composer-fields input::placeholder { color: rgba(195, 225, 237, .35); }
   .do-forum-composer textarea { width: 100%; height: 150px; margin-top: 15px; padding: 15px; resize: none; outline: none; border: 1px solid rgba(116, 202, 230, .13); border-radius: 15px; background: rgba(1, 19, 34, .48); color: #eefaff; font-size: 12px; line-height: 1.65; }
   .do-forum-composer textarea::placeholder { color: rgba(195, 225, 237, .35); }
   .do-forum-composer-tools { display: flex; gap: 6px; margin-top: 10px; }
@@ -479,6 +482,18 @@
   .do-forum-composer > footer button:last-child { display: inline-flex; align-items: center; gap: 6px; border: 0; background: linear-gradient(135deg, #5bd4ec, #1590d4); color: #021827; }
   .do-forum-composer > footer button:last-child:disabled { opacity: .35; }
   .do-forum-composer > footer svg { width: 13px; }
+  .do-forum-empty { display: block; width: 100%; margin-top: 16px; padding: 40px 22px; border: 1px dashed rgba(105, 202, 229, .18); border-radius: 18px; color: rgba(207, 234, 244, .62); font-size: 11px; text-align: center; }
+  .do-forum-comment-list { display: grid; gap: 12px; max-height: 340px; margin-top: 20px; overflow-y: auto; }
+  .do-forum-comment-list > p { padding: 28px 0; color: rgba(207, 234, 244, .48); font-size: 10px; text-align: center; }
+  .do-forum-comment-list article { display: grid; grid-template-columns: 36px 1fr; gap: 10px; padding: 12px; border-radius: 13px; background: rgba(1, 19, 34, .42); }
+  .do-forum-comment-list article > span { width: 36px; height: 36px; }
+  .do-forum-comment-list article strong { font-size: 10px; }
+  .do-forum-comment-list article p { margin-top: 5px; color: rgba(220, 240, 247, .68); font-size: 10px; line-height: 1.6; }
+  .do-forum-comment-form { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; margin-top: 16px; }
+  .do-forum-comment-form textarea { height: 78px; margin: 0; }
+  .do-forum-comment-form button { display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 14px; border-radius: 999px; background: linear-gradient(135deg, #5bd4ec, #1590d4); color: #021827; font-size: 10px; font-weight: 800; }
+  .do-forum-comment-form button:disabled { opacity: .35; }
+  .do-forum-comment-form svg { width: 13px; }
   @media (max-width: 1240px) {
     .do-forum-header { width: min(1180px, calc(100% - 40px)); gap: 17px; }
     .do-forum-header nav { gap: 18px; }
@@ -525,6 +540,7 @@
     .do-forum-right { position: static; display: grid; grid-template-columns: 1fr; margin-top: 14px; }
     .do-forum-side-panel { padding: 20px; }
     .do-forum-composer { padding: 21px; }
+    .do-forum-composer-fields { grid-template-columns: 1fr; }
   }
 }
 
