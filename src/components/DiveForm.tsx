@@ -73,8 +73,8 @@ export function DiveForm({ dive }: Props) {
     }
     setSaving(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
       if (!userId) throw new Error("请先登录");
 
       const uploaded = newFiles.length ? await uploadPhotos(newFiles, userId) : [];
@@ -96,18 +96,32 @@ export function DiveForm({ dive }: Props) {
       };
 
       if (dive) {
-        const { error } = await supabase.from("dives").update(payload).eq("id", dive.id);
+        const { data, error } = await supabase
+          .from("dives")
+          .update(payload)
+          .eq("id", dive.id)
+          .select("*")
+          .single();
         if (error) throw error;
-        await queryClient.invalidateQueries({ queryKey: ["dives"] });
-        await queryClient.invalidateQueries({ queryKey: ["dive", dive.id] });
+        const savedDive = data as Dive;
+        queryClient.setQueryData(["dive", dive.id], savedDive);
+        queryClient.setQueryData<Dive[]>(["dives"], (current) =>
+          current?.map((item) => (item.id === savedDive.id ? savedDive : item)),
+        );
+        void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success("记录已更新");
         navigate({ to: "/dives/$id", params: { id: dive.id } });
       } else {
-        const { data, error } = await supabase.from("dives").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("dives").insert(payload).select("*").single();
         if (error) throw error;
-        await queryClient.invalidateQueries({ queryKey: ["dives"] });
+        const savedDive = data as Dive;
+        queryClient.setQueryData(["dive", savedDive.id], savedDive);
+        queryClient.setQueryData<Dive[]>(["dives"], (current) =>
+          current ? [savedDive, ...current.filter((item) => item.id !== savedDive.id)] : current,
+        );
+        void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success("记录已保存");
-        navigate({ to: "/dives/$id", params: { id: data.id } });
+        navigate({ to: "/dives/$id", params: { id: savedDive.id } });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "保存失败，请重试");

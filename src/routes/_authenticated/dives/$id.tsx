@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
@@ -29,7 +29,9 @@ export const Route = createFileRoute("/_authenticated/dives/$id")({
   component: DiveDetail,
   errorComponent: ({ error }) => (
     <AppShell>
-      <p role="alert" className="text-sm text-muted-foreground">{error.message}</p>
+      <p role="alert" className="text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "潜水记录加载失败"}
+      </p>
     </AppShell>
   ),
   notFoundComponent: () => (
@@ -44,23 +46,21 @@ function DiveDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [photos, setPhotos] = useState<string[]>([]);
 
   const { data: dive, isPending, error } = useQuery({
     queryKey: ["dive", id],
     queryFn: () => getDive(id),
   });
 
-  useEffect(() => {
-    if (!dive) return;
-    let active = true;
-    signedPhotoUrls(dive.photo_urls)
-      .then((urls) => active && setPhotos(urls))
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [dive]);
+  const photoPaths = dive?.photo_urls ?? [];
+  const { data: photos = [] } = useQuery({
+    queryKey: ["dive-photos", id, photoPaths],
+    queryFn: () => signedPhotoUrls(photoPaths),
+    enabled: photoPaths.length > 0,
+    staleTime: 55 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   async function handleDelete() {
     if (!confirm("确定删除这条潜水记录吗？")) return;

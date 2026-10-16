@@ -43,12 +43,26 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  let authStorage: Storage | undefined;
+  if (typeof window !== 'undefined') {
+    authStorage = window.sessionStorage;
+
+    // Remove the old persistent session left by previous versions. Sessions now
+    // live only for the lifetime of the current browser tab.
+    try {
+      const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
+      window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
+    } catch {
+      // The URL has already been validated by the Supabase client below.
+    }
+  }
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: authStorage,
       persistSession: true,
       autoRefreshToken: true,
     }
@@ -65,4 +79,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-

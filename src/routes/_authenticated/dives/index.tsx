@@ -120,6 +120,9 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     queryKey: ["passport-latest-photo", latestPhotoPath],
     queryFn: async () => (await signedPhotoUrls([latestPhotoPath!]))[0] ?? null,
     enabled: !!latestPhotoPath,
+    staleTime: 55 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const profileHref = preview ? "/profile-preview" : "/profile";

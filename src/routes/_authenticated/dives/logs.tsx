@@ -98,6 +98,9 @@ function DivePhoto({ dive, index }: { dive: Dive; index: number }) {
     queryKey: ["dive-log-photo", path],
     queryFn: async () => (await signedPhotoUrls([path!]))[0] ?? null,
     enabled: Boolean(path),
+    staleTime: 55 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const fallback = [
     "/images/user-fish-hero-preview.jpg",

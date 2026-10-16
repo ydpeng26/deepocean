@@ -116,18 +116,10 @@ function AuthPage() {
 
   useEffect(() => {
     if (!navigator.onLine) return;
-    let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) goNext();
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active && session) goNext();
-    });
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, [navigate, next]);
+    // Visiting the login page always starts a fresh login flow. This also
+    // prevents a previously opened tab from silently forwarding the user.
+    void supabase.auth.signOut({ scope: "local" });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
