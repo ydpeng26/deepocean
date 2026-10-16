@@ -24,8 +24,8 @@ export const CERT_LEVELS = [
 ];
 
 export async function getMyProfile(): Promise<Profile | null> {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
   if (!user) return null;
 
   const { data, error } = await supabase
@@ -54,16 +54,16 @@ export async function updateMyProfile(input: {
   cert_level: string | null;
   tank_count: number;
 }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
   const { error } = await supabase.from("profiles").update(input).eq("id", user.id);
   if (error) throw error;
 }
 
 export async function uploadAvatar(file: File): Promise<string> {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `${user.id}/${crypto.randomUUID()}.${ext}`;

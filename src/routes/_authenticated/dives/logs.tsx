@@ -35,6 +35,7 @@ const copy = {
   "zh-CN": {
     passport: "海洋护照",
     logs: "潜水日志",
+    forum: "深蓝论坛",
     profile: "个人资料",
     logout: "退出",
     eyebrow: "MY DIVE STORIES",
@@ -63,6 +64,7 @@ const copy = {
   en: {
     passport: "Ocean Passport",
     logs: "Dive Logs",
+    forum: "Deep Blue Forum",
     profile: "Profile",
     logout: "Sign out",
     eyebrow: "MY DIVE STORIES",
@@ -176,6 +178,7 @@ function DiveLogsPage() {
           <a href="#dive-logs" aria-current="page">
             {c.logs}
           </a>
+          <Link to="/forum">{c.forum}</Link>
           <Link to="/profile">{c.profile}</Link>
         </nav>
         <div className="do-passport-header-actions">

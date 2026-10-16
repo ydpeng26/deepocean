@@ -29,6 +29,7 @@ import { Route as ProfilePreviewRouteImport } from './routes/profile-preview'
 import { Route as SavedPreviewRouteImport } from './routes/saved-preview'
 import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
+import { Route as AuthenticatedForumRouteImport } from './routes/_authenticated/forum'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
@@ -134,6 +135,11 @@ const ShareCardPreviewRoute = ShareCardPreviewRouteImport.update({
   path: '/share-card-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedForumRoute = AuthenticatedForumRouteImport.update({
+  id: '/forum',
+  path: '/forum',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/forum': typeof AuthenticatedForumRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/forum': typeof AuthenticatedForumRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/_authenticated/forum': typeof AuthenticatedForumRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
   '/_authenticated/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/forum'
     | '/profile'
     | '/dives/$id'
     | '/dives/logs'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/forum'
     | '/profile'
     | '/dives/$id'
     | '/dives/logs'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/_authenticated/forum'
     | '/_authenticated/profile'
     | '/_authenticated/dives/$id'
     | '/_authenticated/dives/logs'
@@ -487,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareCardPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/forum': {
+      id: '/_authenticated/forum'
+      path: '/forum'
+      fullPath: '/forum'
+      preLoaderRoute: typeof AuthenticatedForumRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -526,6 +545,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedForumRoute: typeof AuthenticatedForumRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
   AuthenticatedDivesLogsRoute: typeof AuthenticatedDivesLogsRoute
@@ -534,6 +554,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedForumRoute: AuthenticatedForumRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
   AuthenticatedDivesLogsRoute: AuthenticatedDivesLogsRoute,

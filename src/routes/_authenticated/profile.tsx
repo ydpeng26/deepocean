@@ -34,6 +34,7 @@ const copy = {
   "zh-CN": {
     passport: "海洋护照",
     logs: "潜水日志",
+    forum: "深蓝论坛",
     profile: "个人资料",
     logout: "退出",
     eyebrow: "DIVER PROFILE",
@@ -66,6 +67,7 @@ const copy = {
   en: {
     passport: "Ocean Passport",
     logs: "Dive Logs",
+    forum: "Deep Blue Forum",
     profile: "Profile",
     logout: "Sign out",
     eyebrow: "DIVER PROFILE",
@@ -125,8 +127,14 @@ function ProfilePage() {
         cert_level: cert || null,
         tank_count: Math.max(0, Number(tanks) || 0),
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: () => {
+      queryClient.setQueryData(["profile"], profile ? {
+        ...profile,
+        display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
+        cert_level: cert || null,
+        tank_count: Math.max(0, Number(tanks) || 0),
+      } : profile);
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
       setSaved(true);
       toast.success(language === "zh-CN" ? "个人资料已保存" : "Profile saved");
     },
@@ -171,6 +179,7 @@ function ProfilePage() {
         <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>
           <Link to="/dives">{c.passport}</Link>
           <Link to="/dives/logs">{c.logs}</Link>
+          <Link to="/forum">{c.forum}</Link>
           <a href="#profile-editor" aria-current="page">
             {c.profile}
           </a>

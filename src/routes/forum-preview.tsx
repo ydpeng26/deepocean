@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ForumPostMenu } from "@/components/ForumPostMenu";
 import { ScubaTankIcon } from "@/components/ScubaTankIcon";
+import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 export const Route = createFileRoute("/forum-preview")({
@@ -37,7 +38,7 @@ export const Route = createFileRoute("/forum-preview")({
     { title: "深蓝论坛预览 · SupDiver" },
     { name: "robots", content: "noindex" },
   ] }),
-  component: ForumPreview,
+  component: () => <ForumPage preview />,
 });
 
 type Post = {
@@ -94,9 +95,15 @@ const copy = {
   },
 } as const;
 
-function ForumPreview() {
+export function ForumPage({ preview = false }: { preview?: boolean }) {
   const { language, toggleLanguage } = useLanguage();
   const c = copy[language];
+  const { profile, avatarUrl } = useProfile(!preview);
+  const currentName = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
+  const currentAvatar = avatarUrl ?? "/images/user-fish-hero-preview.jpg";
+  const passportHref = preview ? "/passport-preview" : "/dives";
+  const logsHref = preview ? "/logs-preview" : "/dives/logs";
+  const profileHref = preview ? "/profile-preview" : "/profile";
   const [feed, setFeed] = useState<"recommended" | "following" | "latest">("recommended");
   const [topic, setTopic] = useState<"all" | Post["topic"]>("all");
   const [liked, setLiked] = useState<string[]>(["mola"]);
@@ -126,11 +133,23 @@ function ForumPreview() {
   }
 
   function editPost(post: Post) {
-    window.location.assign("/forum-compose-preview?mode=edit");
+    if (preview) {
+      window.location.assign("/forum-compose-preview?mode=edit");
+      return;
+    }
+    setDraft(language === "zh-CN" ? post.textZh : post.textEn);
+    setEditingPost(post.id);
+    setComposer(true);
   }
 
   function openComposer() {
-    window.location.assign("/forum-compose-preview?mode=create");
+    if (preview) {
+      window.location.assign("/forum-compose-preview?mode=create");
+      return;
+    }
+    setDraft("");
+    setEditingPost(null);
+    setComposer(true);
   }
 
   const topicOptions = [
@@ -141,19 +160,19 @@ function ForumPreview() {
   return <div className="do-forum-page">
     <header className="do-passport-header do-forum-header">
       <Link to="/" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
-      <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}><Link to="/passport-preview">{c.passport}</Link><Link to="/logs-preview">{c.logs}</Link><a href="#forum-feed" aria-current="page">{c.forum}</a><Link to="/profile-preview">{c.profile}</Link></nav>
+      <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}><a href={passportHref}>{c.passport}</a><a href={logsHref}>{c.logs}</a><a href="#forum-feed" aria-current="page">{c.forum}</a><a href={profileHref}>{c.profile}</a></nav>
       <label className="do-forum-search"><Search aria-hidden="true" /><input placeholder={c.search} /></label>
       <div className="do-passport-header-actions"><Link to="/offline-sync" className="do-passport-sync-link"><CloudOff aria-hidden="true" /><span>{c.offline}</span></Link><button type="button" className="do-passport-language" onClick={toggleLanguage}><Languages aria-hidden="true" />{language === "zh-CN" ? "EN" : "中文"}</button><button type="button" className="do-forum-create" onClick={openComposer}><Plus aria-hidden="true" />{c.create}</button></div>
     </header>
 
     <main className="do-forum-main">
-      <div className="do-passport-preview-note">{c.preview}</div>
+      {preview && <div className="do-passport-preview-note">{c.preview}</div>}
       <section className="do-forum-hero">
         <div><span>{c.eyebrow}</span><h1>{c.title}<em>{c.titleAccent}</em></h1><p>{c.intro}</p></div>
         <div className="do-forum-hero-orbit" aria-hidden="true"><span><Users /></span><i /><b>2,846</b><small>DIVERS ONLINE</small></div>
       </section>
 
-      <section className="do-forum-compose-strip"><Avatar><AvatarImage src="/images/user-fish-hero-preview.jpg" alt="ydpeng7" /><AvatarFallback>Y</AvatarFallback></Avatar><button type="button" onClick={openComposer}>{c.shareHint}</button><div><button type="button" onClick={openComposer}><ImagePlus />{c.addPhoto}</button><button type="button" onClick={openComposer}><MapPin />{c.addSite}</button><button type="button" onClick={openComposer}><Waves />{c.addLog}</button></div></section>
+      <section className="do-forum-compose-strip"><Avatar><AvatarImage src={currentAvatar} alt={currentName} /><AvatarFallback>{currentName.slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><button type="button" onClick={openComposer}>{c.shareHint}</button><div><button type="button" onClick={openComposer}><ImagePlus />{c.addPhoto}</button><button type="button" onClick={openComposer}><MapPin />{c.addSite}</button><button type="button" onClick={openComposer}><Waves />{c.addLog}</button></div></section>
 
       <div className="do-forum-layout" id="forum-feed">
         <aside className="do-forum-left">
@@ -184,6 +203,6 @@ function ForumPreview() {
     <footer className="do-passport-footer"><span>SupDiver</span><small>{c.footer}</small></footer>
 
     {notice && <div className="do-forum-action-notice" role="status"><Check />{notice}</div>}
-    {composer && <div className="do-forum-composer-backdrop" role="presentation"><section className="do-forum-composer" role="dialog" aria-modal="true" aria-labelledby="forum-composer-title"><header><div><span>{editingPost ? "EDIT OCEAN STORY" : "NEW OCEAN STORY"}</span><h2 id="forum-composer-title">{editingPost ? c.editTitle : c.composerTitle}</h2><p>{editingPost ? c.editHint : c.composerHint}</p></div><button type="button" onClick={() => setComposer(false)} aria-label={c.cancel}><X /></button></header><div className="do-forum-composer-author"><Avatar><AvatarImage src="/images/user-fish-hero-preview.jpg" alt="ydpeng7" /><AvatarFallback>Y</AvatarFallback></Avatar><strong>ydpeng7</strong><span>AOW</span></div><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={c.placeholder} /><div className="do-forum-composer-tools"><button type="button"><ImagePlus />{c.addPhoto}</button><button type="button"><MapPin />{c.addSite}</button><button type="button"><Waves />{c.addLog}</button></div><footer><button type="button" onClick={() => setComposer(false)}>{c.cancel}</button><button type="button" disabled={!draft.trim()} onClick={publishPreview}>{published ? <Check /> : <Send />}{published ? (editingPost ? c.changesSaved : c.published) : (editingPost ? c.saveChanges : c.publish)}</button></footer></section></div>}
+    {composer && <div className="do-forum-composer-backdrop" role="presentation"><section className="do-forum-composer" role="dialog" aria-modal="true" aria-labelledby="forum-composer-title"><header><div><span>{editingPost ? "EDIT OCEAN STORY" : "NEW OCEAN STORY"}</span><h2 id="forum-composer-title">{editingPost ? c.editTitle : c.composerTitle}</h2><p>{editingPost ? c.editHint : c.composerHint}</p></div><button type="button" onClick={() => setComposer(false)} aria-label={c.cancel}><X /></button></header><div className="do-forum-composer-author"><Avatar><AvatarImage src={currentAvatar} alt={currentName} /><AvatarFallback>{currentName.slice(0, 1).toUpperCase()}</AvatarFallback></Avatar><strong>{currentName}</strong><span>{profile?.cert_level || "DIVER"}</span></div><textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={c.placeholder} /><div className="do-forum-composer-tools"><button type="button"><ImagePlus />{c.addPhoto}</button><button type="button"><MapPin />{c.addSite}</button><button type="button"><Waves />{c.addLog}</button></div><footer><button type="button" onClick={() => setComposer(false)}>{c.cancel}</button><button type="button" disabled={!draft.trim()} onClick={publishPreview}>{published ? <Check /> : <Send />}{published ? (editingPost ? c.changesSaved : c.published) : (editingPost ? c.saveChanges : c.publish)}</button></footer></section></div>}
   </div>;
 }
