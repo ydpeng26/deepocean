@@ -6,6 +6,7 @@ const STORE_NAME = "dive-drafts";
 
 export type OfflineDiveFields = {
   country: string;
+  region: string;
   site_name: string;
   dive_date: string;
   weather: string;
@@ -29,6 +30,7 @@ export function emptyOfflineDive(): OfflineDiveFields {
   const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60_000);
   return {
     country: "",
+    region: "",
     site_name: "",
     dive_date: localDate.toISOString().slice(0, 10),
     weather: "",
@@ -86,6 +88,7 @@ export async function saveOfflineDive(fields: OfflineDiveFields, existingId?: st
   const draft: OfflineDive = {
     ...fields,
     country: fields.country.trim().slice(0, 80),
+    region: fields.region.trim().slice(0, 100),
     site_name: fields.site_name.trim().slice(0, 120),
     buddy_name: fields.buddy_name.trim().slice(0, 80),
     notes: fields.notes.trim().slice(0, 2000),
@@ -120,6 +123,7 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
       id: draft.id,
       user_id: userId,
       country: draft.country,
+      region: draft.region || null,
       site_name: draft.site_name,
       dive_date: draft.dive_date,
       weather: draft.weather || null,
@@ -145,7 +149,7 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
       }
       const { data: existing, error: lookupError } = await supabase
         .from("dives")
-        .select("id, country, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes")
+        .select("id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes")
         .eq("id", draft.id)
         .eq("user_id", userId)
         .maybeSingle();
@@ -155,7 +159,7 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
         continue;
       }
       const comparableFields = [
-        "country", "site_name", "dive_date", "weather", "surface_temp", "water_temp",
+        "country", "region", "site_name", "dive_date", "weather", "surface_temp", "water_temp",
         "max_depth", "duration_min", "dive_type", "buddy_role", "buddy_name", "notes",
       ] as const;
       if (comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))) {

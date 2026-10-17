@@ -32,7 +32,8 @@ const copy = {
     sectionPlace: "地点与时间",
     sectionDive: "潜水信息",
     sectionStory: "深蓝记忆",
-    country: "潜水国家 / 地区",
+    country: "潜水国家",
+    region: "地区 / 岛屿",
     site: "潜点名称",
     date: "潜水日期",
     weather: "天气",
@@ -82,7 +83,8 @@ const copy = {
     sectionPlace: "Place and time",
     sectionDive: "Dive information",
     sectionStory: "Ocean memory",
-    country: "Country / region",
+    country: "Country",
+    region: "Region / island",
     site: "Dive site",
     date: "Dive date",
     weather: "Weather",
@@ -229,6 +231,7 @@ function OfflinePage() {
               <h2>{t.sectionPlace}</h2>
               <div className="do-offline-fields">
                 <label>{t.country}<input value={fields.country} onChange={(e) => update("country", e.target.value)} maxLength={80} required /></label>
+                <label>{t.region}<input value={fields.region} onChange={(e) => update("region", e.target.value)} maxLength={100} /></label>
                 <label>{t.site}<input value={fields.site_name} onChange={(e) => update("site_name", e.target.value)} maxLength={120} required /></label>
                 <label>{t.date}<input type="date" value={fields.dive_date} onChange={(e) => update("dive_date", e.target.value)} required /></label>
                 <label>{t.weather}<select value={fields.weather} onChange={(e) => update("weather", e.target.value)}><option value="">{t.noWeather}</option>{weatherOptions.map((value, index) => <option value={value} key={value}>{t[weatherKeys[index]]}</option>)}</select></label>
@@ -259,7 +262,7 @@ function OfflinePage() {
               <ul className="do-offline-drafts">
                 {drafts.map((draft) => <li key={draft.id}>
                   <strong>{draft.site_name}</strong>
-                  <span>{draft.country} · {draft.dive_date}</span>
+                  <span>{[draft.country, draft.region, draft.dive_date].filter(Boolean).join(" · ")}</span>
                   <div><button type="button" onClick={() => startEdit(draft)}><Pencil size={14} />{t.edit}</button><button type="button" onClick={() => remove(draft.id)}><Trash2 size={14} />{t.remove}</button></div>
                 </li>)}
               </ul>

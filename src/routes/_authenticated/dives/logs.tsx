@@ -152,7 +152,7 @@ function DiveLogsPage() {
         return (
           (country === "all" || dive.country === country) &&
           (!search ||
-            `${dive.site_name} ${dive.country} ${dive.notes ?? ""}`.toLowerCase().includes(search))
+            `${dive.site_name} ${dive.region ?? ""} ${dive.country} ${dive.notes ?? ""}`.toLowerCase().includes(search))
         );
       }),
     [country, dives, query],
@@ -332,7 +332,7 @@ function DiveLogsPage() {
                       <div className="do-log-place">
                         <span>
                           <MapPin aria-hidden="true" />
-                          {dive.country}
+                          {[dive.country, dive.region].filter(Boolean).join(" · ")}
                         </span>
                         <h2>
                           {dive.site_name ||

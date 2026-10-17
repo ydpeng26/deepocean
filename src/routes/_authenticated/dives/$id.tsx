@@ -109,6 +109,7 @@ function DiveDetail() {
 
   const rows: Array<[string, string]> = [
     ["潜水国家", dive.country],
+    ["地区 / 岛屿", dive.region ?? "—"],
     ["潜点名称", dive.site_name],
     ["潜水日期", formatDate(dive.dive_date)],
     ["当天天气", dive.weather ?? "—"],
@@ -136,7 +137,7 @@ function DiveDetail() {
         <div>
           <h1 className="text-3xl font-normal tracking-tight text-primary">{dive.site_name}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {dive.country} · {formatDate(dive.dive_date)}
+            {[dive.country, dive.region, formatDate(dive.dive_date)].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="flex gap-2">

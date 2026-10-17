@@ -34,6 +34,7 @@ export function DiveForm({ dive }: Props) {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [country, setCountry] = useState(dive?.country ?? "");
+  const [region, setRegion] = useState(dive?.region ?? "");
   const [siteName, setSiteName] = useState(dive?.site_name ?? "");
   const [diveDate, setDiveDate] = useState(
     dive?.dive_date ?? new Date().toISOString().slice(0, 10),
@@ -72,7 +73,14 @@ export function DiveForm({ dive }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!country.trim() || !siteName.trim() || !diveDate) {
+    const knownRegionCountries: Record<string, string> = {
+      komodo: "Indonesia", "科莫多": "Indonesia", bali: "Indonesia", "巴厘岛": "Indonesia",
+      "nusa penida": "Indonesia", "佩尼达岛": "Indonesia", moalboal: "Philippines", "墨宝": "Philippines",
+      palawan: "Philippines", "巴拉望": "Philippines", sipadan: "Malaysia", "诗巴丹": "Malaysia",
+      maldives: "Maldives", "马尔代夫": "Maldives", okinawa: "Japan", "冲绳": "Japan",
+    };
+    const resolvedCountry = country.trim() || knownRegionCountries[region.trim().toLowerCase()] || "";
+    if (!resolvedCountry || !siteName.trim() || !diveDate) {
       toast.error("请填写潜水国家、潜点名称和日期");
       return;
     }
@@ -87,7 +95,8 @@ export function DiveForm({ dive }: Props) {
         : { photoPaths: [], thumbnailPaths: [] };
       const payload = {
         user_id: userId,
-        country: country.trim().slice(0, 80),
+        country: resolvedCountry.slice(0, 80),
+        region: region.trim().slice(0, 100) || null,
         site_name: siteName.trim().slice(0, 120),
         dive_date: diveDate,
         weather: weather || null,
@@ -149,7 +158,12 @@ export function DiveForm({ dive }: Props) {
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="country">潜水国家</Label>
-            <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} className={field} maxLength={80} placeholder="例如：菲律宾" />
+            <Input id="country" list="dive-country-options" value={country} onChange={(e) => setCountry(e.target.value)} className={field} maxLength={80} placeholder="例如：Indonesia / 印度尼西亚" />
+            <datalist id="dive-country-options"><option value="Indonesia" /><option value="Philippines" /><option value="Malaysia" /><option value="Thailand" /><option value="Maldives" /><option value="Japan" /><option value="Australia" /><option value="China" /></datalist>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="region">地区 / 岛屿</Label>
+            <Input id="region" value={region} onChange={(e) => setRegion(e.target.value)} className={field} maxLength={100} placeholder="例如：Komodo / 科莫多" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="site">潜点名称</Label>

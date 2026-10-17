@@ -8,6 +8,7 @@ export type Dive = {
   id: string;
   user_id: string;
   country: string;
+  region: string | null;
   site_name: string;
   dive_date: string;
   weather: string | null;

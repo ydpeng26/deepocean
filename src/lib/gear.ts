@@ -1,4 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import { prepareWebImage } from "@/lib/images";
+
+const GEAR_PHOTO_BUCKET = "gear-photos";
 
 export type GearCategory = "bcd" | "regulator" | "computer" | "mask" | "fins" | "wetsuit" | "camera" | "other";
 
@@ -13,6 +16,7 @@ export type GearItem = {
   serial_number: string | null;
   dive_count: number;
   notes: string | null;
+  photo_path: string | null;
   created_at: string;
 };
 
@@ -23,6 +27,29 @@ async function userId() {
   const id = data.session?.user.id;
   if (!id) throw new Error("请先登录");
   return id;
+}
+
+export async function uploadGearPhoto(file: File): Promise<string> {
+  const id = await userId();
+  const image = await prepareWebImage(file, { maxEdge: 1600, quality: 0.84 });
+  const path = `${id}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(GEAR_PHOTO_BUCKET).upload(path, image, {
+    cacheControl: "31536000",
+    contentType: "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw error;
+  return path;
+}
+
+export async function signedGearPhotoUrls(paths: string[]) {
+  if (!paths.length) return new Map<string, string>();
+  const unique = Array.from(new Set(paths));
+  const { data, error } = await supabase.storage
+    .from(GEAR_PHOTO_BUCKET)
+    .createSignedUrls(unique, 60 * 60);
+  if (error) throw error;
+  return new Map((data ?? []).flatMap((item) => item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
 }
 
 export async function listGear(): Promise<GearItem[]> {

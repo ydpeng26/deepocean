@@ -19,6 +19,7 @@ export type Database = {
           buddy_name: string | null
           buddy_role: Database["public"]["Enums"]["buddy_role"] | null
           country: string
+          region: string | null
           created_at: string
           dive_date: string
           dive_type: Database["public"]["Enums"]["dive_type"]
@@ -39,6 +40,7 @@ export type Database = {
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
           country: string
+          region?: string | null
           created_at?: string
           dive_date: string
           dive_type?: Database["public"]["Enums"]["dive_type"]
@@ -59,6 +61,7 @@ export type Database = {
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
           country?: string
+          region?: string | null
           created_at?: string
           dive_date?: string
           dive_type?: Database["public"]["Enums"]["dive_type"]
@@ -87,6 +90,7 @@ export type Database = {
           model: string
           next_service_on: string | null
           notes: string | null
+          photo_path: string | null
           purchased_on: string | null
           serial_number: string | null
           updated_at: string
@@ -101,6 +105,7 @@ export type Database = {
           model?: string
           next_service_on?: string | null
           notes?: string | null
+          photo_path?: string | null
           purchased_on?: string | null
           serial_number?: string | null
           updated_at?: string
@@ -115,6 +120,7 @@ export type Database = {
           model?: string
           next_service_on?: string | null
           notes?: string | null
+          photo_path?: string | null
           purchased_on?: string | null
           serial_number?: string | null
           updated_at?: string
