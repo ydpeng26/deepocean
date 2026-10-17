@@ -51,9 +51,9 @@ const copy = {
 } as const;
 
 const previewDives: Dive[] = [
-  { id: "preview-crystal-bay", user_id: "preview", country: "Indonesia", site_name: "Crystal Bay", dive_date: "2026-08-30", weather: "晴", surface_temp: null, water_temp: 21, max_depth: 28, duration_min: 48, dive_type: "recreational", buddy_role: "instructor", buddy_name: "Raiyan", photo_urls: [], notes: null, created_at: "2026-08-30T12:00:00Z" },
-  { id: "preview-moalboal", user_id: "preview", country: "Philippines", site_name: "Moalboal", dive_date: "2026-08-18", weather: "晴", surface_temp: null, water_temp: 27, max_depth: 18, duration_min: 52, dive_type: "recreational", buddy_role: null, buddy_name: null, photo_urls: [], notes: null, created_at: "2026-08-18T12:00:00Z" },
-  { id: "preview-sipadan", user_id: "preview", country: "Malaysia", site_name: "Sipadan", dive_date: "2026-07-26", weather: "晴", surface_temp: null, water_temp: 28, max_depth: 24, duration_min: 46, dive_type: "recreational", buddy_role: null, buddy_name: null, photo_urls: [], notes: null, created_at: "2026-07-26T12:00:00Z" },
+  { id: "preview-crystal-bay", user_id: "preview", country: "Indonesia", site_name: "Crystal Bay", dive_date: "2026-08-30", weather: "晴", surface_temp: null, water_temp: 21, max_depth: 28, duration_min: 48, dive_type: "recreational", buddy_role: "instructor", buddy_name: "Raiyan", photo_urls: [], photo_thumbnail_urls: [], notes: null, created_at: "2026-08-30T12:00:00Z" },
+  { id: "preview-moalboal", user_id: "preview", country: "Philippines", site_name: "Moalboal", dive_date: "2026-08-18", weather: "晴", surface_temp: null, water_temp: 27, max_depth: 18, duration_min: 52, dive_type: "recreational", buddy_role: null, buddy_name: null, photo_urls: [], photo_thumbnail_urls: [], notes: null, created_at: "2026-08-18T12:00:00Z" },
+  { id: "preview-sipadan", user_id: "preview", country: "Malaysia", site_name: "Sipadan", dive_date: "2026-07-26", weather: "晴", surface_temp: null, water_temp: 28, max_depth: 24, duration_min: 46, dive_type: "recreational", buddy_role: null, buddy_name: null, photo_urls: [], photo_thumbnail_urls: [], notes: null, created_at: "2026-07-26T12:00:00Z" },
 ];
 
 const englishCertifications: Record<string, string> = {
@@ -115,7 +115,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   const { profile: liveProfile, avatarUrl } = useProfile(!preview);
   const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18 } : liveProfile;
   const latest = dives[0];
-  const latestPhotoPath = latest?.photo_urls?.[0];
+  const latestPhotoPath = latest?.photo_thumbnail_urls?.[0] || latest?.photo_urls?.[0];
   const { data: latestPhoto } = useQuery({
     queryKey: ["passport-latest-photo", latestPhotoPath],
     queryFn: async () => (await signedPhotoUrls([latestPhotoPath!]))[0] ?? null,

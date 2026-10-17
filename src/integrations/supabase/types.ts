@@ -26,6 +26,7 @@ export type Database = {
           id: string
           max_depth: number | null
           notes: string | null
+          photo_thumbnail_urls: string[]
           photo_urls: string[]
           site_name: string
           surface_temp: number | null
@@ -45,6 +46,7 @@ export type Database = {
           id?: string
           max_depth?: number | null
           notes?: string | null
+          photo_thumbnail_urls?: string[]
           photo_urls?: string[]
           site_name: string
           surface_temp?: number | null
@@ -64,6 +66,7 @@ export type Database = {
           id?: string
           max_depth?: number | null
           notes?: string | null
+          photo_thumbnail_urls?: string[]
           photo_urls?: string[]
           site_name?: string
           surface_temp?: number | null

@@ -18,7 +18,13 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { listDives } from "@/lib/dives";
-import { CERT_LEVELS, updateMyProfile, uploadAvatar } from "@/lib/profile";
+import {
+  CERT_LEVELS,
+  signedAvatarUrl,
+  updateMyProfile,
+  uploadAvatar,
+  type Profile,
+} from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -112,6 +118,15 @@ function ProfilePage() {
   const [cert, setCert] = useState("");
   const [tanks, setTanks] = useState("0");
   const [saved, setSaved] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarPreviewRef = useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (profile) {
@@ -143,12 +158,29 @@ function ProfilePage() {
   });
   const upload = useMutation({
     mutationFn: (file: File) => uploadAvatar(file),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: (path) => {
+      queryClient.setQueryData<Profile | null>(["profile"], (current) =>
+        current ? { ...current, avatar_url: path } : current,
+      );
+      void signedAvatarUrl(path)
+        .then((signedUrl) => queryClient.setQueryData(["avatar-url", path], signedUrl))
+        .catch(() => queryClient.invalidateQueries({ queryKey: ["avatar-url", path] }));
       toast.success(language === "zh-CN" ? "头像已更新" : "Photo updated");
     },
-    onError: () => toast.error(language === "zh-CN" ? "头像上传失败" : "Photo upload failed"),
+    onError: (error) => {
+      if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+      avatarPreviewRef.current = null;
+      setAvatarPreview(null);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : language === "zh-CN"
+            ? "头像上传失败"
+            : "Photo upload failed",
+      );
+    },
   });
+  const displayedAvatar = avatarPreview ?? avatarUrl;
   const display = name.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const initials = display.slice(0, 1).toUpperCase();
   const countries = useMemo(
@@ -156,7 +188,7 @@ function ProfilePage() {
     [dives],
   );
   const complete = Math.round(
-    ([name.trim(), cert, Number(tanks) > 0, avatarUrl].filter(Boolean).length / 4) * 100,
+    ([name.trim(), cert, Number(tanks) > 0, displayedAvatar].filter(Boolean).length / 4) * 100,
   );
   function changed(setter: (value: string) => void, value: string) {
     setter(value);
@@ -191,7 +223,7 @@ function ProfilePage() {
           </button>
           <span className="do-passport-account">
             <Avatar>
-              <AvatarImage src={avatarUrl ?? undefined} alt={display} />
+              <AvatarImage src={displayedAvatar ?? undefined} alt={display} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <span>{display}</span>
@@ -219,7 +251,7 @@ function ProfilePage() {
             <aside className="do-profile-identity-card">
               <div className="do-profile-avatar-wrap">
                 <Avatar className="do-profile-avatar">
-                  <AvatarImage src={avatarUrl ?? undefined} alt={display} />
+                  <AvatarImage src={displayedAvatar ?? undefined} alt={display} />
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <button
@@ -238,7 +270,13 @@ function ProfilePage() {
                 hidden
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) upload.mutate(file);
+                  if (file) {
+                    if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+                    const previewUrl = URL.createObjectURL(file);
+                    avatarPreviewRef.current = previewUrl;
+                    setAvatarPreview(previewUrl);
+                    upload.mutate(file);
+                  }
                   event.target.value = "";
                 }}
               />

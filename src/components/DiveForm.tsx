@@ -47,13 +47,16 @@ export function DiveForm({ dive }: Props) {
   const [buddyName, setBuddyName] = useState(dive?.buddy_name ?? "");
   const [notes, setNotes] = useState(dive?.notes ?? "");
   const [existingPaths, setExistingPaths] = useState<string[]>(dive?.photo_urls ?? []);
+  const [existingThumbnailPaths, setExistingThumbnailPaths] = useState<string[]>(
+    (dive?.photo_urls ?? []).map((_, index) => dive?.photo_thumbnail_urls?.[index] ?? ""),
+  );
   const [existingUrls, setExistingUrls] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
 
   useEffect(() => {
     let active = true;
     signedPhotoUrls(existingPaths)
-      .then((urls) => active && setExistingUrls(urls))
+      .then((urls) => active && setExistingUrls(urls.filter(Boolean)))
       .catch(() => undefined);
     return () => {
       active = false;
@@ -77,7 +80,9 @@ export function DiveForm({ dive }: Props) {
       const userId = sessionData.session?.user.id;
       if (!userId) throw new Error("请先登录");
 
-      const uploaded = newFiles.length ? await uploadPhotos(newFiles, userId) : [];
+      const uploaded = newFiles.length
+        ? await uploadPhotos(newFiles, userId)
+        : { photoPaths: [], thumbnailPaths: [] };
       const payload = {
         user_id: userId,
         country: country.trim().slice(0, 80),
@@ -91,7 +96,8 @@ export function DiveForm({ dive }: Props) {
         dive_type: diveType,
         buddy_role: buddyRole === "" ? null : buddyRole,
         buddy_name: buddyName.trim().slice(0, 80) || null,
-        photo_urls: [...existingPaths, ...uploaded],
+        photo_urls: [...existingPaths, ...uploaded.photoPaths],
+        photo_thumbnail_urls: [...existingThumbnailPaths, ...uploaded.thumbnailPaths],
         notes: notes.trim().slice(0, 2000) || null,
       };
 
@@ -242,7 +248,12 @@ export function DiveForm({ dive }: Props) {
                 <button
                   type="button"
                   aria-label="移除照片"
-                  onClick={() => setExistingPaths(existingPaths.filter((_, idx) => idx !== i))}
+                  onClick={() => {
+                    setExistingPaths(existingPaths.filter((_, idx) => idx !== i));
+                    setExistingThumbnailPaths(
+                      existingThumbnailPaths.filter((_, idx) => idx !== i),
+                    );
+                  }}
                   className="absolute right-1 top-1 bg-background/90 p-1 text-foreground"
                 >
                   <X className="h-3 w-3" />

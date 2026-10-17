@@ -92,16 +92,7 @@ const copy = {
   },
 } as const;
 
-function DivePhoto({ dive, index }: { dive: Dive; index: number }) {
-  const path = dive.photo_urls?.[0];
-  const { data: photo } = useQuery({
-    queryKey: ["dive-log-photo", path],
-    queryFn: async () => (await signedPhotoUrls([path!]))[0] ?? null,
-    enabled: Boolean(path),
-    staleTime: 55 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+function DivePhoto({ photo, index }: { photo: string | null; index: number }) {
   const fallback = [
     "/images/user-fish-hero-preview.jpg",
     "/images/user-cave-photo-hero-preview.jpg",
@@ -129,6 +120,25 @@ function DiveLogsPage() {
     isPending,
     isError,
   } = useQuery({ queryKey: ["dives"], queryFn: listDives });
+  const logPhotoPaths = useMemo(
+    () =>
+      dives
+        .map((dive) => dive.photo_thumbnail_urls?.[0] || dive.photo_urls?.[0])
+        .filter((path): path is string => Boolean(path)),
+    [dives],
+  );
+  const { data: logPhotoUrls = [] } = useQuery({
+    queryKey: ["dive-log-photos", logPhotoPaths],
+    queryFn: () => signedPhotoUrls(logPhotoPaths),
+    enabled: logPhotoPaths.length > 0,
+    staleTime: 55 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const logPhotoByPath = useMemo(
+    () => new Map(logPhotoPaths.map((path, index) => [path, logPhotoUrls[index] ?? null])),
+    [logPhotoPaths, logPhotoUrls],
+  );
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("all");
   const countries = useMemo(
@@ -310,7 +320,14 @@ function DiveLogsPage() {
                       <span>{parts.month}</span>
                       <small>{parts.year}</small>
                     </div>
-                    <DivePhoto dive={dive} index={index} />
+                    <DivePhoto
+                      index={index}
+                      photo={
+                        logPhotoByPath.get(
+                          dive.photo_thumbnail_urls?.[0] || dive.photo_urls?.[0] || "",
+                        ) ?? null
+                      }
+                    />
                     <div className="do-log-content">
                       <div className="do-log-place">
                         <span>

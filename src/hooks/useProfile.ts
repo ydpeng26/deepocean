@@ -17,6 +17,7 @@ export function useProfile(enabled = true) {
     staleTime: 55 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 1,
   });
   return {
     profile: profileQuery.data ?? null,

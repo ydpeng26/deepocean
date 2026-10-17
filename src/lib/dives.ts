@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { prepareWebImage } from "@/lib/images";
 
 export type DiveType = "recreational" | "freediving" | "technical";
 export type BuddyRole = "instructor" | "buddy";
@@ -18,6 +19,7 @@ export type Dive = {
   buddy_role: BuddyRole | null;
   buddy_name: string | null;
   photo_urls: string[];
+  photo_thumbnail_urls: string[];
   notes: string | null;
   created_at: string;
 };
@@ -59,54 +61,51 @@ export async function deleteDive(id: string) {
   if (error) throw error;
 }
 
-async function optimizePhoto(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || file.size <= 2 * 1024 * 1024) return file;
+export type UploadedPhotos = {
+  photoPaths: string[];
+  thumbnailPaths: string[];
+};
 
-  try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const maxEdge = 2400;
-    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) return file;
-    context.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.84),
-    );
-    if (!blob || blob.size >= file.size) return file;
-    const baseName = file.name.replace(/\.[^.]+$/, "") || "dive-photo";
-    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg", lastModified: file.lastModified });
-  } catch {
-    return file;
-  }
-}
-
-export async function uploadPhotos(files: File[], userId: string): Promise<string[]> {
+export async function uploadPhotos(files: File[], userId: string): Promise<UploadedPhotos> {
   const paths: string[] = [];
-  const maxConcurrentUploads = 3;
+  const thumbnailPaths: string[] = [];
+  const maxConcurrentUploads = 2;
 
   for (let start = 0; start < files.length; start += maxConcurrentUploads) {
     const batch = files.slice(start, start + maxConcurrentUploads);
-    const uploaded = await Promise.all(batch.map(async (original) => {
-      const file = await optimizePhoto(original);
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (error) throw error;
-      return path;
-    }));
-    paths.push(...uploaded);
+    const uploaded = await Promise.all(
+      batch.map(async (original) => {
+        const id = crypto.randomUUID();
+        const photo = await prepareWebImage(original, { maxEdge: 2400, quality: 0.84 });
+        const thumbnail = await prepareWebImage(original, {
+          maxEdge: 720,
+          quality: 0.76,
+          suffix: "-thumb",
+        });
+        const path = `${userId}/${id}.jpg`;
+        const thumbnailPath = `${userId}/thumbs/${id}.jpg`;
+        const [photoUpload, thumbnailUpload] = await Promise.all([
+          supabase.storage.from(PHOTO_BUCKET).upload(path, photo, {
+            cacheControl: "31536000",
+            contentType: "image/jpeg",
+            upsert: false,
+          }),
+          supabase.storage.from(PHOTO_BUCKET).upload(thumbnailPath, thumbnail, {
+            cacheControl: "31536000",
+            contentType: "image/jpeg",
+            upsert: false,
+          }),
+        ]);
+        if (photoUpload.error) throw photoUpload.error;
+        if (thumbnailUpload.error) throw thumbnailUpload.error;
+        return { path, thumbnailPath };
+      }),
+    );
+    paths.push(...uploaded.map((item) => item.path));
+    thumbnailPaths.push(...uploaded.map((item) => item.thumbnailPath));
   }
 
-  return paths;
+  return { photoPaths: paths, thumbnailPaths };
 }
 
 export async function signedPhotoUrls(paths: string[]): Promise<string[]> {
@@ -115,9 +114,7 @@ export async function signedPhotoUrls(paths: string[]): Promise<string[]> {
     .from(PHOTO_BUCKET)
     .createSignedUrls(paths, 60 * 60);
   if (error) throw error;
-  return (data ?? [])
-    .map((d) => d.signedUrl)
-    .filter((url): url is string => typeof url === "string" && url.length > 0);
+  return (data ?? []).map((item) => item.signedUrl ?? "");
 }
 
 export function formatDate(value: string) {

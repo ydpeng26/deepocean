@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { prepareWebImage } from "@/lib/images";
 
 export const AVATAR_BUCKET = "avatars";
 
@@ -65,10 +66,11 @@ export async function uploadAvatar(file: File): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, file, {
-    cacheControl: "3600",
+  const webImage = await prepareWebImage(file, { maxEdge: 640, quality: 0.84 });
+  const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, webImage, {
+    cacheControl: "31536000",
+    contentType: "image/jpeg",
     upsert: false,
   });
   if (error) throw error;
@@ -85,6 +87,6 @@ export async function signedAvatarUrl(path: string | null): Promise<string | nul
   const { data, error } = await supabase.storage
     .from(AVATAR_BUCKET)
     .createSignedUrl(path, 60 * 60);
-  if (error) return null;
+  if (error) throw error;
   return data?.signedUrl ?? null;
 }

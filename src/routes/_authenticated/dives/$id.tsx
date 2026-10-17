@@ -55,7 +55,7 @@ function DiveDetail() {
   const photoPaths = dive?.photo_urls ?? [];
   const { data: photos = [] } = useQuery({
     queryKey: ["dive-photos", id, photoPaths],
-    queryFn: () => signedPhotoUrls(photoPaths),
+    queryFn: async () => (await signedPhotoUrls(photoPaths)).filter(Boolean),
     enabled: photoPaths.length > 0,
     staleTime: 55 * 60 * 1000,
     gcTime: 60 * 60 * 1000,

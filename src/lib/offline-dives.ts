@@ -131,6 +131,7 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
       buddy_role: draft.buddy_role || null,
       buddy_name: draft.buddy_name || null,
       photo_urls: [],
+      photo_thumbnail_urls: [],
       notes: draft.notes || null,
     };
     const { error } = await supabase.from("dives").insert(payload);
