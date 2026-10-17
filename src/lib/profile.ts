@@ -97,9 +97,34 @@ export async function uploadAvatar(file: File): Promise<string> {
 
 export async function signedAvatarUrl(path: string | null): Promise<string | null> {
   if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const cacheKey = `supdiver:avatar-url:${path}`;
+  if (typeof window !== "undefined") {
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(cacheKey) ?? "null") as {
+        url?: string;
+        expiresAt?: number;
+      } | null;
+      if (cached?.url && (cached.expiresAt ?? 0) > Date.now() + 60_000) return cached.url;
+    } catch {
+      window.localStorage.removeItem(cacheKey);
+    }
+  }
+  const lifetimeSeconds = 7 * 24 * 60 * 60;
   const { data, error } = await supabase.storage
     .from(AVATAR_BUCKET)
-    .createSignedUrl(path, 60 * 60);
+    .createSignedUrl(path, lifetimeSeconds);
   if (error) throw error;
-  return data?.signedUrl ?? null;
+  const url = data?.signedUrl ?? null;
+  if (url && typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(cacheKey, JSON.stringify({
+        url,
+        expiresAt: Date.now() + (lifetimeSeconds - 60 * 60) * 1000,
+      }));
+    } catch {
+      // Private browsing and strict storage settings may disable local storage.
+    }
+  }
+  return url;
 }
