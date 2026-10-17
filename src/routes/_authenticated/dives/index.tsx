@@ -113,7 +113,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     initialData: preview ? previewDives : undefined,
   });
   const { profile: liveProfile, avatarUrl } = useProfile(!preview);
-  const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18 } : liveProfile;
+  const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18, bio: language === "zh-CN" ? "在蓝色星球上，认真记录每一次下潜。" : "Logging every descent on our blue planet." } : liveProfile;
   const latest = dives[0];
   const latestPhotoPath = latest?.photo_thumbnail_urls?.[0] || latest?.photo_urls?.[0];
   const { data: latestPhoto } = useQuery({
@@ -127,7 +127,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const profileHref = preview ? "/profile-preview" : "/profile";
   const certificatesHref = preview ? "/certificates-preview" : "/profile";
-  const gearHref = preview ? "/gear-preview" : "/profile";
+  const gearHref = preview ? "/gear-preview" : "/gear";
   const countries = Array.from(new Set(dives.map((d) => d.country.trim()).filter(Boolean)));
   const maxDepth = dives.reduce((max, d) => Math.max(max, Number(d.max_depth) || 0), 0);
   const totalMinutes = dives.reduce((sum, d) => sum + (Number(d.duration_min) || 0), 0);
@@ -165,7 +165,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
         <aside className="do-passport-profile-column" aria-label={c.identity}>
           <section className="do-passport-identity" aria-label={c.identity}>
             <div className="do-passport-panel-heading"><span className="do-passport-serial">SUPDIVER / 01</span></div>
-            <div className="do-passport-identity-person"><Avatar className="do-passport-profile-avatar" style={{ width: 120, height: 120 }}><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback className="do-passport-profile-avatar-fallback">{name.slice(0, 1)}</AvatarFallback></Avatar><div><h2 id="passport-identity-title">{name}</h2></div></div>
+            <div className="do-passport-identity-person"><Avatar className="do-passport-profile-avatar"><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback className="do-passport-profile-avatar-fallback">{name.slice(0, 1)}</AvatarFallback></Avatar><div><h2 id="passport-identity-title">{name}</h2>{profile?.bio && <p className="do-passport-profile-bio">{profile.bio}</p>}</div></div>
             <div className="do-passport-community-stats" aria-label={language === "zh-CN" ? "社区数据" : "Community stats"}><span><ScubaTankIcon /><strong>{preview ? "1,286" : "0"}</strong><small>{c.likesReceived}</small></span><span><Bookmark aria-hidden="true" /><strong>{preview ? "318" : "0"}</strong><small>{c.savesReceived}</small></span><span><Users aria-hidden="true" /><strong>{preview ? "246" : "0"}</strong><small>{c.followers}</small></span></div>
             <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending ? "—" : dives.length}</strong></div>
             <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending ? "—" : countries.length}</strong></div>

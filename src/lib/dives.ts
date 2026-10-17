@@ -76,6 +76,18 @@ export async function uploadPhotos(files: File[], userId: string): Promise<Uploa
     const uploaded = await Promise.all(
       batch.map(async (original) => {
         const id = crypto.randomUUID();
+        if (original.type.startsWith("video/")) {
+          if (original.size > 100 * 1024 * 1024) throw new Error("单个视频不能超过 100MB");
+          const ext = original.name.split(".").pop()?.toLowerCase() || "mp4";
+          const path = `${userId}/${id}.${ext}`;
+          const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, original, {
+            cacheControl: "31536000",
+            contentType: original.type || "video/mp4",
+            upsert: false,
+          });
+          if (error) throw error;
+          return { path, thumbnailPath: "" };
+        }
         const photo = await prepareWebImage(original, { maxEdge: 2400, quality: 0.84 });
         const thumbnail = await prepareWebImage(original, {
           maxEdge: 720,
@@ -106,6 +118,10 @@ export async function uploadPhotos(files: File[], userId: string): Promise<Uploa
   }
 
   return { photoPaths: paths, thumbnailPaths };
+}
+
+export function isVideoPath(path: string) {
+  return /\.(mp4|mov|m4v|webm)$/i.test(path.split("?")[0]);
 }
 
 export async function signedPhotoUrls(paths: string[]): Promise<string[]> {

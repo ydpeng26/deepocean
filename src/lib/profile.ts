@@ -9,7 +9,10 @@ export type Profile = {
   avatar_url: string | null;
   cert_level: string | null;
   tank_count: number;
+  bio: string | null;
 };
+
+export type PublicProfile = Profile & { created_at: string };
 
 export const CERT_LEVELS = [
   "OW 开放水域",
@@ -31,7 +34,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, cert_level, tank_count")
+    .select("id, display_name, avatar_url, cert_level, tank_count, bio")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
@@ -43,6 +46,7 @@ export async function getMyProfile(): Promise<Profile | null> {
       avatar_url: null,
       cert_level: null,
       tank_count: 0,
+      bio: null,
     };
     await supabase.from("profiles").insert(fallback);
     return fallback;
@@ -54,12 +58,21 @@ export async function updateMyProfile(input: {
   display_name: string;
   cert_level: string | null;
   tank_count: number;
+  bio: string | null;
 }) {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
   const { error } = await supabase.from("profiles").update(input).eq("id", user.id);
   if (error) throw error;
+}
+
+export async function getPublicProfile(id: string): Promise<PublicProfile | null> {
+  const { data, error } = await supabase.rpc("get_public_diver_profile", {
+    target_user_id: id,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
 
 export async function uploadAvatar(file: File): Promise<string> {

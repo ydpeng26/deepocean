@@ -13,6 +13,7 @@ import {
   formatDate,
   getDive,
   signedPhotoUrls,
+  isVideoPath,
 } from "@/lib/dives";
 
 export const Route = createFileRoute("/_authenticated/dives/$id")({
@@ -161,10 +162,10 @@ function DiveDetail() {
 
       {photos.length > 0 && (
         <section className="mt-12">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">照片</h2>
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">照片与视频</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {photos.map((url, i) => (
-              <img key={url} src={url} alt={`${dive.site_name} 潜水照片 ${i + 1}`} loading="lazy" className="aspect-square w-full object-cover" />
+              isVideoPath(photoPaths[i] ?? "") ? <video key={url} src={url} controls preload="metadata" className="aspect-square w-full bg-black object-contain" /> : <img key={url} src={url} alt={`${dive.site_name} 潜水照片 ${i + 1}`} loading="lazy" className="aspect-square w-full object-cover" />
             ))}
           </div>
         </section>

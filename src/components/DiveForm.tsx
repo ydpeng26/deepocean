@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import {
   type Dive,
   type DiveType,
   signedPhotoUrls,
+  isVideoPath,
   uploadPhotos,
 } from "@/lib/dives";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { ImagePlus, Upload, X } from "lucide-react";
 
 type Props = { dive?: Dive };
 
@@ -52,6 +53,7 @@ export function DiveForm({ dive }: Props) {
   );
   const [existingUrls, setExistingUrls] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const mediaInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -244,7 +246,7 @@ export function DiveForm({ dive }: Props) {
           <div className="flex flex-wrap gap-3">
             {existingUrls.map((url, i) => (
               <div key={url} className="relative">
-                <img src={url} alt={`潜水照片 ${i + 1}`} loading="lazy" className="h-24 w-24 object-cover" />
+                {isVideoPath(existingPaths[i] ?? "") ? <video src={url} className="h-24 w-24 object-cover" controls preload="metadata" /> : <img src={url} alt={`潜水照片 ${i + 1}`} loading="lazy" className="h-24 w-24 object-cover" />}
                 <button
                   type="button"
                   aria-label="移除照片"
@@ -263,18 +265,22 @@ export function DiveForm({ dive }: Props) {
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="photos">上传照片</Label>
-          <Input
+        <div className="space-y-3">
+          <Label htmlFor="photos">照片 / 视频</Label>
+          <input
+            ref={mediaInput}
             id="photos"
             type="file"
-            accept="image/*"
+            accept="image/*,video/mp4,video/quicktime,video/webm"
             multiple
-            className={field}
+            hidden
             onChange={(e) => setNewFiles(Array.from(e.target.files ?? []).slice(0, 6))}
           />
+          <button type="button" onClick={() => mediaInput.current?.click()} className="flex w-full items-center justify-between gap-4 border border-dashed border-sky-500/50 bg-sky-500/5 px-5 py-5 text-left transition hover:border-sky-500 hover:bg-sky-500/10">
+            <span className="flex items-center gap-4"><span className="grid h-11 w-11 place-items-center bg-sky-500 text-white"><ImagePlus className="h-5 w-5" /></span><span><strong className="block text-sm text-foreground">上传照片 / 视频</strong><small className="mt-1 block text-muted-foreground">最多 6 个文件；单个视频不超过 100MB</small></span></span><Upload className="h-5 w-5 text-sky-500" />
+          </button>
           {newFiles.length > 0 && (
-            <p className="text-xs text-muted-foreground">已选择 {newFiles.length} 张照片</p>
+            <div className="space-y-1 text-xs text-muted-foreground"><p>已选择 {newFiles.length} 个文件</p>{newFiles.map((file) => <p key={`${file.name}-${file.size}`} className="truncate">• {file.name}</p>)}</div>
           )}
         </div>
 

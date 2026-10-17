@@ -30,7 +30,9 @@ import { Route as SavedPreviewRouteImport } from './routes/saved-preview'
 import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
 import { Route as AuthenticatedForumRouteImport } from './routes/_authenticated/forum'
+import { Route as AuthenticatedGearRouteImport } from './routes/_authenticated/gear'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedDiversIdRouteImport } from './routes/_authenticated/divers/$id'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
 import { Route as AuthenticatedDivesLogsRouteImport } from './routes/_authenticated/dives/logs'
@@ -140,9 +142,19 @@ const AuthenticatedForumRoute = AuthenticatedForumRouteImport.update({
   path: '/forum',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGearRoute = AuthenticatedGearRouteImport.update({
+  id: '/gear',
+  path: '/gear',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDiversIdRoute = AuthenticatedDiversIdRouteImport.update({
+  id: '/divers/$id',
+  path: '/divers/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDivesIndexRoute = AuthenticatedDivesIndexRouteImport.update({
@@ -187,7 +199,9 @@ export interface FileRoutesByFullPath {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/forum': typeof AuthenticatedForumRoute
+  '/gear': typeof AuthenticatedGearRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
@@ -214,7 +228,9 @@ export interface FileRoutesByTo {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/forum': typeof AuthenticatedForumRoute
+  '/gear': typeof AuthenticatedGearRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/dives/new': typeof AuthenticatedDivesNewRoute
@@ -243,7 +259,9 @@ export interface FileRoutesById {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/_authenticated/forum': typeof AuthenticatedForumRoute
+  '/_authenticated/gear': typeof AuthenticatedGearRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/divers/$id': typeof AuthenticatedDiversIdRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
   '/_authenticated/dives/logs': typeof AuthenticatedDivesLogsRoute
   '/_authenticated/dives/new': typeof AuthenticatedDivesNewRoute
@@ -272,7 +290,9 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/forum'
+    | '/gear'
     | '/profile'
+    | '/divers/$id'
     | '/dives/$id'
     | '/dives/logs'
     | '/dives/new'
@@ -299,7 +319,9 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/forum'
+    | '/gear'
     | '/profile'
+    | '/divers/$id'
     | '/dives/$id'
     | '/dives/logs'
     | '/dives/new'
@@ -327,7 +349,9 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/_authenticated/forum'
+    | '/_authenticated/gear'
     | '/_authenticated/profile'
+    | '/_authenticated/divers/$id'
     | '/_authenticated/dives/$id'
     | '/_authenticated/dives/logs'
     | '/_authenticated/dives/new'
@@ -506,11 +530,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedForumRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gear': {
+      id: '/_authenticated/gear'
+      path: '/gear'
+      fullPath: '/gear'
+      preLoaderRoute: typeof AuthenticatedGearRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/divers/$id': {
+      id: '/_authenticated/divers/$id'
+      path: '/divers/$id'
+      fullPath: '/divers/$id'
+      preLoaderRoute: typeof AuthenticatedDiversIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dives/': {
@@ -546,7 +584,9 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedForumRoute: typeof AuthenticatedForumRoute
+  AuthenticatedGearRoute: typeof AuthenticatedGearRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedDiversIdRoute: typeof AuthenticatedDiversIdRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
   AuthenticatedDivesLogsRoute: typeof AuthenticatedDivesLogsRoute
   AuthenticatedDivesNewRoute: typeof AuthenticatedDivesNewRoute
@@ -555,7 +595,9 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedForumRoute: AuthenticatedForumRoute,
+  AuthenticatedGearRoute: AuthenticatedGearRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedDiversIdRoute: AuthenticatedDiversIdRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
   AuthenticatedDivesLogsRoute: AuthenticatedDivesLogsRoute,
   AuthenticatedDivesNewRoute: AuthenticatedDivesNewRoute,

@@ -77,9 +77,55 @@ export type Database = {
         }
         Relationships: []
       }
+      gear_items: {
+        Row: {
+          brand: string
+          category: "bcd" | "regulator" | "computer" | "mask" | "fins" | "wetsuit" | "camera" | "other"
+          created_at: string
+          dive_count: number
+          id: string
+          model: string
+          next_service_on: string | null
+          notes: string | null
+          purchased_on: string | null
+          serial_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string
+          category: "bcd" | "regulator" | "computer" | "mask" | "fins" | "wetsuit" | "camera" | "other"
+          created_at?: string
+          dive_count?: number
+          id?: string
+          model?: string
+          next_service_on?: string | null
+          notes?: string | null
+          purchased_on?: string | null
+          serial_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string
+          category?: "bcd" | "regulator" | "computer" | "mask" | "fins" | "wetsuit" | "camera" | "other"
+          created_at?: string
+          dive_count?: number
+          id?: string
+          model?: string
+          next_service_on?: string | null
+          notes?: string | null
+          purchased_on?: string | null
+          serial_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           cert_level: string | null
           created_at: string
           display_name: string | null
@@ -88,6 +134,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           cert_level?: string | null
           created_at?: string
           display_name?: string | null
@@ -96,6 +143,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           cert_level?: string | null
           created_at?: string
           display_name?: string | null
@@ -109,7 +157,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_diver_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          cert_level: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          tank_count: number
+        }[]
+      }
     }
     Enums: {
       buddy_role: "instructor" | "buddy"

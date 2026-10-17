@@ -53,6 +53,8 @@ const copy = {
     identity: "基础资料",
     diveProfile: "潜水资料",
     displayName: "显示名称",
+    bio: "个人简介",
+    bioPlaceholder: "介绍一下你的潜水经历、喜欢的海域或下一次想去的地方…",
     cert: "当前最高证书",
     tanks: "累计潜水瓶数",
     save: "保存个人资料",
@@ -86,6 +88,8 @@ const copy = {
     identity: "Basic profile",
     diveProfile: "Diving profile",
     displayName: "Display name",
+    bio: "Bio",
+    bioPlaceholder: "Share your dive story, favorite waters, or where you want to go next…",
     cert: "Highest certification",
     tanks: "Total logged tanks",
     save: "Save profile",
@@ -117,6 +121,7 @@ function ProfilePage() {
   const [name, setName] = useState("");
   const [cert, setCert] = useState("");
   const [tanks, setTanks] = useState("0");
+  const [bio, setBio] = useState("");
   const [saved, setSaved] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarPreviewRef = useRef<string | null>(null);
@@ -133,6 +138,7 @@ function ProfilePage() {
       setName(profile.display_name ?? "");
       setCert(profile.cert_level ?? "");
       setTanks(String(profile.tank_count ?? 0));
+      setBio(profile.bio ?? "");
     }
   }, [profile]);
   const save = useMutation({
@@ -141,6 +147,7 @@ function ProfilePage() {
         display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
         cert_level: cert || null,
         tank_count: Math.max(0, Number(tanks) || 0),
+        bio: bio.trim().slice(0, 300) || null,
       }),
     onSuccess: () => {
       queryClient.setQueryData(["profile"], profile ? {
@@ -148,6 +155,7 @@ function ProfilePage() {
         display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
         cert_level: cert || null,
         tank_count: Math.max(0, Number(tanks) || 0),
+        bio: bio.trim().slice(0, 300) || null,
       } : profile);
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
       setSaved(true);
@@ -188,7 +196,7 @@ function ProfilePage() {
     [dives],
   );
   const complete = Math.round(
-    ([name.trim(), cert, Number(tanks) > 0, displayedAvatar].filter(Boolean).length / 4) * 100,
+    ([name.trim(), cert, Number(tanks) > 0, displayedAvatar, bio.trim()].filter(Boolean).length / 5) * 100,
   );
   function changed(setter: (value: string) => void, value: string) {
     setter(value);
@@ -284,6 +292,7 @@ function ProfilePage() {
                 <small>SUPDIVER / PROFILE</small>
                 <strong>{display}</strong>
                 <span>@{profile?.id?.slice(0, 8) ?? "diver"}</span>
+                {bio.trim() && <p className="do-profile-bio">{bio.trim()}</p>}
               </div>
               <dl className="do-profile-account-data">
                 <div>
@@ -339,6 +348,17 @@ function ProfilePage() {
                     maxLength={40}
                     onChange={(event) => changed(setName, event.target.value)}
                   />
+                </label>
+                <label className="do-profile-wide">
+                  <span>{c.bio}</span>
+                  <textarea
+                    value={bio}
+                    maxLength={300}
+                    rows={4}
+                    placeholder={c.bioPlaceholder}
+                    onChange={(event) => changed(setBio, event.target.value)}
+                  />
+                  <small>{bio.length} / 300</small>
                 </label>
               </div>
               <div className="do-profile-section-heading do-profile-dive-heading">
@@ -409,7 +429,7 @@ function ProfilePage() {
                   <div>
                     <small>@{profile?.id?.slice(0, 8) ?? "diver"}</small>
                     <strong>{display}</strong>
-                    <p>{c.publicHint}</p>
+                    <p>{bio.trim() || c.publicHint}</p>
                   </div>
                 </div>
                 <div className="do-profile-public-stats">
