@@ -12,6 +12,7 @@ import { listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
 import { toast } from "sonner";
 import { listGear } from "@/lib/gear";
 import { GearIllustration } from "@/components/GearIllustration";
+import { DiveWorldMap } from "@/components/DiveWorldMap";
 
 export const Route = createFileRoute("/_authenticated/dives/")({
   head: () => ({ meta: [
@@ -86,21 +87,6 @@ const countryCodes: Record<string, string> = {
 function countryFlag(country: string) {
   const code = countryCodes[country.trim().toLowerCase()];
   return code ? String.fromCodePoint(...[...code].map((letter) => 127397 + letter.charCodeAt(0))) : "🌐";
-}
-function WorldMap() {
-  return <svg className="do-passport-world-map" viewBox="0 0 780 350" role="img" aria-label="Stylized world map" preserveAspectRatio="xMidYMid meet">
-    <g className="do-passport-map-grid"><path d="M0 87H780M0 175H780M0 263H780M130 0V350M260 0V350M390 0V350M520 0V350M650 0V350" /></g>
-    <g className="do-passport-map-land">
-      <path d="M42 72 79 55 118 49 139 57 170 46 197 57 204 76 232 80 245 99 232 115 208 115 194 135 171 128 160 148 141 141 123 160 101 152 90 133 62 125 54 107 33 98Z" />
-      <path d="m117 157 28 2 19 17 18 4 14 22-5 18 16 22-10 28-17 14-12 34-20 16-13-15 2-25-15-23-3-27-18-28-4-29Z" />
-      <path d="m256 77 27-22 28 5 15 18-18 19-29 6-19-10Z" />
-      <path d="m322 87 23-18 38 8 26-13 25 7 26-15 46 6 32-12 53 11 23 20 36 1 28 20-13 23-33 4-15 22-29-3-22 23-25-10-22 8-26-19-26 5-24-17-21 4-12-19-29-4-18-19-28 6Z" />
-      <path d="m339 152 31-11 35 11 24 24-5 26-14 22-6 38-25 25-20-8-7-26-22-17-11-38 11-28Z" />
-      <path d="m571 239 30-20 47 5 27 16 37 4 18 19-15 31-35 7-23-11-30 6-29-17-31-4Z" />
-      <path d="m289 37 29-11 24 13-9 14-28-4ZM721 107l15 12-5 20-16-7ZM482 204l12 8-4 14-12-5Z" />
-    </g>
-    <g className="do-passport-map-coast"><path d="M54 107 62 125 90 133M141 141 160 148 171 128M196 220 207 242 197 270M370 141 405 152 429 176M581 238 601 219 648 224" /></g>
-  </svg>;
 }
 
 export function OceanPassport({ preview = false }: { preview?: boolean }) {
@@ -193,7 +179,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
                 <div className="do-passport-map-count"><strong>{isPending ? "—" : String(countries.length).padStart(2, "0")}</strong><span>{c.countryCount}</span></div>
                 {countries.length > 0 && <ul className="do-passport-map-places">{countries.map((country) => <li key={country}><span className="do-passport-country-flag" aria-hidden="true">{countryFlag(country)}</span><span>{country}</span></li>)}</ul>}
               </div>
-              <div className="do-passport-map-canvas"><WorldMap /></div>
+              <div className="do-passport-map-canvas"><DiveWorldMap visits={dives.map((dive) => dive.country)} english={language === "en"} /></div>
             </div>
           </section>
           <section className="do-passport-gear-panel" aria-labelledby="passport-gear-title"><div className="do-passport-panel-heading"><span>04 / {c.gear}</span><Waves aria-hidden="true" /></div>{gearItems.length ? <div className="do-passport-owned-gear"><h2 id="passport-gear-title">{c.gear} <small>({gearItems.length})</small></h2><ul>{gearItems.map((item) => <li key={item.id}><Link to="/gear"><GearIllustration category={item.category} /><span><strong>{[item.brand, item.model].filter(Boolean).join(" ") || (language === "zh-CN" ? "潜水装备" : "Dive gear")}</strong><small>{language === "zh-CN" ? `已使用 ${item.dive_count} 次` : `${item.dive_count} dives`}{item.next_service_on ? ` · ${language === "zh-CN" ? "下次保养" : "Service"} ${item.next_service_on}` : ""}</small></span><ChevronRight /></Link></li>)}</ul><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div> : <div className="do-passport-gear-body"><div className="do-passport-gear-symbol"><Waves aria-hidden="true" /></div><div><h2 id="passport-gear-title">{c.gear}</h2><p>{c.gearEmpty}</p><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div></div>}</section>

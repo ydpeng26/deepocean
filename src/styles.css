@@ -770,7 +770,19 @@
   .do-passport-map-count { display: flex; align-items: end; gap: 7px; margin-top: 1px; }
   .do-passport-map-count strong { color: #73d6ff; font-size: 32px; font-weight: 620; line-height: .9; }
   .do-passport-map-count span { color: rgba(207,238,255,.55); font-size: 8px; line-height: 1.2; }
-  .do-passport-map-canvas { height: 254px; overflow: hidden; border-radius: 15px; background: radial-gradient(circle at 70% 45%, rgba(27,103,163,.1), transparent 45%), rgba(0,15,34,.12); }
+  .do-passport-map-canvas { min-height: 254px; height: auto; overflow: hidden; border-radius: 15px; background: radial-gradient(circle at 70% 45%, rgba(27,103,163,.1), transparent 45%), rgba(0,15,34,.12); }
+  .do-dive-world-map { display: flex; flex-direction: column; justify-content: center; min-height: 254px; height: 100%; padding: 8px; }
+  .do-dive-world-map > svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .do-dive-world-grid path { fill: none; stroke: rgba(75,151,209,.12); stroke-width: .6; }
+  .do-dive-world-land path { fill: #17486c; stroke: #4280a4; stroke-width: .5; stroke-linejoin: round; }
+  .do-dive-world-pin { cursor: pointer; outline: none; }
+  .do-dive-world-pin-hit { fill: transparent; }
+  .do-dive-world-pin-halo { fill: #ff525244; }
+  .do-dive-world-pin-dot { fill: #ff4b55; stroke: #ffe8e8; stroke-width: 1; }
+  .do-dive-world-pin:focus .do-dive-world-pin-halo, .do-dive-world-pin:hover .do-dive-world-pin-halo { fill: #ff525288; stroke: #ff9494; }
+  .do-dive-world-caption { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 6px 4px; color: #b5d2e5; font-size: 10px; }
+  .do-dive-world-caption i { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: #ff4b55; }
+  .do-dive-world-caption small { color: #7695ac; font-size: 8px; }
   .do-passport-world-map { width: 100%; height: 100%; }
   .do-passport-map-grid path { fill: none; stroke: rgba(75,151,209,.1); stroke-width: 1; }
   .do-passport-map-land path { fill: #1b5d91; stroke: #4aa1dc; stroke-width: 1.5; stroke-linejoin: round; opacity: .8; }
