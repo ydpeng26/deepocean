@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 const db = supabase as any;
 const FORUM_MEDIA_BUCKET = "forum-media";
 
-export type ForumTopic = "stories" | "creatures" | "sites" | "gear" | "stays";
+export type ForumTopic = "stories" | "creatures" | "encyclopedia" | "sites" | "gear" | "stays";
 
 export type ForumPost = {
   id: string;

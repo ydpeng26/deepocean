@@ -1616,3 +1616,4 @@
 .do-passport-encounter-entry { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; padding: 18px 22px; border: 1px solid #579ac744; border-radius: 16px; background: linear-gradient(100deg, #06425d66, #05213b55); color: #d9f2ff; font-size: 14px; }
 .do-passport-encounter-entry small { display: block; margin-top: 6px; color: #9ebccd; font-size: 11px; }
 .do-passport-encounter-entry > svg { width: 18px; flex: none; color: #80d0ff; }
+.do-marine-share { display: grid; justify-items: start; gap: 14px; margin-top: 20px; padding: 16px; border: 1px solid #579ac744; border-radius: 12px; background: #12648a15; }

@@ -64,3 +64,19 @@ export async function addSuggestion(id: string, body: string) {
   const { error } = await db.from("marine_suggestions").insert({ encounter_id: id, user_id: current.id, author_name: profile?.display_name || "潜水员", body: body.trim() });
   if (error) throw error;
 }
+
+export async function shareEncounterToForum(encounter: Encounter): Promise<string> {
+  const current = await user();
+  if (encounter.user_id !== current.id) throw Error("只能转发自己的记录");
+  const { data: existing, error: lookupError } = await db.from("forum_posts").select("id").eq("source_encounter_id", encounter.id).maybeSingle();
+  if (lookupError) throw lookupError;
+  if (existing) return existing.id;
+  const path = `${current.id}/encounter-${encounter.id}.jpg`;
+  const { data: image, error: downloadError } = await supabase.storage.from("marine-photos").download(encounter.photo_path);
+  if (downloadError || !image) throw downloadError ?? Error("无法读取相遇照片");
+  const { error: uploadError } = await supabase.storage.from("forum-media").upload(path, image, { contentType: "image/jpeg", cacheControl: "3600", upsert: false });
+  if (uploadError && !["409", "Duplicate"].includes(String((uploadError as any).statusCode)) && !uploadError.message.toLowerCase().includes("already exists")) throw uploadError;
+  const { data, error } = await db.rpc("share_marine_encounter", { target_id: encounter.id });
+  if (error) throw error;
+  return data;
+}

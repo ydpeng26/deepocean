@@ -5,7 +5,7 @@ import { Camera, Fish, MapPin, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useProfile } from "@/hooks/useProfile";
-import { addSuggestion, deleteEncounter, listEncounters, listSuggestions, saveEncounter, type Encounter } from "@/lib/marine";
+import { addSuggestion, deleteEncounter, listEncounters, listSuggestions, saveEncounter, shareEncounterToForum, type Encounter } from "@/lib/marine";
 
 export const Route = createFileRoute("/_authenticated/marine")({ head: () => ({ meta: [{ title: "我的海洋生物展览墙 · SupDiver" }] }), component: MarineWall });
 const today = () => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
@@ -25,6 +25,7 @@ function MarineWall() {
   const [needsHelp, setNeedsHelp] = useState(false);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sharedPost, setSharedPost] = useState<{ encounterId: string; postId: string } | null>(null);
   const query = useQuery({ queryKey: ["marine", help], queryFn: () => listEncounters(help) });
   const suggestions = useQuery({ queryKey: ["marine-suggestions", selected?.id], queryFn: () => listSuggestions(selected!.id), enabled: Boolean(selected) });
   useEffect(() => {
@@ -66,6 +67,7 @@ function MarineWall() {
     </form></section></div>}
     {selected && <div className="do-marine-overlay"><section role="dialog" aria-modal="true" aria-labelledby="marine-detail-title" className="do-marine-dialog"><button className="do-marine-close" disabled={busy} aria-label="关闭" onClick={() => setSelected(null)}><X /></button><img className="do-marine-preview" src={selected.imageUrl} alt={selected.species_name} /><h2 id="marine-detail-title">{selected.species_name}</h2><p>{selected.location} · {selected.encountered_on}</p><p className="do-marine-hint">记录者：{selected.author_name}{selected.needs_help ? " · 正在寻求识别帮助" : ""}</p>
       {selected.user_id === profile?.id && <div className="do-marine-owner-actions"><button disabled={busy} onClick={() => openEditor(selected)}>编辑名称与记录 / 关闭求助</button><button disabled={busy} onClick={async () => { if (!confirm("删除这次海洋相遇和相关留言？")) return; setBusy(true); try { await deleteEncounter(selected); setSelected(null); await refresh(); } catch { toast.error("删除失败，请重试"); } finally { setBusy(false); } }}>删除记录</button></div>}
+      {selected.user_id === profile?.id && <div className="do-marine-share"><p className="do-marine-hint">可将这张照片、生物名称、相遇时间和地点转发至深蓝论坛「生物百科」，请潜水员一起交流识别。论坛帖子独立保留，关闭展览墙求助或删除相遇不会删除已转发的帖子。</p><button disabled={busy} onClick={async () => { if (!confirm("将此照片、生物名称、相遇时间和地点发布至深蓝论坛「生物百科」？论坛成员将能查看和评论。")) return; setBusy(true); try { const postId = await shareEncounterToForum(selected); setSharedPost({ encounterId: selected.id, postId }); await client.invalidateQueries({ queryKey: ["forum-posts"] }); toast.success("已转发至深蓝论坛 · 生物百科"); } catch (error) { toast.error(error instanceof Error ? error.message : "转发失败，请重试"); } finally { setBusy(false); } }}>{busy ? "处理中…" : "转发至深蓝论坛"}</button>{sharedPost?.encounterId === selected.id && <a href={`/forum#post-${sharedPost.postId}`} className="do-marine-back">查看论坛帖子 →</a>}</div>}
       <h3>识别建议</h3><p className="do-marine-hint">建议仅供参考，请结合可信资料核实生物种类。</p>
       {suggestions.isPending ? <p>正在载入建议…</p> : suggestions.isError ? <button onClick={() => suggestions.refetch()}>建议加载失败，点击重试</button> : suggestions.data?.length ? suggestions.data.map(item => <article className="do-marine-suggestion" key={item.id}><strong>{item.author_name}</strong><p>{item.body}</p></article>) : <p className="do-marine-hint">还没有识别建议。</p>}
       {selected.needs_help && <form onSubmit={async event => { event.preventDefault(); if (!reply.trim()) return; setBusy(true); try { await addSuggestion(selected.id, reply); setReply(""); await client.invalidateQueries({ queryKey: ["marine-suggestions", selected.id] }); toast.success("识别建议已发送"); } catch { toast.error("发送失败，请重试"); } finally { setBusy(false); } }}><label>提供识别建议<textarea required value={reply} maxLength={1000} placeholder="你认为是什么生物？可以补充识别特征与依据。" onChange={event => setReply(event.target.value)} /></label><button disabled={busy || !reply.trim()} type="submit">{busy ? "发送中…" : "发送建议"}</button></form>}

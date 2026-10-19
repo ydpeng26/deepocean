@@ -71,7 +71,7 @@ type Post = {
   titleEn: string;
   textZh: string;
   textEn: string;
-  topic: "stories" | "creatures" | "sites" | "gear" | "stays";
+  topic: ForumTopic;
   likes: number;
   comments: number;
   liked?: boolean;
@@ -205,7 +205,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     if (navigator.share) await navigator.share({ title: post.titleZh, text: post.textZh, url });
     else { await navigator.clipboard.writeText(url); showNotice(c.copied); }
   }
-  const topicOptions = [["all", c.all, Waves], ["stories", c.stories, Sparkles], ["creatures", c.creatures, Fish], ["sites", c.sites, MapPin], ["stays", c.stays, BedDouble], ["gear", c.gear, Compass]] as const;
+  const topicOptions = [["all", c.all, Waves], ["stories", c.stories, Sparkles], ["creatures", c.creatures, Fish], ["encyclopedia", language === "zh-CN" ? "生物百科" : "Marine encyclopedia", Fish], ["sites", c.sites, MapPin], ["stays", c.stays, BedDouble], ["gear", c.gear, Compass]] as const;
   const menuLabels = { more: c.more, report: c.report, block: c.block, edit: c.edit, delete: c.delete, confirmDelete: c.confirmDelete, confirm: c.confirm, cancel: c.cancel };
 
   return <div className="do-forum-page">
