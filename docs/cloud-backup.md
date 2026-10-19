@@ -1,0 +1,13 @@
+# Cloud backups
+
+GitHub Actions runs `Cloud backup` on main daily at 03:17 Asia/Shanghai (scheduled runs may be delayed), or manually. R2 bucket `supdiver-backups` stays private. Data is staged only in the ephemeral GitHub runner, never committed or attached as public build artifacts.
+
+Required Actions Secrets: `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `SUPABASE_DB_URL` (Session pooler, password included), `SUPABASE_SERVICE_ROLE_KEY`. Restrict R2 key to this bucket. These credentials must never be exposed to frontend code.
+
+Each snapshot includes a consistent full PostgreSQL custom-format dump, role definitions without login password hashes, storage bucket metadata and a file manifest. Photo contents use immutable SHA256-addressed objects, so identical contents are not stored twice. Source deletions do not delete old backups. Each run currently re-downloads source files to verify actual contents; it does not assume metadata means unchanged. No retention deletion is enabled initially: watch storage usage and configure an explicit retention policy before large-scale use.
+
+Every archive and photo is read back from R2 and SHA256 checked. `complete.json` is written last. Failed snapshots without that marker are incomplete. `pg_restore --list` checks archive readability, NOT restore feasibility. A full restore drill into a separate disposable Supabase project is still required before calling this disaster recovery validated. Never restore over production for testing. Supabase-managed schema versions, extensions (including Vault), auth encryption keys, settings, email providers and OAuth secrets need separate restore planning; database and photo copies alone do not reproduce service configuration. Concurrent photo changes/deletions may fail a run; rerun rather than accepting incomplete data.
+
+For recovery: choose a completed snapshot, verify manifest hash in complete marker, download its dump/roles plus referenced content-addressed files in an isolated cloud recovery environment, verify SHA256, then follow the official Supabase backup/restore procedure. Recreate matching storage bucket settings and upload objects to original bucket/path. Validate row counts, auth login and private file access before switching production traffic. Do not download user data onto a developer workstation.
+
+Check each run under repository Actions. A green run means backup export and integrity checks passed, not that an application recovery drill passed. Configure GitHub failure notifications for responsible maintainers. R2 is storage, not the task execution environment. GitHub runners execute the task.
