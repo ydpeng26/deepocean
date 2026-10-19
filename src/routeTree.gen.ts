@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthConfirmedRouteImport } from './routes/auth-confirmed'
 import { Route as CertificatesPreviewRouteImport } from './routes/certificates-preview'
+import { Route as CommunityGuidelinesRouteImport } from './routes/community-guidelines'
 import { Route as DiveDetailPreviewRouteImport } from './routes/dive-detail-preview'
 import { Route as ForumComposePreviewRouteImport } from './routes/forum-compose-preview'
 import { Route as ForumPostPreviewRouteImport } from './routes/forum-post-preview'
@@ -60,6 +61,11 @@ const AuthConfirmedRoute = AuthConfirmedRouteImport.update({
 const CertificatesPreviewRoute = CertificatesPreviewRouteImport.update({
   id: '/certificates-preview',
   path: '/certificates-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityGuidelinesRoute = CommunityGuidelinesRouteImport.update({
+  id: '/community-guidelines',
+  path: '/community-guidelines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiveDetailPreviewRoute = DiveDetailPreviewRouteImport.update({
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
   '/forum-post-preview': typeof ForumPostPreviewRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
   '/forum-post-preview': typeof ForumPostPreviewRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/auth-confirmed': typeof AuthConfirmedRoute
   '/certificates-preview': typeof CertificatesPreviewRoute
+  '/community-guidelines': typeof CommunityGuidelinesRoute
   '/dive-detail-preview': typeof DiveDetailPreviewRoute
   '/forum-compose-preview': typeof ForumComposePreviewRoute
   '/forum-post-preview': typeof ForumPostPreviewRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth-confirmed'
     | '/certificates-preview'
+    | '/community-guidelines'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
     | '/forum-post-preview'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth-confirmed'
     | '/certificates-preview'
+    | '/community-guidelines'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
     | '/forum-post-preview'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth-confirmed'
     | '/certificates-preview'
+    | '/community-guidelines'
     | '/dive-detail-preview'
     | '/forum-compose-preview'
     | '/forum-post-preview'
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AuthConfirmedRoute: typeof AuthConfirmedRoute
   CertificatesPreviewRoute: typeof CertificatesPreviewRoute
+  CommunityGuidelinesRoute: typeof CommunityGuidelinesRoute
   DiveDetailPreviewRoute: typeof DiveDetailPreviewRoute
   ForumComposePreviewRoute: typeof ForumComposePreviewRoute
   ForumPostPreviewRoute: typeof ForumPostPreviewRoute
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/certificates-preview'
       fullPath: '/certificates-preview'
       preLoaderRoute: typeof CertificatesPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community-guidelines': {
+      id: '/community-guidelines'
+      path: '/community-guidelines'
+      fullPath: '/community-guidelines'
+      preLoaderRoute: typeof CommunityGuidelinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dive-detail-preview': {
@@ -613,6 +633,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AuthConfirmedRoute: AuthConfirmedRoute,
   CertificatesPreviewRoute: CertificatesPreviewRoute,
+  CommunityGuidelinesRoute: CommunityGuidelinesRoute,
   DiveDetailPreviewRoute: DiveDetailPreviewRoute,
   ForumComposePreviewRoute: ForumComposePreviewRoute,
   ForumPostPreviewRoute: ForumPostPreviewRoute,
