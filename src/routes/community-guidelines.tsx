@@ -22,7 +22,6 @@ function CommunityGuidelines() {
     <header className="do-community-header"><Link to="/" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link><Link to="/forum"><ArrowLeft size={16} />返回深蓝论坛</Link></header>
     <main className="do-community-main"><article>
       <header className="do-community-intro"><ShieldCheck aria-hidden="true" /><span>DEEP BLUE COMMUNITY</span><h1>深蓝论坛社区规范</h1><p>尊重海洋，也尊重每一位分享者。</p></header>
-      <nav className="do-community-contents" aria-label="规范目录">{sections.map((section, index) => <a key={section.title} href={`#guideline-${index + 1}`}>{section.title}</a>)}</nav>
       {sections.map((section, index) => <section className="do-community-section" id={`guideline-${index + 1}`} key={section.title}><h2>{section.title}</h2>{section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}{section.items && <ul>{section.items.map((item) => <li key={item}>{item}</li>)}</ul>}</section>)}
       <footer className="do-community-closing"><p>感谢你认真分享，也认真对待海洋。</p><p>愿每一段被记录的经历，都能帮助另一位潜水员更好地出发。</p><Link to="/forum"><ArrowLeft size={16} />返回深蓝论坛</Link></footer>
     </article></main>
