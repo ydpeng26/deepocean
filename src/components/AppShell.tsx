@@ -25,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             SupDiver
           </Link>
           <div className="flex items-center gap-3">
+            <Link to="/marine" className="text-xs text-muted-foreground hover:text-primary">海洋生物</Link>
             <Link
               to="/profile"
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"

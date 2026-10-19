@@ -211,7 +211,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   return <div className="do-forum-page">
     <header className="do-passport-header do-forum-header">
       <Link to="/" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
-      <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}><a href={preview ? "/passport-preview" : "/dives"}>{c.passport}</a><a href={preview ? "/logs-preview" : "/dives/logs"}>{c.logs}</a><a href="#forum-feed" aria-current="page">{c.forum}</a><a href={preview ? "/profile-preview" : "/profile"}>{c.profile}</a></nav>
+      <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}><a href={preview ? "/passport-preview" : "/dives"}>{c.passport}</a><a href={preview ? "/logs-preview" : "/dives/logs"}>{c.logs}</a><a href="#forum-feed" aria-current="page">{c.forum}</a><a href={preview ? "/profile-preview" : "/profile"}>{c.profile}</a><Link to="/marine">{language === "zh-CN" ? "海洋生物展览墙" : "Ocean encounters"}</Link></nav>
       <label className="do-forum-search"><Search aria-hidden="true" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={c.search} /></label>
       <div className="do-passport-header-actions"><Link to="/offline-sync" className="do-passport-sync-link"><CloudOff aria-hidden="true" /><span>{c.offline}</span></Link><button type="button" className="do-passport-language" onClick={toggleLanguage}><Languages aria-hidden="true" />{language === "zh-CN" ? "EN" : "中文"}</button><button type="button" className="do-forum-create" onClick={openComposer}><Plus aria-hidden="true" />{c.create}</button></div>
     </header>

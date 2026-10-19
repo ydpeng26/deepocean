@@ -137,6 +137,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
         <Link to="/dives" aria-current="page">{c.navPassport}</Link>
         <Link to="/dives/logs">{c.navLogs}</Link>
         <Link to="/forum">{c.navForum}</Link>
+        <Link to="/marine">{language === "en" ? "Ocean encounters" : "海洋生物"}</Link>
         <Link to={profileHref}>{c.navProfile}</Link>
       </nav>
       <div className="do-passport-header-actions">
@@ -150,6 +151,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     <main id="passport-overview" className="do-passport-main">
       {preview && <div className="do-passport-preview-note">{c.previewNote}</div>}
       {!preview && <OfflineSyncBanner dark />}
+      {!preview && <Link to="/marine" className="do-passport-encounter-entry"><span>{language === "en" ? "Ocean encounters" : "我的海洋生物展览墙"}<small>{language === "en" ? "Collect your encounters · Help identify marine life" : "记录海洋相遇 · 与潜水员一起识别生物"}</small></span><ChevronRight aria-hidden="true" /></Link>}
       <div className="do-passport-columns">
         <aside className="do-passport-profile-column" aria-label={c.identity}>
           <section className="do-passport-identity" aria-label={c.identity}>

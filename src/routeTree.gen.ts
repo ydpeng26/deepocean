@@ -32,6 +32,7 @@ import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
 import { Route as AuthenticatedForumRouteImport } from './routes/_authenticated/forum'
 import { Route as AuthenticatedGearRouteImport } from './routes/_authenticated/gear'
+import { Route as AuthenticatedMarineRouteImport } from './routes/_authenticated/marine'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDiversIdRouteImport } from './routes/_authenticated/divers/$id'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
@@ -153,6 +154,11 @@ const AuthenticatedGearRoute = AuthenticatedGearRouteImport.update({
   path: '/gear',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarineRoute = AuthenticatedMarineRouteImport.update({
+  id: '/marine',
+  path: '/marine',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/forum': typeof AuthenticatedForumRoute
   '/gear': typeof AuthenticatedGearRoute
+  '/marine': typeof AuthenticatedMarineRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/forum': typeof AuthenticatedForumRoute
   '/gear': typeof AuthenticatedGearRoute
+  '/marine': typeof AuthenticatedMarineRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/_authenticated/forum': typeof AuthenticatedForumRoute
   '/_authenticated/gear': typeof AuthenticatedGearRoute
+  '/_authenticated/marine': typeof AuthenticatedMarineRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/divers/$id': typeof AuthenticatedDiversIdRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/forum'
     | '/gear'
+    | '/marine'
     | '/profile'
     | '/divers/$id'
     | '/dives/$id'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/forum'
     | '/gear'
+    | '/marine'
     | '/profile'
     | '/divers/$id'
     | '/dives/$id'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/share-card-preview'
     | '/_authenticated/forum'
     | '/_authenticated/gear'
+    | '/_authenticated/marine'
     | '/_authenticated/profile'
     | '/_authenticated/divers/$id'
     | '/_authenticated/dives/$id'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGearRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/marine': {
+      id: '/_authenticated/marine'
+      path: '/marine'
+      fullPath: '/marine'
+      preLoaderRoute: typeof AuthenticatedMarineRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -605,6 +624,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedForumRoute: typeof AuthenticatedForumRoute
   AuthenticatedGearRoute: typeof AuthenticatedGearRoute
+  AuthenticatedMarineRoute: typeof AuthenticatedMarineRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedDiversIdRoute: typeof AuthenticatedDiversIdRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
@@ -616,6 +636,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedForumRoute: AuthenticatedForumRoute,
   AuthenticatedGearRoute: AuthenticatedGearRoute,
+  AuthenticatedMarineRoute: AuthenticatedMarineRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedDiversIdRoute: AuthenticatedDiversIdRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
