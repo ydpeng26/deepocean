@@ -209,35 +209,6 @@ function ProfilePage() {
 
   return (
     <div className="do-profile-page">
-      <header className="do-passport-header do-profile-header">
-        <Link to="/dives" className="do-brand" aria-label="SupDiver">
-          <span className="do-brand-mark">
-            <img src="/images/supdiver-wave-mark.svg" alt="" />
-          </span>
-          <b>SupDiver</b>
-        </Link>
-        <div className="do-passport-header-actions">
-          <button type="button" className="do-passport-language" onClick={toggleLanguage}>
-            <Languages aria-hidden="true" />
-            {language === "zh-CN" ? "EN" : "中文"}
-          </button>
-          <span className="do-passport-account">
-            <Avatar>
-              <AvatarImage src={displayedAvatar ?? undefined} alt={display} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <span>{display}</span>
-          </span>
-          <button
-            type="button"
-            className="do-passport-logout"
-            onClick={signOut}
-            aria-label={c.logout}
-          >
-            <LogOut aria-hidden="true" />
-          </button>
-        </div>
-      </header>
       <main id="profile-editor" className="do-profile-main">
         <section className="do-profile-intro">
           <span>{c.eyebrow}</span>

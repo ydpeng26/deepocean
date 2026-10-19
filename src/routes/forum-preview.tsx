@@ -209,11 +209,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const menuLabels = { more: c.more, report: c.report, block: c.block, edit: c.edit, delete: c.delete, confirmDelete: c.confirmDelete, confirm: c.confirm, cancel: c.cancel };
 
   return <div className="do-forum-page">
-    <header className="do-passport-header do-forum-header">
-      <Link to="/" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
-      <label className="do-forum-search"><Search aria-hidden="true" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={c.search} /></label>
-      <div className="do-passport-header-actions"><Link to="/offline-sync" className="do-passport-sync-link"><CloudOff aria-hidden="true" /><span>{c.offline}</span></Link><button type="button" className="do-passport-language" onClick={toggleLanguage}><Languages aria-hidden="true" />{language === "zh-CN" ? "EN" : "中文"}</button><button type="button" className="do-forum-create" onClick={openComposer}><Plus aria-hidden="true" />{c.create}</button></div>
-    </header>
+    <div className="do-forum-standalone-search"><label className="do-forum-search"><Search aria-hidden="true" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={c.search} /></label></div>
     <main className="do-forum-main">
       {preview && <div className="do-passport-preview-note">{c.preview}</div>}
       <section className="do-forum-hero"><div><span>{c.eyebrow}</span><h1>{c.title}<em>{c.titleAccent}</em></h1><p>{c.intro}</p></div><div className="do-forum-hero-orbit" aria-hidden="true"><span><Users /></span><i /><b>{sourcePosts.length}</b><small>OCEAN STORIES</small></div></section>

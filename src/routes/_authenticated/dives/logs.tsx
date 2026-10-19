@@ -179,35 +179,6 @@ function DiveLogsPage() {
 
   return (
     <div className="do-logs-page">
-      <header className="do-passport-header do-logs-header">
-        <Link to="/dives" className="do-brand" aria-label="SupDiver">
-          <span className="do-brand-mark">
-            <img src="/images/supdiver-wave-mark.svg" alt="" />
-          </span>
-          <b>SupDiver</b>
-        </Link>
-        <div className="do-passport-header-actions">
-          <button type="button" className="do-passport-language" onClick={toggleLanguage}>
-            <Languages aria-hidden="true" />
-            {language === "zh-CN" ? "EN" : "中文"}
-          </button>
-          <Link to="/profile" className="do-passport-account">
-            <Avatar>
-              <AvatarImage src={avatarUrl ?? undefined} alt={name} />
-              <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
-            </Avatar>
-            <span>{name}</span>
-          </Link>
-          <button
-            type="button"
-            className="do-passport-logout"
-            onClick={signOut}
-            aria-label={c.logout}
-          >
-            <LogOut aria-hidden="true" />
-          </button>
-        </div>
-      </header>
       <main id="dive-logs" className="do-logs-main">
         <section className="do-logs-intro">
           <div>

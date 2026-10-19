@@ -131,15 +131,6 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   }
 
   return <div className="do-passport">
-    <header className="do-passport-header">
-      <Link to="/dives" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
-      <div className="do-passport-header-actions">
-        <Link to="/offline-sync" className="do-passport-sync-link"><CloudOff aria-hidden="true" /><span>{c.offlineSync}</span></Link>
-        <button type="button" className="do-passport-language" onClick={toggleLanguage} aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}><Languages aria-hidden="true" />{language === "zh-CN" ? "EN" : "中文"}</button>
-        <Link to={profileHref} className="do-passport-account" aria-label={c.navProfile}><Avatar><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback>{name.slice(0, 1)}</AvatarFallback></Avatar><span>{name}</span></Link>
-        <button type="button" className="do-passport-logout" onClick={signOut} aria-label={c.logout}><LogOut aria-hidden="true" /></button>
-      </div>
-    </header>
 
     <main id="passport-overview" className="do-passport-main">
       {preview && <div className="do-passport-preview-note">{c.previewNote}</div>}
