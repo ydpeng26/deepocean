@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
+import { MainNavigation } from "@/components/MainNavigation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -19,13 +20,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-6 py-5">
+        <div className="do-app-header mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-5">
           <Link to="/dives" className="flex items-center gap-2 text-sm font-medium tracking-widest text-primary">
             <img src="/images/supdiver-wave-mark.svg" alt="" className="h-6 w-7" />
             SupDiver
           </Link>
-          <div className="flex items-center gap-3">
-            <Link to="/marine" className="text-xs text-muted-foreground hover:text-primary">海洋生物</Link>
+          <MainNavigation />
+          <div className="do-app-header-actions flex items-center gap-3">
             <Link
               to="/profile"
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"

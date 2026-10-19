@@ -1620,3 +1620,14 @@
 .do-marine-photo-upload { display: grid; justify-items: start; gap: 12px; padding: 16px; border: 1px dashed #579ac766; border-radius: 12px; background: #12648a15; }
 .do-marine-photo-upload > span { font-size: 13px; }
 .do-marine-photo-upload > small { max-width: 100%; overflow-wrap: anywhere; color: #91aaba; font-size: 11px; line-height: 1.7; }
+/* Shared navigation stays available on every signed-in page. */
+.do-main-navigation, .do-passport-header > nav.do-main-navigation { display: flex !important; align-items: stretch; gap: clamp(14px, 2vw, 28px); min-width: 0; }
+.do-main-navigation a { display: inline-flex; align-items: center; flex-shrink: 0; min-height: 44px; border-bottom: 2px solid transparent; color: #a4bbce; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.do-main-navigation a:hover, .do-main-navigation a[aria-current="page"] { color: #eef8ff; }
+.do-main-navigation a[aria-current="page"] { border-bottom-color: #32aeff; }
+@media (max-width: 1150px) {
+  .do-passport-header:has(> .do-main-navigation) { flex-wrap: wrap; height: auto !important; min-height: 82px; padding-top: 14px; gap: 8px 18px; }
+  .do-passport-header > nav.do-main-navigation, .do-app-header > .do-main-navigation { order: 3; flex: 0 0 100%; width: 100%; margin: 0; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding-bottom: 3px; }
+  .do-passport-header:has(> .do-main-navigation) > .do-passport-header-actions, .do-app-header-actions { margin-left: auto; }
+  .do-forum-header:has(> .do-main-navigation) > .do-forum-search { display: none; }
+}

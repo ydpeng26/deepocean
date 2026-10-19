@@ -133,13 +133,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   return <div className="do-passport">
     <header className="do-passport-header">
       <Link to="/dives" className="do-brand" aria-label="SupDiver"><span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span><b>SupDiver</b></Link>
-      <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>
-        <Link to="/dives" aria-current="page">{c.navPassport}</Link>
-        <Link to="/dives/logs">{c.navLogs}</Link>
-        <Link to="/forum">{c.navForum}</Link>
-        <Link to="/marine">{language === "en" ? "Ocean encounters" : "海洋生物"}</Link>
-        <Link to={profileHref}>{c.navProfile}</Link>
-      </nav>
+<MainNavigation />
       <div className="do-passport-header-actions">
         <Link to="/offline-sync" className="do-passport-sync-link"><CloudOff aria-hidden="true" /><span>{c.offlineSync}</span></Link>
         <button type="button" className="do-passport-language" onClick={toggleLanguage} aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}><Languages aria-hidden="true" />{language === "zh-CN" ? "EN" : "中文"}</button>
@@ -197,3 +191,4 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     <footer className="do-passport-footer"><span>SupDiver</span><small>YOUR OCEAN. YOUR STORY.</small></footer>
   </div>;
 }
+import { MainNavigation } from "@/components/MainNavigation";

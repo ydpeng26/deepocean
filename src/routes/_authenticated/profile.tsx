@@ -216,14 +216,7 @@ function ProfilePage() {
           </span>
           <b>SupDiver</b>
         </Link>
-        <nav aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>
-          <Link to="/dives">{c.passport}</Link>
-          <Link to="/dives/logs">{c.logs}</Link>
-          <Link to="/forum">{c.forum}</Link>
-          <a href="#profile-editor" aria-current="page">
-            {c.profile}
-          </a>
-        </nav>
+<MainNavigation />
         <div className="do-passport-header-actions">
           <button type="button" className="do-passport-language" onClick={toggleLanguage}>
             <Languages aria-hidden="true" />
@@ -490,3 +483,4 @@ function ProfilePage() {
     </div>
   );
 }
+import { MainNavigation } from "@/components/MainNavigation";
