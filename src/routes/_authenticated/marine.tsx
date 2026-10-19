@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Fish, MapPin, Plus, X } from "lucide-react";
@@ -18,6 +18,7 @@ function MarineWall() {
   const [editing, setEditing] = useState<Encounter | undefined>();
   const [selected, setSelected] = useState<Encounter | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [date, setDate] = useState(today);
@@ -59,7 +60,7 @@ function MarineWall() {
     {query.isPending ? <p role="status">正在载入海洋相遇…</p> : query.isError ? <div className="do-marine-empty"><p>暂时无法载入展览墙</p><button onClick={() => query.refetch()}>重新加载</button></div> : !query.data?.length ? <div className="do-marine-empty"><Fish size={44} /><h2>{help ? "暂时没有待识别的相遇" : "你的海洋相遇，值得被收藏"}</h2><p>{help ? "遇到不认识的生物时，可以上传照片并寻求帮助。" : "上传第一张照片，记录生物名称、相遇时间和地点。"}</p><button onClick={() => openEditor()}><Camera size={17} />上传照片</button></div> : <div className="do-marine-grid">{query.data.map(item => <button className="do-marine-card" key={item.id} onClick={() => { setSelected(item); setReply(""); }}><div><img src={item.imageUrl} alt={item.species_name} loading="lazy" />{item.needs_help && <span>寻求识别帮助</span>}</div><h2>{item.species_name}</h2><p><MapPin size={13} />{item.location}</p><small>{item.encountered_on}{help ? ` · ${item.author_name}` : ""}</small></button>)}</div>}
     {editor && <div className="do-marine-overlay"><section role="dialog" aria-modal="true" aria-labelledby="marine-editor-title" className="do-marine-dialog"><button className="do-marine-close" disabled={busy} aria-label="关闭" onClick={() => setEditor(false)}><X /></button><h2 id="marine-editor-title">{editing ? "编辑海洋相遇" : "记录一次海洋相遇"}</h2><form onSubmit={save}>
       {(preview || editing?.imageUrl) && <img className="do-marine-preview" src={preview ?? editing?.imageUrl} alt="相遇照片预览" />}
-      <label>相遇照片<input type="file" accept="image/*" required={!editing} onChange={event => setFile(event.target.files?.[0] ?? null)} /><small>请选择自己拍摄或获授权的照片，原图不超过 20MB。</small></label>
+      <div className="do-marine-photo-upload"><span>相遇照片</span><input ref={photoInput} type="file" accept="image/*" hidden onChange={event => { const chosen = event.target.files?.[0]; if (chosen) setFile(chosen); event.target.value = ""; }} /><button type="button" onClick={() => photoInput.current?.click()}><Camera size={18} />{file || editing ? "更换照片" : "上传照片"}</button><small>{file ? file.name : editing ? "已保存相遇照片，可点击按钮更换" : "尚未上传照片"}</small><small>请选择自己拍摄或获授权的照片，原图不超过 20MB。</small></div>
       <label>生物名称<input autoFocus value={name} maxLength={120} placeholder={needsHelp ? "不确定可留空，将保存为待识别" : "例如：绿海龟"} required={!needsHelp} onChange={event => setName(event.target.value)} /></label>
       <label>相遇时间<input type="date" required max={today()} value={date} onChange={event => setDate(event.target.value)} /></label>
       <label>相遇地点<input required value={location} maxLength={200} placeholder="例如：Indonesia · Komodo · Batu Bolong" onChange={event => setLocation(event.target.value)} /></label>

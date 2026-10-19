@@ -1617,3 +1617,6 @@
 .do-passport-encounter-entry small { display: block; margin-top: 6px; color: #9ebccd; font-size: 11px; }
 .do-passport-encounter-entry > svg { width: 18px; flex: none; color: #80d0ff; }
 .do-marine-share { display: grid; justify-items: start; gap: 14px; margin-top: 20px; padding: 16px; border: 1px solid #579ac744; border-radius: 12px; background: #12648a15; }
+.do-marine-photo-upload { display: grid; justify-items: start; gap: 12px; padding: 16px; border: 1px dashed #579ac766; border-radius: 12px; background: #12648a15; }
+.do-marine-photo-upload > span { font-size: 13px; }
+.do-marine-photo-upload > small { max-width: 100%; overflow-wrap: anywhere; color: #91aaba; font-size: 11px; line-height: 1.7; }
