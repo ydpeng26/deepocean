@@ -124,7 +124,6 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const c = copy[language];
   const { profile, avatarUrl } = useProfile(!preview);
   const forumQuery = useQuery({ queryKey: ["forum-posts"], queryFn: listForumPosts, enabled: !preview });
-  const divesQuery = useQuery({ queryKey: ["dives"], queryFn: listDives, enabled: !preview && composer });
   const currentName = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const currentAvatar = avatarUrl ?? "/images/user-fish-hero-preview.jpg";
   const [feed, setFeed] = useState<"recommended" | "following" | "latest">("recommended");
@@ -134,6 +133,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const [saved, setSaved] = useState<string[]>([]);
   const [followed, setFollowed] = useState<string[]>(["Raiyan"]);
   const [composer, setComposer] = useState(false);
+  const divesQuery = useQuery({ queryKey: ["dives"], queryFn: listDives, enabled: !preview && composer });
   const [draft, setDraft] = useState("");
   const [postTitle, setPostTitle] = useState("");
   const [postLocation, setPostLocation] = useState("");
