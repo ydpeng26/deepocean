@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Footprints, Gauge, Glasses, LifeBuoy, Package, Plus, Save, Shirt, Trash2, Wrench, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, Wrench } from "lucide-react";
+import { GearIllustration } from "@/components/GearIllustration";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -23,21 +24,9 @@ const categories: Array<[GearCategory, string]> = [
 
 const empty: GearInput = { category: "bcd", brand: "", model: "", purchased_on: null, next_service_on: null, serial_number: null, dive_count: 0, notes: null, photo_path: null };
 
-const categoryIcons: Record<GearCategory, LucideIcon> = {
-  bcd: LifeBuoy,
-  regulator: Gauge,
-  computer: Gauge,
-  mask: Glasses,
-  fins: Footprints,
-  wetsuit: Shirt,
-  camera: Camera,
-  other: Package,
-};
-
 function GearVisual({ category, compact = false }: { category: GearCategory; compact?: boolean }) {
-  const Icon = categoryIcons[category];
   const label = categories.find(([value]) => value === category)?.[1] ?? "潜水装备";
-  return <span className={`grid shrink-0 place-items-center bg-gradient-to-br from-sky-500/20 to-cyan-500/5 text-sky-400 ${compact ? "h-14 w-16" : "h-44 w-full"}`} aria-label={label}><Icon className={compact ? "h-7 w-7" : "h-16 w-16"} strokeWidth={1.35} /></span>;
+  return <span className={`grid shrink-0 place-items-center bg-gradient-to-br from-sky-500/20 to-cyan-500/5 text-sky-400 ${compact ? "h-14 w-16" : "h-44 w-full"}`}><GearIllustration category={category} className={compact ? "h-10 w-10" : "h-24 w-24"} label={label} /></span>;
 }
 
 function GearPage() {

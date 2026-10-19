@@ -10,6 +10,8 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
 import { toast } from "sonner";
+import { listGear } from "@/lib/gear";
+import { GearIllustration } from "@/components/GearIllustration";
 
 export const Route = createFileRoute("/_authenticated/dives/")({
   head: () => ({ meta: [
@@ -113,6 +115,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     initialData: preview ? previewDives : undefined,
   });
   const { profile: liveProfile, avatarUrl } = useProfile(!preview);
+  const { data: gearItems = [] } = useQuery({ queryKey: ["gear"], queryFn: listGear, enabled: !preview });
   const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18, bio: language === "zh-CN" ? "在蓝色星球上，认真记录每一次下潜。" : "Logging every descent on our blue planet." } : liveProfile;
   const latest = dives[0];
   const latestPhotoPath = latest?.photo_thumbnail_urls?.[0] || latest?.photo_urls?.[0];
@@ -193,7 +196,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
               <div className="do-passport-map-canvas"><WorldMap /></div>
             </div>
           </section>
-          <section className="do-passport-gear-panel" aria-labelledby="passport-gear-title"><div className="do-passport-panel-heading"><span>04 / {c.gear}</span><Waves aria-hidden="true" /></div><div className="do-passport-gear-body"><div className="do-passport-gear-symbol"><Waves aria-hidden="true" /></div><div><h2 id="passport-gear-title">{c.gear}</h2><p>{c.gearEmpty}</p><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div></div></section>
+          <section className="do-passport-gear-panel" aria-labelledby="passport-gear-title"><div className="do-passport-panel-heading"><span>04 / {c.gear}</span><Waves aria-hidden="true" /></div>{gearItems.length ? <div className="do-passport-owned-gear"><h2 id="passport-gear-title">{c.gear} <small>({gearItems.length})</small></h2><ul>{gearItems.map((item) => <li key={item.id}><Link to="/gear"><GearIllustration category={item.category} /><span><strong>{[item.brand, item.model].filter(Boolean).join(" ") || (language === "zh-CN" ? "潜水装备" : "Dive gear")}</strong><small>{language === "zh-CN" ? `已使用 ${item.dive_count} 次` : `${item.dive_count} dives`}{item.next_service_on ? ` · ${language === "zh-CN" ? "下次保养" : "Service"} ${item.next_service_on}` : ""}</small></span><ChevronRight /></Link></li>)}</ul><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div> : <div className="do-passport-gear-body"><div className="do-passport-gear-symbol"><Waves aria-hidden="true" /></div><div><h2 id="passport-gear-title">{c.gear}</h2><p>{c.gearEmpty}</p><Link to={gearHref} className="do-passport-panel-link">{c.gearManage}<ChevronRight aria-hidden="true" /></Link></div></div>}</section>
           <section className="do-passport-saved-panel" aria-labelledby="passport-saved-title"><div className="do-passport-panel-heading"><span>05 / {c.favorites}</span><Bookmark aria-hidden="true" /></div><div className="do-passport-saved-heading"><div><h2 id="passport-saved-title">{c.favorites}</h2><p>{c.favoritesIntro}</p>{preview ? <Link to="/saved-preview" className="do-passport-saved-link">{c.viewAllFavorites}<ChevronRight aria-hidden="true" /></Link> : <Link to="/forum" className="do-passport-saved-link">{c.viewAllFavorites}<ChevronRight aria-hidden="true" /></Link>}</div><strong>{preview ? "12" : "0"}</strong></div>{preview ? <div className="do-passport-saved-grid"><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-fish-hero-preview.jpg')" }}><span>Crystal Bay</span></div><h3>在冷水里遇见一只慢吞吞的 Mola mola</h3><small>ydpeng7 · 286 {c.likesReceived}</small></article><article><div style={{ backgroundImage: "linear-gradient(0deg, rgba(1,20,38,.48), transparent), url('/images/user-cave-photo-hero-preview.jpg')" }}><span>Moalboal</span></div><h3>沙丁鱼群遮住阳光的十秒钟</h3><small>lanhai_02 · 194 {c.likesReceived}</small></article></div> : <div className="do-passport-saved-empty"><Bookmark aria-hidden="true" /><p>{c.favoritesEmpty}</p><Link to="/forum">{c.viewForum}<ChevronRight aria-hidden="true" /></Link></div>}</section>
         </div>
 
