@@ -216,7 +216,6 @@ function ProfilePage() {
           </span>
           <b>SupDiver</b>
         </Link>
-<MainNavigation />
         <div className="do-passport-header-actions">
           <button type="button" className="do-passport-language" onClick={toggleLanguage}>
             <Languages aria-hidden="true" />
@@ -483,4 +482,3 @@ function ProfilePage() {
     </div>
   );
 }
-import { MainNavigation } from "@/components/MainNavigation";

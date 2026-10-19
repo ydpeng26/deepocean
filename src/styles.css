@@ -1631,3 +1631,6 @@
   .do-passport-header:has(> .do-main-navigation) > .do-passport-header-actions, .do-app-header-actions { margin-left: auto; }
   .do-forum-header:has(> .do-main-navigation) > .do-forum-search { display: none; }
 }
+.do-member-navigation { position: relative; z-index: 20; padding: 0 max(16px, calc((100vw - 1320px) / 2)); border-bottom: 1px solid #579ac733; background: #031326; }
+.do-member-navigation > .do-main-navigation { display: flex !important; width: 100%; gap: clamp(16px, 4vw, 48px); overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+.do-member-navigation .do-main-navigation a { min-height: 52px; padding: 4px 0; }

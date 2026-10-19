@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
-import { MainNavigation } from "@/components/MainNavigation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -25,7 +24,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <img src="/images/supdiver-wave-mark.svg" alt="" className="h-6 w-7" />
             SupDiver
           </Link>
-          <MainNavigation />
           <div className="do-app-header-actions flex items-center gap-3">
             <Link
               to="/profile"
