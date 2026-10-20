@@ -90,11 +90,11 @@ def main():
         s3.download_file(BUCKET, entry['key'], str(archive))
         check(digest(archive) == entry['sha256'], 'Database archive integrity failed.')
 
-        def pg(arguments):
+        def pg(arguments, program='pg_restore'):
             command = ['docker', 'run', '--rm', '--volume', str(root) + ':' + str(root)]
             for variable in ['PGHOST', 'PGPORT', 'PGUSER', 'PGPASSWORD', 'PGDATABASE', 'PGSSLMODE', 'PGOPTIONS']:
                 command += ['--env', variable]
-            result = subprocess.run(command + ['postgres:17', 'pg_restore'] + arguments,
+            result = subprocess.run(command + ['postgres:17', program] + arguments,
                                     env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode:
                 # Only emit error categories, never SQL, data, paths or credentials.
@@ -137,8 +137,13 @@ def main():
                 elif table:
                     expected[table] += 1
         print('Stage: restore application schema and account data transactionally', flush=True)
-        pg(['--dbname=postgres', '--single-transaction', '--exit-on-error', '--no-owner',
-            '--no-tablespaces', '--use-list=' + str(listing), str(archive)])
+        restore_sql = root / 'restore.sql'
+        pg(['--file=' + str(restore_sql), '--no-owner', '--no-tablespaces',
+            '--use-list=' + str(listing), str(archive)])
+        # Poolers may not forward PGOPTIONS. Set this inside the restoring session,
+        # as recommended by Supabase, so existing Auth FKs don't depend on dump order.
+        pg(['--dbname=postgres', '--single-transaction', '--set=ON_ERROR_STOP=1',
+            '--command=SET session_replication_role = replica', '--file=' + str(restore_sql)], 'psql')
         with psycopg.connect(url, connect_timeout=20, sslmode='require', autocommit=True) as conn:
             for (schema, name), count in expected.items():
                 actual = conn.execute(sql.SQL('SELECT count(*) FROM {}.{}').format(
