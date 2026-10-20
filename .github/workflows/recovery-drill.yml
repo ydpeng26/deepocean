@@ -1,11 +1,6 @@
 name: Recovery drill
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/recovery-drill.py
-      - .github/workflows/recovery-drill.yml
 permissions:
   contents: read
 concurrency:
