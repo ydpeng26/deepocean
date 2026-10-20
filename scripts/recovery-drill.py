@@ -105,6 +105,8 @@ def main():
                 constraints = re.findall(r'violates foreign key constraint "([a-z0-9_]+)"', error)
                 if constraints:
                     categories += ['constraint=' + c for c in sorted(set(constraints))]
+                objects = re.findall(r'permission denied (?:for|to) (?:set parameter|schema|table|function|sequence|relation) "?([a-z0-9_.]+)', error)
+                categories += ['object=' + c for c in sorted(set(objects))]
                 raise RuntimeError('Restore command failed; categories: ' + ', '.join(categories or ['unclassified']))
             return result.stdout.decode()
 
