@@ -111,15 +111,18 @@ try {
   pass('private_photo_owner_download_and_cross_user_sign_overwrite_denied');
 
   await page.goto(site + '/forum', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: '发布动态', exact: true }).click();
+  stage = 'forum_composer_open';
+  await page.locator('.do-forum-compose-strip > button').click();
   const dialog = page.getByRole('dialog');
   await dialog.locator('.do-forum-composer-fields input').first().fill(marker);
   await dialog.locator('textarea').fill('Disposable forum recovery test');
   await dialog.locator('footer button').last().click();
+  stage = 'forum_post_persistence';
   const posts = await poll(() => req(`/rest/v1/forum_posts?user_id=eq.${a.id}&select=*`, { token: a.token }), p => p.length === 1, 'Browser post create not persisted');
   const post = posts[0];
   pass('browser_forum_post_create_persisted');
   const card = page.locator('article').filter({ has: page.getByRole('heading', { name: marker, exact: true }) });
+  stage = 'forum_bookmark_toggle';
   await card.getByRole('button', { name: '收藏', exact: true }).click();
   const bookmarks = () => req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&select=*`, { token: a.token });
   await poll(bookmarks, r => r.length === 1, 'Bookmark not persisted');
@@ -128,6 +131,7 @@ try {
   await poll(bookmarks, r => r.length === 0, 'Bookmark removal not persisted');
   pass('browser_bookmark_add_remove_and_private_isolation');
   await card.getByRole('button', { name: '阅读全文', exact: true }).click();
+  stage = 'forum_comment_create';
   await page.getByRole('dialog').locator('textarea').fill(marker + '-COMMENT');
   await page.getByRole('dialog').getByRole('button', { name: '发送', exact: true }).click();
   const comments = await poll(() => req(`/rest/v1/forum_comments?post_id=eq.${post.id}&select=*`, { token: a.token }), c => c.length === 1, 'Browser comment not persisted');
@@ -192,6 +196,10 @@ try {
       await req('/auth/v1/admin/users/' + u.id, { method: 'DELETE', privileged: true });
       const r = await response('/auth/v1/admin/users/' + u.id, { privileged: true });
       check(r.status === 404, 'Synthetic account remains');
+      for (const table of ['dives', 'forum_posts', 'forum_comments', 'forum_bookmarks']) {
+        const remaining = await req(`/rest/v1/${table}?user_id=eq.${u.id}&select=user_id`, { privileged: true });
+        check(remaining.length === 0, 'Synthetic rows remain');
+      }
     } catch { cleanup = false; }
   }
   if (!cleanup) { process.exitCode = 1; console.error('Synthetic cleanup needs attention.'); }
