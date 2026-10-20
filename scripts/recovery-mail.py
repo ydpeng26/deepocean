@@ -28,7 +28,7 @@ def main():
         raise RuntimeError('Missing encrypted configuration: ' + ', '.join(missing))
     recipient = os.environ['RECOVERY_TEST_EMAIL'].strip()
     # Only the one human-authorized mailbox is allowed; no private address in source.
-    expected = '413a5f7179c9c11b20e4b67af61c7b3819f51716ac4e1f2c32e011602faea158'
+    expected = 'f458de9ff9a355dc9cc89e8c901bbc19dbb05f11edbc4cfc94ab3cac4fdf62a4'
     if hashlib.sha256(recipient.lower().encode()).hexdigest() != expected:
         raise RuntimeError('Recipient does not match authorized mailbox.')
     s3 = boto3.client('s3', endpoint_url=os.environ['R2_ENDPOINT'].strip(), region_name='auto',
