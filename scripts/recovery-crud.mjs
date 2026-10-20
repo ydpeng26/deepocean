@@ -41,7 +41,7 @@ async function poll(fn, predicate, label) {
   throw new Error(label);
 }
 async function context(session) {
-  const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const c = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'zh-CN' });
   contexts.push(c);
   await c.route('**/*', route => {
     const u = new URL(route.request().url());
@@ -52,6 +52,7 @@ async function context(session) {
     return route.continue();
   });
   await c.addInitScript(({ project, session }) => {
+    localStorage.setItem('deepocean-language', 'zh-CN');
     sessionStorage.setItem(`sb-${project}-auth-token`, JSON.stringify(session));
   }, { project, session });
   return c;
