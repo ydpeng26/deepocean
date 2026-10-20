@@ -1,0 +1,35 @@
+name: Recovery functional validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/recovery-validation.py
+      - .github/workflows/recovery-validation.yml
+permissions:
+  contents: read
+concurrency:
+  group: isolated-recovery-validation
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install validation tools
+        run: |
+          docker pull postgres:17
+          python3 -m venv "$RUNNER_TEMP/validation-venv"
+          "$RUNNER_TEMP/validation-venv/bin/pip" install boto3==1.40.54 psycopg[binary]==3.2.10 requests==2.32.5
+      - name: Validate only restored test project
+        env:
+          RECOVERY_DB_URL: ${{ secrets.RECOVERY_DB_URL }}
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: '"$RUNNER_TEMP/validation-venv/bin/python" scripts/recovery-validation.py'
