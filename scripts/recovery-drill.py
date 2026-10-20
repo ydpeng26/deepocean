@@ -107,6 +107,10 @@ def main():
                     categories += ['constraint=' + c for c in sorted(set(constraints))]
                 objects = re.findall(r'permission denied (?:for|to) (?:set parameter|schema|table|function|sequence|relation) "?([a-z0-9_.]+)', error)
                 categories += ['object=' + c for c in sorted(set(objects))]
+                for phrase in ['permission denied to change default privileges', 'permission denied for parameter',
+                               'permission denied to create event trigger', 'permission denied to create extension']:
+                    if phrase in error:
+                        categories.append(phrase)
                 raise RuntimeError('Restore command failed; categories: ' + ', '.join(categories or ['unclassified']))
             return result.stdout.decode()
 
@@ -116,6 +120,10 @@ def main():
             if not line or line.startswith(';'):
                 continue
             if ' SCHEMA - public ' in line or ' ACL - SCHEMA public ' in line:
+                continue
+            # Managed-role default ACLs cannot be reassigned by a hosted project's
+            # postgres role. Preserve explicit existing object grants instead.
+            if ' DEFAULT ACL ' in line:
                 continue
             if (' public ' in line or ' supabase_migrations ' in line or
                 (' TABLE DATA auth ' in line and ' schema_migrations ' not in line) or
