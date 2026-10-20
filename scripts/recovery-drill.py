@@ -102,6 +102,9 @@ def main():
                 categories = [c for c in ['permission denied', 'already exists', 'does not exist',
                               'violates foreign key', 'duplicate key', 'unsupported version',
                               'password authentication failed', 'could not connect'] if c in error]
+                constraints = re.findall(r'violates foreign key constraint "([a-z0-9_]+)"', error)
+                if constraints:
+                    categories += ['constraint=' + c for c in sorted(set(constraints))]
                 raise RuntimeError('Restore command failed; categories: ' + ', '.join(categories or ['unclassified']))
             return result.stdout.decode()
 
