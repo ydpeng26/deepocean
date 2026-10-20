@@ -30,9 +30,19 @@ def main():
     missing = [key for key in required if not os.environ.get(key)]
     if missing:
         raise RuntimeError('Missing Actions Secrets/config: ' + ', '.join(missing))
-    endpoint = os.environ['R2_ENDPOINT']
-    if urlparse(endpoint).scheme != 'https':
-        raise RuntimeError('R2 endpoint must use HTTPS.')
+    print('Stage: validate R2 endpoint', flush=True)
+    endpoint = os.environ['R2_ENDPOINT'].strip()
+    try:
+        endpoint_parts = urlparse(endpoint)
+        valid_endpoint = (endpoint_parts.scheme == 'https' and
+                          (endpoint_parts.hostname or '').endswith('.r2.cloudflarestorage.com') and
+                          endpoint_parts.path in ('', '/') and not endpoint_parts.query and
+                          not endpoint_parts.fragment and not endpoint_parts.username)
+    except ValueError:
+        valid_endpoint = False
+    if not valid_endpoint:
+        raise RuntimeError('R2_ENDPOINT format invalid: use only the HTTPS S3 endpoint, without bucket name or copied labels.')
+    print('Stage: initialize R2 client', flush=True)
     s3 = boto3.client('s3', endpoint_url=endpoint, region_name='auto',
                       aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'],
                       aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'])
@@ -57,13 +67,25 @@ def main():
     with tempfile.TemporaryDirectory(prefix='supdiver-', dir=os.environ['RUNNER_TEMP']) as temporary:
         root = Path(temporary)
         # Keep connection credentials out of process arguments and console output.
-        parsed = urlparse(os.environ['SUPABASE_DB_URL'])
+        print('Stage: validate database connection URI', flush=True)
+        database_url = os.environ['SUPABASE_DB_URL'].strip()
+        try:
+            parsed = urlparse(database_url)
+            port = parsed.port or 5432
+            valid_database = (parsed.scheme in ('postgres', 'postgresql') and parsed.hostname and
+                              parsed.username and parsed.password and parsed.path.lstrip('/'))
+        except ValueError:
+            valid_database = False
+        if not valid_database:
+            raise RuntimeError('SUPABASE_DB_URL format invalid: use the full PostgreSQL URI with a URL-encoded password.')
         env = os.environ.copy()
-        env.update(PGHOST=parsed.hostname or '', PGPORT=str(parsed.port or 5432),
+        env.update(PGHOST=parsed.hostname or '', PGPORT=str(port),
                    PGUSER=unquote(parsed.username or ''), PGPASSWORD=unquote(parsed.password or ''),
                    PGDATABASE=unquote(parsed.path.lstrip('/')), PGSSLMODE='require',
                    PGOPTIONS='-c default_transaction_read_only=on')
-        with psycopg.connect(os.environ['SUPABASE_DB_URL'], autocommit=True) as connection:
+        print('Stage: connect to database', flush=True)
+        with psycopg.connect(database_url, autocommit=True, connect_timeout=20, sslmode='require') as connection:
+            print('Database authentication successful. Stage: export read-only snapshot', flush=True)
             connection.execute('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
             snapshot = connection.execute('SELECT pg_export_snapshot()').fetchone()[0]
             manifest['buckets'] = connection.execute('SELECT to_jsonb(b) FROM storage.buckets b').fetchall()
