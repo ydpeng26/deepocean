@@ -50,7 +50,16 @@ def main():
                              headers={'apikey': key, 'Authorization': 'Bearer ' + key},
                              json={'type': 'signup', 'email': recipient, 'password': secrets.token_urlsafe(36)})
     if not response.ok:
-        raise RuntimeError('Test signup-link generation failed (HTTP ' + str(response.status_code) + ').')
+        try:
+            code = response.json().get('error_code', '')
+        except ValueError:
+            code = ''
+        safe_codes = {'email_exists', 'user_already_exists', 'signup_disabled',
+                      'email_address_invalid', 'validation_failed', 'weak_password',
+                      'over_email_send_rate_limit', 'unexpected_failure'}
+        safe_code = code if code in safe_codes else 'unclassified'
+        raise RuntimeError('Test signup-link generation failed (HTTP ' + str(response.status_code)
+                           + ', code=' + safe_code + '); no email sent.')
     generated = response.json()
     uid = generated.get('id') or generated.get('user', {}).get('id')
     token = generated.get('hashed_token')
