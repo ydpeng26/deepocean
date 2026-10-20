@@ -25,3 +25,17 @@ The connection pooler did not apply startup trigger-mode options reliably. Recov
 Not yet validated: end-to-end login, email delivery/confirmation, per-user RLS behavior, frontend navigation and signed URLs, Vault encryption root keys, external provider secrets, realtime/publication settings, or full application disaster recovery. Row counts are not a field-by-field database checksum. Photo checks are byte-level checksums. Do not describe this result as complete production recovery certification.
 
 The `Recovery drill` workflow is manual-only after the initial implementation tests. It requires `RECOVERY_DB_URL` and `RECOVERY_SERVICE_ROLE_KEY` in addition to R2 credentials. It creates no public artifacts or local workstation backups. Keep Data API disabled on the test project until access controls are reviewed. Test data remains in the isolated cloud project after the run; cleanup requires a separate explicit decision.
+
+## Functional and browser checks — 2026-10-20
+
+Backend run: https://github.com/ydpeng26/deepocean/actions/runs/39375209980
+
+Passed: exact restored account IDs/password hashes against the verified R2 archive; authenticated Auth sessions for restored users (generated links, no emails); per-user SELECT isolation for profiles, dives, gear, bookmarks, blocks and reports; owner UPDATE and outsider UPDATE/DELETE denial tested inside rolled-back transactions; anonymous private-table denial; owner signed photo URLs and cross-user denial; logout; disposable account password login, wrong-password rejection, token refresh and signup-profile trigger. Temporary virtual accounts were removed. Backend report is private in R2 `recovery-validation/`.
+
+User explicitly approved enabling the test Data API after these checks. Only `public` was exposed on project `esovqvampbrhuhamkfcs`. Production was not changed. A separate Vercel Hobby project `supdiver-recovery-test` was created with only the test project URL and public anon key in its frontend environment. No service role key was placed in frontend config. Test site: https://supdiver-recovery-test.vercel.app . It is a snapshot copy, not the production record system.
+
+Browser run: https://github.com/ydpeng26/deepocean/actions/runs/39378810569
+
+Passed: actual form password login using a disposable account; all five navigation sections persist; logout prevents access to authenticated pages; restored-user passport/photos render; restored logs/profile/gear/forum/marine pages load; valid signup-token confirmation shows success; invalid token shows error. Browser requests to production Supabase or production website origins are blocked by the test harness. No screenshots/traces/credential artifacts are uploaded. Both validation workflows are now manual-only.
+
+Remaining: login with the human user's original password (hash preservation is verified but the original plaintext password was not supplied), real email delivery/receipt/click, Google OAuth, full feature CRUD coverage, Vault secrets/third-party settings and production cutover. Do not call these completed. The user separately approved temporary reuse of production SMTP credentials ONLY for a designated test recipient, with removal afterward. As of this entry that copy did not run: macOS keychain access stalled and was interrupted before any management PATCH. Thus no real test email has yet been sent and no SMTP cleanup is required for that unexecuted copy. If a later turn copies SMTP, it must remove test SMTP credentials after the mail test and verify removal, without changing production.

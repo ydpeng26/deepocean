@@ -1,11 +1,6 @@
 name: Recovery functional validation
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/recovery-validation.py
-      - .github/workflows/recovery-validation.yml
 permissions:
   contents: read
 concurrency:

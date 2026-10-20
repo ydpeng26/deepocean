@@ -1,11 +1,6 @@
 name: Recovery browser validation
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/recovery-browser.mjs
-      - .github/workflows/recovery-browser.yml
 permissions:
   contents: read
 concurrency:
