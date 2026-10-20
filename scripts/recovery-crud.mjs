@@ -19,9 +19,9 @@ function pass(name) { checks.push(name); console.log('PASS: ' + name); stage = n
 async function response(path, { method = 'GET', body, token, privileged = false, raw = false } = {}) {
   check(path.startsWith('/') && !path.startsWith('//'), 'Invalid API path');
   const r = await fetch(api + path, { method, signal: AbortSignal.timeout(60000),
-    headers: { apikey: privileged ? admin : anon,
+    headers: { apikey: privileged ? admin : anon, Prefer: 'return=representation',
       ...(token || privileged ? { Authorization: `Bearer ${token || admin}` } : {}),
-      ...(body ? { 'Content-Type': raw ? 'image/png' : 'application/json', Prefer: 'return=representation' } : {}) },
+      ...(body ? { 'Content-Type': raw ? 'image/png' : 'application/json' } : {}) },
     body: body ? (raw ? body : JSON.stringify(body)) : undefined });
   return r;
 }
@@ -195,6 +195,7 @@ try {
     } catch { cleanup = false; }
   }
   if (!cleanup) { process.exitCode = 1; console.error('Synthetic cleanup needs attention.'); }
+  else console.log('PASS: synthetic_account_and_storage_cleanup_verified');
   const report = { checks, status: process.exitCode ? 'incomplete' : 'passed', target: project,
     synthetic_cleanup_verified: cleanup, production_modified: false, local_user_data_saved: false,
     frontend: 'log create/edit/delete, photo upload/render, post/comment create, bookmark toggle',
