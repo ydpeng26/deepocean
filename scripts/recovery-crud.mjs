@@ -11,7 +11,7 @@ const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const source = await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8');
 const anon = source.match(/const anon = '([^']+)'/)[1];
 const marker = `RECOVERY-CRUD-${process.env.GITHUB_RUN_ID}-${randomBytes(4).toString('hex')}`;
-const users = [], contexts = [], files = [], checks = [];
+const users = [], contexts = [], files = [], checks = [], findings = [];
 let browser;
 let stage = 'preflight';
 function check(ok, message) { if (!ok) throw new Error(message); }
@@ -130,6 +130,9 @@ try {
   }
   const card = page.locator('#post-' + post.id);
   console.log('Safe forum UI diagnostic: load-error=' + await page.getByText('论坛暂时无法加载，请稍后重试。', { exact: true }).count());
+  try {
+  stage = 'forum_publish_dialog_close';
+  await dialog.waitFor({ state: 'hidden', timeout: 30000 });
   stage = 'forum_bookmark_toggle';
   await card.getByRole('button', { name: '收藏', exact: true }).click();
   const bookmarks = () => req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&select=*`, { token: a.token });
@@ -143,8 +146,22 @@ try {
   stage = 'forum_comment_create';
   await page.getByRole('dialog').locator('textarea').fill(marker + '-COMMENT');
   await page.getByRole('dialog').getByRole('button', { name: '发送', exact: true }).click();
-  const comments = await poll(() => req(`/rest/v1/forum_comments?post_id=eq.${post.id}&select=*`, { token: a.token }), c => c.length === 1, 'Browser comment not persisted');
+  await poll(() => req(`/rest/v1/forum_comments?post_id=eq.${post.id}&select=*`, { token: a.token }), c => c.length === 1, 'Browser comment not persisted');
   pass('browser_comment_create_persisted');
+  } catch (error) {
+    findings.push('forum_browser_interaction_incomplete_at_' + stage);
+    console.log('Safe forum UI diagnostic: cards=' + await card.count() + ', bookmark-buttons=' + await card.getByRole('button', { name: '收藏', exact: true }).count() + ', dialogs=' + await page.getByRole('dialog').count() + ', pointer-interception=' + String(String(error.message).includes('intercepts pointer events')));
+    // Continue backend coverage, but never label this a browser success.
+    await req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&user_id=eq.${a.id}`, { method: 'DELETE', token: a.token });
+    await req('/rest/v1/forum_bookmarks', { method: 'POST', token: a.token, body: { post_id: post.id, user_id: a.id } });
+    check((await req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&select=*`, { token: b.token })).length === 0, 'Private bookmark exposed');
+    await req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&user_id=eq.${a.id}`, { method: 'DELETE', token: a.token });
+    const existing = await req(`/rest/v1/forum_comments?post_id=eq.${post.id}&select=*`, { token: a.token });
+    if (!existing.length) await req('/rest/v1/forum_comments', { method: 'POST', token: a.token, body: { post_id: post.id, user_id: a.id, body: marker + '-COMMENT' } });
+    pass('forum_bookmark_add_remove_isolation_and_comment_create_api_only');
+  }
+  const comments = await req(`/rest/v1/forum_comments?post_id=eq.${post.id}&select=*`, { token: a.token });
+  check(comments.length === 1, 'Comment fixture missing');
   const comment = comments[0];
   check((await rows('forum_posts', post.id, b.token)).length === 1, 'Members cannot read shared posts');
   for (const [table, id] of [['forum_posts', post.id], ['forum_comments', comment.id]]) {
@@ -176,6 +193,7 @@ try {
     }
   }
   pass('synthetic_photo_and_thumbnail_explicit_delete_verified');
+  if (findings.length) process.exitCode = 1;
 } catch (e) {
   console.error('Business test failed after stage: ' + stage + '; details suppressed (' + e.constructor.name + ').');
   process.exitCode = 1;
@@ -213,7 +231,7 @@ try {
   }
   if (!cleanup) { process.exitCode = 1; console.error('Synthetic cleanup needs attention.'); }
   else console.log('PASS: synthetic_account_and_storage_cleanup_verified');
-  const report = { checks, status: process.exitCode ? 'incomplete' : 'passed', target: project,
+  const report = { checks, findings, status: process.exitCode ? 'incomplete' : 'passed', target: project,
     synthetic_cleanup_verified: cleanup, production_modified: false, local_user_data_saved: false,
     frontend: 'log create/edit/delete, photo upload/render, post/comment create, bookmark toggle',
     api: 'ownership isolation, private reads, forged owner denial, post/comment edit/delete, photo delete',
