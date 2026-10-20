@@ -326,7 +326,7 @@ function AuthPage() {
           {mode === "signin" && passwordRecoveryEnabled && (
             <button
               type="button"
-              className="do-auth-back"
+              className="do-auth-forgot"
               onClick={requestReset}
               disabled={resetBusy}
             >
