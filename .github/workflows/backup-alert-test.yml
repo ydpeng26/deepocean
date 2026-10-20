@@ -1,0 +1,14 @@
+name: Backup notification test (intentional failure)
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  notification-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Simulate a failure without accessing data or credentials
+        run: |
+          echo 'Notification delivery test only. No database, R2, credentials or backup task was accessed.' >> "$GITHUB_STEP_SUMMARY"
+          echo '::error::Intentional notification test. This is not a production backup failure.'
+          exit 1
