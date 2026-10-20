@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { passwordRecoveryEnabled } from "@/lib/password-recovery";
 
 const authCopy = {
   "zh-CN": {
@@ -88,6 +89,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
   const submittingRef = useRef(false);
 
   const publicSiteUrl = (
@@ -192,29 +194,97 @@ function AuthPage() {
     }
   }
 
+  async function requestReset() {
+    if (resetBusy || !passwordRecoveryEnabled) return;
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error(language === "zh-CN" ? "请先填写有效邮箱。" : "Enter a valid email first.");
+      return;
+    }
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success(
+        language === "zh-CN"
+          ? "如果该邮箱已注册，你将收到找回密码邮件，请检查收件箱和垃圾邮件。"
+          : "If this email is registered, a reset email will arrive. Check your inbox and spam.",
+      );
+    } catch {
+      toast.error(
+        language === "zh-CN"
+          ? "暂时无法发送，请稍后重试。"
+          : "Unable to send right now. Try again later.",
+      );
+    } finally {
+      setResetBusy(false);
+    }
+  }
+
   return (
     <div className="do-auth">
       <div className="do-auth-bg" aria-hidden="true" />
       <div className="do-auth-overlay" aria-hidden="true" />
       <header className="do-auth-header">
         <Link to="/" className="do-brand" aria-label="SupDiver home">
-          <span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span>
+          <span className="do-brand-mark">
+            <img src="/images/supdiver-wave-mark.svg" alt="" />
+          </span>
           <b>SupDiver</b>
         </Link>
         <div className="do-auth-header-actions">
-          <Link to="/offline-sync" className="do-auth-offline"><CloudOff /><span>{copy.offline}</span></Link>
-          <button type="button" className="do-language" onClick={toggleLanguage} aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}>
-            <Languages /><span>{language === "zh-CN" ? "EN" : "中文"}</span>
+          <Link to="/offline-sync" className="do-auth-offline">
+            <CloudOff />
+            <span>{copy.offline}</span>
+          </Link>
+          <button
+            type="button"
+            className="do-language"
+            onClick={toggleLanguage}
+            aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}
+          >
+            <Languages />
+            <span>{language === "zh-CN" ? "EN" : "中文"}</span>
           </button>
-          <Link to="/" className="do-auth-back"><ArrowLeft />{copy.back}</Link>
+          <Link to="/" className="do-auth-back">
+            <ArrowLeft />
+            {copy.back}
+          </Link>
         </div>
       </header>
 
       <main className="do-auth-main">
-        <section className="do-auth-panel" aria-label={mode === "signin" ? copy.signin : copy.signup}>
-          <div className="do-auth-tabs" role="tablist" aria-label={language === "zh-CN" ? "账号操作" : "Account action"}>
-            <button type="button" role="tab" aria-selected={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setAwaitingConfirmation(false); }}>{copy.signin}</button>
-            <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>{copy.signup}</button>
+        <section
+          className="do-auth-panel"
+          aria-label={mode === "signin" ? copy.signin : copy.signup}
+        >
+          <div
+            className="do-auth-tabs"
+            role="tablist"
+            aria-label={language === "zh-CN" ? "账号操作" : "Account action"}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "signin"}
+              className={mode === "signin" ? "active" : ""}
+              onClick={() => {
+                setMode("signin");
+                setAwaitingConfirmation(false);
+              }}
+            >
+              {copy.signin}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "signup"}
+              className={mode === "signup" ? "active" : ""}
+              onClick={() => setMode("signup")}
+            >
+              {copy.signup}
+            </button>
           </div>
           <div className="do-auth-intro">
             <p className="do-auth-kicker">SUPDIVER</p>
@@ -224,11 +294,51 @@ function AuthPage() {
 
           <form onSubmit={handleSubmit} className="do-auth-form">
             <label htmlFor="email">{copy.email}</label>
-            <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={copy.emailPlaceholder} maxLength={255} required />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={copy.emailPlaceholder}
+              maxLength={255}
+              required
+            />
             <label htmlFor="password">{copy.password}</label>
-            <input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder} maxLength={72} minLength={6} required />
-            <button type="submit" disabled={loading} className="do-auth-submit">{loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}<ArrowRight /></button>
+            <input
+              id="password"
+              type="password"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={
+                mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder
+              }
+              maxLength={72}
+              minLength={6}
+              required
+            />
+            <button type="submit" disabled={loading} className="do-auth-submit">
+              {loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}
+              <ArrowRight />
+            </button>
           </form>
+          {mode === "signin" && passwordRecoveryEnabled && (
+            <button
+              type="button"
+              className="do-auth-back"
+              onClick={requestReset}
+              disabled={resetBusy}
+            >
+              {language === "zh-CN"
+                ? resetBusy
+                  ? "发送中…"
+                  : "忘记密码？"
+                : resetBusy
+                  ? "Sending…"
+                  : "Forgot password?"}
+            </button>
+          )}
 
           {mode === "signup" && awaitingConfirmation ? (
             <div className="do-auth-confirmation" role="status">
@@ -239,10 +349,23 @@ function AuthPage() {
             </div>
           ) : null}
 
-          <div className="do-auth-divider"><span />{copy.or}<span /></div>
-          <button type="button" className="do-auth-google" onClick={handleGoogle} disabled={loading}><span className="do-google-mark" aria-hidden="true">G</span>{copy.continueGoogle}</button>
+          <div className="do-auth-divider">
+            <span />
+            {copy.or}
+            <span />
+          </div>
+          <button
+            type="button"
+            className="do-auth-google"
+            onClick={handleGoogle}
+            disabled={loading}
+          >
+            <span className="do-google-mark" aria-hidden="true">
+              G
+            </span>
+            {copy.continueGoogle}
+          </button>
         </section>
-
       </main>
     </div>
   );

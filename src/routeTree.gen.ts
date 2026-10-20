@@ -27,6 +27,7 @@ import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as OfflineSyncPreviewRouteImport } from './routes/offline-sync-preview'
 import { Route as PassportPreviewRouteImport } from './routes/passport-preview'
 import { Route as ProfilePreviewRouteImport } from './routes/profile-preview'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SavedPreviewRouteImport } from './routes/saved-preview'
 import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
@@ -129,6 +130,11 @@ const ProfilePreviewRoute = ProfilePreviewRouteImport.update({
   path: '/profile-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SavedPreviewRoute = SavedPreviewRouteImport.update({
   id: '/saved-preview',
   path: '/saved-preview',
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
   '/passport-preview': typeof PassportPreviewRoute
   '/profile-preview': typeof ProfilePreviewRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
   '/passport-preview': typeof PassportPreviewRoute
   '/profile-preview': typeof ProfilePreviewRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
   '/passport-preview': typeof PassportPreviewRoute
   '/profile-preview': typeof ProfilePreviewRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/offline-sync-preview'
     | '/passport-preview'
     | '/profile-preview'
+    | '/reset-password'
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/offline-sync-preview'
     | '/passport-preview'
     | '/profile-preview'
+    | '/reset-password'
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/offline-sync-preview'
     | '/passport-preview'
     | '/profile-preview'
+    | '/reset-password'
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
@@ -401,6 +413,7 @@ export interface RootRouteChildren {
   OfflineSyncPreviewRoute: typeof OfflineSyncPreviewRoute
   PassportPreviewRoute: typeof PassportPreviewRoute
   ProfilePreviewRoute: typeof ProfilePreviewRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SavedPreviewRoute: typeof SavedPreviewRoute
   SettingsPreviewRoute: typeof SettingsPreviewRoute
   ShareCardPreviewRoute: typeof ShareCardPreviewRoute
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/profile-preview'
       fullPath: '/profile-preview'
       preLoaderRoute: typeof ProfilePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/saved-preview': {
@@ -667,6 +687,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfflineSyncPreviewRoute: OfflineSyncPreviewRoute,
   PassportPreviewRoute: PassportPreviewRoute,
   ProfilePreviewRoute: ProfilePreviewRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SavedPreviewRoute: SavedPreviewRoute,
   SettingsPreviewRoute: SettingsPreviewRoute,
   ShareCardPreviewRoute: ShareCardPreviewRoute,
