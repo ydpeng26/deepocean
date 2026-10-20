@@ -121,11 +121,20 @@ try {
   const posts = await poll(() => req(`/rest/v1/forum_posts?user_id=eq.${a.id}&select=*`, { token: a.token }), p => p.length === 1, 'Browser post create not persisted');
   const post = posts[0];
   pass('browser_forum_post_create_persisted');
-  const card = page.locator('article').filter({ has: page.getByRole('heading', { name: marker, exact: true }) });
+  // Use the stable persisted post ID rather than a nested accessible heading.
+  const feedCheck = await response('/rest/v1/forum_posts?select=id,forum_likes(user_id),forum_comments(id)&id=eq.' + post.id, { token: a.token });
+  if (!feedCheck.ok) {
+    const error = await feedCheck.json();
+    console.log('Safe forum relationship diagnostic HTTP ' + feedCheck.status + ', code=' + (/^[A-Z0-9_]+$/.test(error.code || '') ? error.code : 'unknown'));
+    throw new Error('Forum feed relationship query failed');
+  }
+  const card = page.locator('#post-' + post.id);
+  console.log('Safe forum UI diagnostic: load-error=' + await page.getByText('论坛暂时无法加载，请稍后重试。', { exact: true }).count());
   stage = 'forum_bookmark_toggle';
   await card.getByRole('button', { name: '收藏', exact: true }).click();
   const bookmarks = () => req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&select=*`, { token: a.token });
   await poll(bookmarks, r => r.length === 1, 'Bookmark not persisted');
+  await poll(() => card.getByRole('button', { name: '收藏', exact: true }).getAttribute('data-active'), v => v === 'true', 'Bookmark UI state not updated');
   check((await req(`/rest/v1/forum_bookmarks?post_id=eq.${post.id}&select=*`, { token: b.token })).length === 0, 'Other user sees private bookmark');
   await card.getByRole('button', { name: '收藏', exact: true }).click();
   await poll(bookmarks, r => r.length === 0, 'Bookmark removal not persisted');
