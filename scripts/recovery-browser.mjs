@@ -107,10 +107,15 @@ try {
   await context.close();
 
   // Test the real confirmation UI with a server-generated signup token, without mail.
+  for (const orphan of users.filter(u => /^confirm-[a-f0-9]{24}@example\.invalid$/.test(u.email || ''))) {
+    await request('/auth/v1/admin/users/' + orphan.id, { method: 'DELETE', adminRequest: true });
+  }
   const signupEmail = `confirm-${randomBytes(12).toString('hex')}@example.invalid`;
   const generated = await request('/auth/v1/admin/generate_link', { adminRequest: true, method: 'POST',
     body: { type: 'signup', email: signupEmail, password: randomBytes(32).toString('base64url') } });
-  created.push(generated.user.id);
+  const confirmationId = generated.user?.id || generated.id;
+  check(confirmationId, 'Generated signup response did not include a user ID');
+  created.push(confirmationId);
   ({ context, violations } = await newContext());
   page = await context.newPage();
   await page.goto(site + '/auth-confirmed?token_hash=' + encodeURIComponent(generated.hashed_token), { waitUntil: 'networkidle', timeout: 90000 });
