@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { passwordRecoveryEnabled } from "@/lib/password-recovery";
+import { isRecoveryTestProject, passwordRecoveryEnabled } from "@/lib/password-recovery";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 export const Route = createFileRoute("/reset-password")({
@@ -100,7 +100,9 @@ function ResetPassword() {
       <div className="do-auth-overlay" aria-hidden="true" />
       <main className="do-auth-main">
         <section className="do-auth-panel" aria-live="polite">
-          <p className="do-auth-kicker">SUPDIVER · RECOVERY TEST</p>
+          <p className="do-auth-kicker">
+            {isRecoveryTestProject ? "SUPDIVER · RECOVERY TEST" : "SUPDIVER"}
+          </p>
           <h1>{zh ? "设置新密码" : "Set a new password"}</h1>
           {state === "checking" && <p>{zh ? "正在验证链接…" : "Checking link…"}</p>}
           {state === "invalid" && (
@@ -120,9 +122,13 @@ function ResetPassword() {
           {state === "ready" && (
             <form className="do-auth-form" onSubmit={submit}>
               <p>
-                {zh
-                  ? "仅修改恢复测试站的密码，不影响正式网站。"
-                  : "Changes only the recovery test account, not production."}
+                {isRecoveryTestProject
+                  ? zh
+                    ? "仅修改恢复测试站的密码，不影响正式网站。"
+                    : "Changes only the recovery test account, not production."
+                  : zh
+                    ? "为你的 SupDiver 账号设置新密码，完成后请重新登录。"
+                    : "Set a new password for your SupDiver account, then sign in again."}
               </p>
               <label htmlFor="new-password">{zh ? "新密码" : "New password"}</label>
               <input

@@ -1,3 +1,5 @@
-// Staged rollout: production stays unchanged until the recovery drill passes.
+// Explicit project allowlist: never enable recovery for an arbitrary backend.
+const backend = import.meta.env.VITE_SUPABASE_URL;
+export const isRecoveryTestProject = backend === "https://esovqvampbrhuhamkfcs.supabase.co";
 export const passwordRecoveryEnabled =
-  import.meta.env.VITE_SUPABASE_URL === "https://esovqvampbrhuhamkfcs.supabase.co";
+  isRecoveryTestProject || backend === "https://zmhtlhpeulhhcvlnjdrb.supabase.co";
