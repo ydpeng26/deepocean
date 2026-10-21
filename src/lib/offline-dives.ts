@@ -58,7 +58,8 @@ function openDatabase(): Promise<IDBDatabase> {
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("无法打开离线存储"));
-    request.onblocked = () => reject(new Error("离线存储正在被其他页面使用，请关闭其他标签页后重试"));
+    request.onblocked = () =>
+      reject(new Error("离线存储正在被其他页面使用，请关闭其他标签页后重试"));
   });
 }
 
@@ -71,11 +72,22 @@ async function withStore<T>(
     let result: T;
     const transaction = db.transaction(STORE_NAME, mode);
     const request = operation(transaction.objectStore(STORE_NAME));
-    request.onsuccess = () => { result = request.result; };
+    request.onsuccess = () => {
+      result = request.result;
+    };
     request.onerror = () => transaction.abort();
-    transaction.oncomplete = () => { db.close(); resolve(result); };
-    transaction.onerror = () => { db.close(); reject(transaction.error ?? request.error ?? new Error("本机保存失败")); };
-    transaction.onabort = () => { db.close(); reject(transaction.error ?? request.error ?? new Error("本机保存失败")); };
+    transaction.oncomplete = () => {
+      db.close();
+      resolve(result);
+    };
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error ?? request.error ?? new Error("本机保存失败"));
+    };
+    transaction.onabort = () => {
+      db.close();
+      reject(transaction.error ?? request.error ?? new Error("本机保存失败"));
+    };
   });
 }
 
@@ -84,7 +96,10 @@ export async function listOfflineDives(): Promise<OfflineDive[]> {
   return drafts.sort((a, b) => b.saved_at.localeCompare(a.saved_at));
 }
 
-export async function saveOfflineDive(fields: OfflineDiveFields, existingId?: string): Promise<OfflineDive> {
+export async function saveOfflineDive(
+  fields: OfflineDiveFields,
+  existingId?: string,
+): Promise<OfflineDive> {
   const draft: OfflineDive = {
     ...fields,
     country: fields.country.trim().slice(0, 80),
@@ -107,14 +122,37 @@ function optionalNumber(value: string): number | null {
   return value.trim() === "" ? null : Number(value);
 }
 
-export async function syncOfflineDives(onProgress?: (done: number, total: number) => void) {
+type SyncOptions = { selectedIds?: string[]; expectedUserId?: string };
+let syncInProgress = false;
+
+export async function syncOfflineDives(
+  onProgress?: (done: number, total: number) => void,
+  options: SyncOptions = {},
+) {
+  if (syncInProgress) throw new Error("已有同步任务正在进行，请等待完成");
+  syncInProgress = true;
+  try {
+    return await performSync(onProgress, options);
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+async function performSync(
+  onProgress: ((done: number, total: number) => void) | undefined,
+  options: SyncOptions,
+) {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     throw new Error("当前没有网络连接，请联网后再同步");
   }
   const { data, error: authError } = await supabase.auth.getUser();
   if (authError || !data.user) throw new Error("请先登录账号再同步离线记录");
   const userId = data.user.id;
-  const drafts = await listOfflineDives();
+  if (options.expectedUserId && options.expectedUserId !== userId) {
+    throw new Error("登录账号已变化，请重新确认同步账号");
+  }
+  const selected = options.selectedIds ? new Set(options.selectedIds) : null;
+  const drafts = (await listOfflineDives()).filter((draft) => !selected || selected.has(draft.id));
   let synced = 0;
   const failures: string[] = [];
 
@@ -149,7 +187,9 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
       }
       const { data: existing, error: lookupError } = await supabase
         .from("dives")
-        .select("id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes")
+        .select(
+          "id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
+        )
         .eq("id", draft.id)
         .eq("user_id", userId)
         .maybeSingle();
@@ -159,17 +199,33 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
         continue;
       }
       const comparableFields = [
-        "country", "region", "site_name", "dive_date", "weather", "surface_temp", "water_temp",
-        "max_depth", "duration_min", "dive_type", "buddy_role", "buddy_name", "notes",
+        "country",
+        "region",
+        "site_name",
+        "dive_date",
+        "weather",
+        "surface_temp",
+        "water_temp",
+        "max_depth",
+        "duration_min",
+        "dive_type",
+        "buddy_role",
+        "buddy_name",
+        "notes",
       ] as const;
-      if (comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))) {
+      if (
+        comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))
+      ) {
         failures.push(`${draft.site_name}: 云端已有不同内容的记录，请先核对；本机草稿仍保留`);
         onProgress?.(synced, drafts.length);
         continue;
       }
     }
     try {
-      await deleteOfflineDive(draft.id);
+      if (!(await deleteSyncedDraft(draft))) {
+        failures.push(`${draft.site_name}: 同步期间本机内容已修改，请核对云端记录；新草稿仍保留`);
+        continue;
+      }
       synced += 1;
     } catch {
       // Keep the draft if local cleanup fails. Its stable id makes retry safe.
@@ -178,4 +234,30 @@ export async function syncOfflineDives(onProgress?: (done: number, total: number
     onProgress?.(synced, drafts.length);
   }
   return { synced, total: drafts.length, failures };
+}
+
+// Another tab may edit a draft while the upload is in flight. Only remove the
+// exact version that was sent; an updated local entry must never be discarded.
+async function deleteSyncedDraft(draft: OfflineDive): Promise<boolean> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    let removed = false;
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const read = store.get(draft.id);
+    read.onsuccess = () => {
+      if (JSON.stringify(read.result) === JSON.stringify(draft)) {
+        store.delete(draft.id);
+        removed = true;
+      }
+    };
+    tx.oncomplete = () => {
+      db.close();
+      resolve(removed);
+    };
+    tx.onabort = tx.onerror = () => {
+      db.close();
+      reject(tx.error ?? new Error("本机状态未更新"));
+    };
+  });
 }

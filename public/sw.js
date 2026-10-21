@@ -12,6 +12,7 @@ self.addEventListener("install", (event) => {
     await cache.addAll([
       "/auth",
       OFFLINE_URL,
+      "/offline-sync",
       "/images/user-cave-photo-hero-preview.jpg",
       "/images/supdiver-wave-mark.svg",
       ...assets,
@@ -38,7 +39,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
       try {
         const response = await fetch(request);
-        if (response.ok && (url.pathname === "/auth" || url.pathname === OFFLINE_URL)) {
+        if (response.ok && ["/auth", OFFLINE_URL, "/offline-sync"].includes(url.pathname)) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put(url.pathname, response.clone());
         }
