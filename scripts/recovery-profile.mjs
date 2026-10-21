@@ -80,7 +80,7 @@ try {
   pass('read_failure_blocks_blank_editor_and_reload_restores_actual_profile');
   await name.fill(edited); await bio.fill('Edited synthetic bio ' + suffix);
   await cert.selectOption('AOW 进阶开放水域'); await tanks.fill('15');
-  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9S8AAAAASUVORK5CYII=', 'base64');
   await page.locator('input[type=file]').setInputFiles({ name: 'synthetic.png', mimeType: 'image/png', buffer: png });
   await page.getByRole('button', { name: '上传中…', exact: true }).waitFor();
   check(!await name.isEnabled() && !await save.isEnabled(), 'Avatar upload did not lock editor');
