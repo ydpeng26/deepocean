@@ -10,7 +10,7 @@ const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const source = await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8');
 const anon = source.match(/const anon = '([^']+)'/)[1];
 const users = [], results = [];
-let browser, stage = 'preflight', cleaned = true;
+let browser, page, stage = 'preflight', cleaned = true;
 function check(value, message) { if (!value) throw new Error(message); }
 function record(name, passed) {
   results.push({ name, passed });
@@ -58,7 +58,7 @@ try {
     return route.continue();
   });
   await context.addInitScript(() => localStorage.setItem('deepocean-language', 'zh-CN'));
-  const page = await context.newPage();
+  page = await context.newPage();
   async function login(user) {
     await page.getByLabel('邮箱', { exact: true }).fill(user.email);
     await page.getByLabel('密码', { exact: true }).fill(user.password);
@@ -69,6 +69,7 @@ try {
   stage = 'first account browser login';
   await page.goto(site + '/auth', { waitUntil: 'networkidle', timeout: 90000 });
   await login(users[0]);
+  stage = 'first account log render';
   await page.getByText(users[0].siteName, { exact: true }).waitFor({ state: 'visible' });
   record('account_A_profile_and_log_rendered', (await page.locator('.do-member-header').innerText()).includes(users[0].name));
   // Preserve this exact document and router cache across logout/login.
@@ -106,6 +107,20 @@ try {
   record('recovery_token_removed_from_address', !page.url().includes('token_hash'));
 } catch (error) {
   console.error(`Test incomplete at ${stage}; details suppressed (${error.constructor.name}).`);
+  if (page) {
+    try {
+      const body = await page.locator('body').innerText({ timeout: 5000 });
+      console.log('Safe UI diagnostic: ' + JSON.stringify({
+        path: new URL(page.url()).pathname,
+        signinVisible: await page.getByRole('button', { name: '登录', exact: true }).isVisible(),
+        memberHeader: await page.locator('.do-member-header').count(),
+        accountAVisible: Boolean(users[0] && body.includes(users[0].name)),
+        logAVisible: Boolean(users[0] && body.includes(users[0].siteName)),
+        loadingVisible: /载入|加载/.test(body),
+        errorVisible: /失败|出了点问题|Something went wrong|didn't load/.test(body),
+      }));
+    } catch { console.log('Safe UI diagnostic unavailable.'); }
+  }
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
