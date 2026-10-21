@@ -4,11 +4,10 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
@@ -134,11 +133,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const [accountRevision, setAccountRevision] = useState(0);
-  const isAuthPage = useRouterState({
-    select: (state) =>
-      ["/auth", "/auth-confirmed", "/reset-password"].includes(state.location.pathname),
-  });
 
   useEffect(() => {
     let accountId: string | null | undefined;
@@ -149,10 +143,10 @@ function RootComponent() {
       accountId = nextAccountId;
       if (previousAccountId === undefined) return;
       // Shared query keys must never carry private data into another session.
-      // clear() also cancels pending queries; remounting drops local form state.
+      // clear() also cancels pending queries. The authenticated layout scopes
+      // local component state by user ID without remounting one-use auth flows.
       // Keep this callback synchronous: Auth calls here can deadlock the client.
       queryClient.clear();
-      setAccountRevision((revision) => revision + 1);
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient]);
@@ -169,10 +163,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {/* Auth pages must retain one-use token state during verification. */}
-      <Fragment key={isAuthPage ? "auth" : accountRevision}>
-        <Outlet />
-      </Fragment>
+      <Outlet />
       <Toaster />
     </QueryClientProvider>
   );
