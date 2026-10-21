@@ -79,11 +79,27 @@ try {
   await page.waitForURL('**/auth', { timeout: 30000 });
   record('logout_returns_to_signin', await page.getByRole('button', { name: '登录', exact: true }).isVisible());
   stage = 'second account browser login';
+  // SPA navigation can retain the document's earlier networkidle state. Observe
+  // stale content throughout the transition and await B's actual rendered data.
+  await page.evaluate(({ name, siteName }) => {
+    window.__pcOldAccountVisible = false;
+    new MutationObserver(() => {
+      if (location.pathname !== '/dives') return;
+      const text = document.body.innerText;
+      if (text.includes(name) || text.includes(siteName)) window.__pcOldAccountVisible = true;
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }, { name: users[0].name, siteName: users[0].siteName });
   await login(users[1]);
   record('same_document_preserved_for_cache_test', documentId === await page.evaluate(() => performance.timeOrigin));
+  const transition = await page.locator('body').innerText();
+  record('old_account_not_visible_while_B_loads', !transition.includes(users[0].name) && !transition.includes(users[0].siteName));
+  stage = 'second account data render';
+  await page.getByText(users[1].siteName, { exact: true }).waitFor({ state: 'visible' });
+  await page.locator('.do-member-header').getByText(users[1].name, { exact: true }).waitFor({ state: 'visible' });
   const view = await page.locator('body').innerText();
   record('account_B_profile_replaces_A', view.includes(users[1].name) && !view.includes(users[0].name));
   record('account_B_log_replaces_A', view.includes(users[1].siteName) && !view.includes(users[0].siteName));
+  record('no_old_account_flash_during_B_transition', !(await page.evaluate(() => window.__pcOldAccountVisible)));
   stage = 'independent API isolation';
   const session = await req('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: users[1].email, password: users[1].password } });
   const rows = await req('/rest/v1/dives?select=user_id,site_name', { token: session.access_token });
