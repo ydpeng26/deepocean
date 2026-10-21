@@ -7,7 +7,7 @@ const site = 'https://supdiver-recovery-test.vercel.app';
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const source = await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8');
 const anon = source.match(/const anon = '([^']+)'/)[1];
-let browser, user, stage = 'preflight', cleaned = false;
+let browser, page, user, stage = 'preflight', cleaned = false;
 const results = [], paths = new Set();
 function check(ok, message) { if (!ok) throw Error(message); }
 function pass(name) { results.push(name); stage = name; console.log('PASS: ' + name); }
@@ -56,7 +56,7 @@ try {
     }
     return route.continue();
   });
-  const page = await context.newPage();
+  page = await context.newPage();
   async function login() {
     await page.goto(site + '/auth', { waitUntil: 'networkidle', timeout: 90000 });
     await page.getByLabel('邮箱', { exact: true }).fill(email);
@@ -78,12 +78,17 @@ try {
   const save = page.getByRole('button', { name: '保存个人资料', exact: true });
   await poll(() => name.inputValue(), value => value === original);
   pass('read_failure_blocks_blank_editor_and_reload_restores_actual_profile');
-  await name.fill(edited); await bio.fill('Edited synthetic bio ' + suffix);
-  await cert.selectOption('AOW 进阶开放水域'); await tanks.fill('15');
+  stage = 'edit name'; await name.fill(edited);
+  stage = 'edit bio'; await bio.fill('Edited synthetic bio ' + suffix);
+  stage = 'edit certification'; await cert.selectOption('AOW 进阶开放水域');
+  stage = 'edit tank count'; await tanks.fill('15');
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9S8AAAAASUVORK5CYII=', 'base64');
+  stage = 'select avatar';
   await page.locator('input[type=file]').setInputFiles({ name: 'synthetic.png', mimeType: 'image/png', buffer: png });
+  stage = 'avatar pending state';
   await page.getByRole('button', { name: '上传中…', exact: true }).waitFor();
   check(!await name.isEnabled() && !await save.isEnabled(), 'Avatar upload did not lock editor');
+  stage = 'avatar success notice';
   await page.getByText('头像已更新', { exact: true }).waitFor();
   check(await name.inputValue() === edited && await bio.inputValue() === 'Edited synthetic bio ' + suffix
     && await cert.inputValue() === 'AOW 进阶开放水域' && await tanks.inputValue() === '15', 'Avatar upload lost edits');
@@ -131,6 +136,10 @@ try {
   pass('signout_and_fresh_signin_preserve_saved_fields_and_real_avatar');
 } catch (error) {
   console.error(`Profile test incomplete after ${stage} (${error.constructor.name}); details suppressed.`);
+  if (page) console.log('Safe avatar diagnostic: decode-error=' + await page.getByText('无法处理该图片，请选择 JPG、PNG 或 WebP 格式', { exact: true }).count()
+    + ', upload-failure=' + await page.getByText('头像上传失败', { exact: true }).count()
+    + ', success-notice=' + await page.getByText('头像已更新', { exact: true }).count()
+    + ', profile-avatar-stored=' + Boolean((await profile())?.avatar_url));
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
