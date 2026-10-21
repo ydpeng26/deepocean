@@ -4,15 +4,17 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +134,28 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [accountRevision, setAccountRevision] = useState(0);
+  const isAuthPage = useRouterState({
+    select: (state) =>
+      ["/auth", "/auth-confirmed", "/reset-password"].includes(state.location.pathname),
+  });
+
+  useEffect(() => {
+    let accountId: string | null | undefined;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextAccountId = session?.user.id ?? null;
+      if (nextAccountId === accountId) return;
+      const previousAccountId = accountId;
+      accountId = nextAccountId;
+      if (previousAccountId === undefined) return;
+      // Shared query keys must never carry private data into another session.
+      // clear() also cancels pending queries; remounting drops local form state.
+      // Keep this callback synchronous: Auth calls here can deadlock the client.
+      queryClient.clear();
+      setAccountRevision((revision) => revision + 1);
+    });
+    return () => data.subscription.unsubscribe();
+  }, [queryClient]);
 
   useEffect(() => {
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
@@ -145,7 +169,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      {/* Auth pages must retain one-use token state during verification. */}
+      <Fragment key={isAuthPage ? "auth" : accountRevision}>
+        <Outlet />
+      </Fragment>
       <Toaster />
     </QueryClientProvider>
   );

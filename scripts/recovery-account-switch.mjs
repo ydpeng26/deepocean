@@ -92,6 +92,18 @@ try {
   await page.getByText(users[1].siteName, { exact: true }).waitFor({ state: 'visible' });
   const refreshed = await page.locator('body').innerText();
   record('full_reload_shows_B_without_A', refreshed.includes(users[1].name) && !refreshed.includes(users[0].name) && !refreshed.includes(users[0].siteName));
+  stage = 'reset-link verification regression';
+  // Generate a link without sending mail or changing a password. Verify that
+  // session changes do not remount this page after it consumes its one-use token.
+  await page.locator('.do-member-header').getByRole('button', { name: '退出', exact: true }).click();
+  await page.waitForURL('**/auth');
+  const recovery = await req('/auth/v1/admin/generate_link', { method: 'POST', privileged: true,
+    body: { type: 'recovery', email: users[1].email } });
+  check(recovery.hashed_token, 'Synthetic recovery token unavailable');
+  await page.goto(site + '/reset-password?token_hash=' + encodeURIComponent(recovery.hashed_token), { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: '保存新密码', exact: true }).waitFor({ state: 'visible' });
+  record('recovery_link_unlocks_form_without_password_change_or_email', true);
+  record('recovery_token_removed_from_address', !page.url().includes('token_hash'));
 } catch (error) {
   console.error(`Test incomplete at ${stage}; details suppressed (${error.constructor.name}).`);
   process.exitCode = 1;
