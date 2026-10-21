@@ -48,23 +48,52 @@ export async function getMyProfile(): Promise<Profile | null> {
       tank_count: 0,
       bio: null,
     };
-    await supabase.from("profiles").insert(fallback);
-    return fallback;
+    const { data: created, error: createError } = await supabase
+      .from("profiles")
+      .insert(fallback)
+      .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+      .single();
+    if (createError) {
+      // Another simultaneous profile query may already have created the row.
+      if (createError.code !== "23505") throw createError;
+      const { data: existing, error: readError } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+        .eq("id", user.id)
+        .single();
+      if (readError) throw readError;
+      return existing as Profile;
+    }
+    return created as Profile;
   }
   return data as Profile;
 }
 
-export async function updateMyProfile(input: {
+export type ProfileUpdate = {
   display_name: string;
   cert_level: string | null;
   tank_count: number;
   bio: string | null;
-}) {
+};
+
+export async function updateMyProfile(
+  input: ProfileUpdate,
+  expectedUserId?: string,
+): Promise<Profile> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
-  const { error } = await supabase.from("profiles").update(input).eq("id", user.id);
+  if (expectedUserId && user.id !== expectedUserId)
+    throw new Error("登录账号已变化，请重新载入资料");
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(input)
+    .eq("id", user.id)
+    .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+    .single();
   if (error) throw error;
+  if (!data) throw new Error("未确认资料保存，请重试");
+  return data as Profile;
 }
 
 export async function getPublicProfile(id: string): Promise<PublicProfile | null> {
@@ -75,10 +104,12 @@ export async function getPublicProfile(id: string): Promise<PublicProfile | null
   return data?.[0] ?? null;
 }
 
-export async function uploadAvatar(file: File): Promise<string> {
+export async function uploadAvatar(file: File, expectedUserId?: string): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
+  if (expectedUserId && user.id !== expectedUserId)
+    throw new Error("登录账号已变化，请重新载入资料");
   const webImage = await prepareWebImage(file, { maxEdge: 640, quality: 0.84 });
   const path = `${user.id}/${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, webImage, {
@@ -90,7 +121,9 @@ export async function uploadAvatar(file: File): Promise<string> {
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ avatar_url: path })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("id")
+    .single();
   if (updateError) throw updateError;
   return path;
 }
@@ -118,10 +151,13 @@ export async function signedAvatarUrl(path: string | null): Promise<string | nul
   const url = data?.signedUrl ?? null;
   if (url && typeof window !== "undefined") {
     try {
-      window.localStorage.setItem(cacheKey, JSON.stringify({
-        url,
-        expiresAt: Date.now() + (lifetimeSeconds - 60 * 60) * 1000,
-      }));
+      window.localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          url,
+          expiresAt: Date.now() + (lifetimeSeconds - 60 * 60) * 1000,
+        }),
+      );
     } catch {
       // Private browsing and strict storage settings may disable local storage.
     }

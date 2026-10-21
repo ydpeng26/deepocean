@@ -24,6 +24,7 @@ import {
   updateMyProfile,
   uploadAvatar,
   type Profile,
+  type ProfileUpdate,
 } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -70,6 +71,8 @@ const copy = {
     complete: "资料完整度",
     identityComplete: "你的潜水员身份已准备就绪",
     load: "正在载入你的资料…",
+    loadError: "暂时无法读取个人资料，请重新加载后再编辑。",
+    retry: "重新加载",
     avatarHint: "支持常见图片格式，建议使用清晰的正方形头像。",
   },
   en: {
@@ -106,6 +109,8 @@ const copy = {
     complete: "Profile complete",
     identityComplete: "Your diver identity is ready",
     load: "Loading your profile…",
+    loadError: "Your profile couldn't be loaded. Please reload before editing.",
+    retry: "Reload profile",
     avatarHint: "Common image formats are supported. A clear square photo works best.",
   },
 } as const;
@@ -116,7 +121,7 @@ function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { language, toggleLanguage } = useLanguage();
   const c = copy[language];
-  const { profile, avatarUrl, isPending } = useProfile();
+  const { profile, avatarUrl, isPending, isError, refetch } = useProfile();
   const { data: dives = [] } = useQuery({ queryKey: ["dives"], queryFn: listDives });
   const [name, setName] = useState("");
   const [cert, setCert] = useState("");
@@ -125,16 +130,22 @@ function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarPreviewRef = useRef<string | null>(null);
-
-  useEffect(
-    () => () => {
-      if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
-    },
-    [],
-  );
+  const initializedAccount = useRef<string | null>(null);
+  const operationRef = useRef<"save" | "upload" | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (profile) {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Avatar/cache refreshes must never reset unsaved text in this editor.
+    if (profile && initializedAccount.current !== profile.id) {
+      initializedAccount.current = profile.id;
       setName(profile.display_name ?? "");
       setCert(profile.cert_level ?? "");
       setTanks(String(profile.tank_count ?? 0));
@@ -142,40 +153,53 @@ function ProfilePage() {
     }
   }, [profile]);
   const save = useMutation({
-    mutationFn: () =>
-      updateMyProfile({
-        display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
-        cert_level: cert || null,
-        tank_count: Math.max(0, Number(tanks) || 0),
-        bio: bio.trim().slice(0, 300) || null,
-      }),
-    onSuccess: () => {
-      queryClient.setQueryData(["profile"], profile ? {
-        ...profile,
-        display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
-        cert_level: cert || null,
-        tank_count: Math.max(0, Number(tanks) || 0),
-        bio: bio.trim().slice(0, 300) || null,
-      } : profile);
-      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+    mutationFn: ({ values, accountId }: { values: ProfileUpdate; accountId: string }) =>
+      updateMyProfile(values, accountId),
+    onSuccess: (confirmed: Profile) => {
+      if (!mountedRef.current) return;
+      // Only the database-confirmed values may be labelled as saved.
+      queryClient.setQueryData(["profile"], confirmed);
+      setName(confirmed.display_name ?? "");
+      setCert(confirmed.cert_level ?? "");
+      setTanks(String(confirmed.tank_count));
+      setBio(confirmed.bio ?? "");
+      void queryClient.invalidateQueries({ queryKey: ["public-profile", confirmed.id] });
       setSaved(true);
       toast.success(language === "zh-CN" ? "个人资料已保存" : "Profile saved");
     },
-    onError: () =>
-      toast.error(language === "zh-CN" ? "保存失败，请重试" : "Couldn't save. Please try again."),
+    onError: () => {
+      if (mountedRef.current)
+        toast.error(
+          language === "zh-CN"
+            ? "保存失败，修改内容已保留，请重试"
+            : "Couldn't save. Your edits are kept; please try again.",
+        );
+    },
+    onSettled: () => {
+      operationRef.current = null;
+    },
   });
   const upload = useMutation({
-    mutationFn: (file: File) => uploadAvatar(file),
-    onSuccess: (path) => {
+    mutationFn: ({ file, accountId }: { file: File; accountId: string }) =>
+      uploadAvatar(file, accountId),
+    onSuccess: (path, { accountId }) => {
+      if (!mountedRef.current) return;
       queryClient.setQueryData<Profile | null>(["profile"], (current) =>
         current ? { ...current, avatar_url: path } : current,
       );
       void signedAvatarUrl(path)
-        .then((signedUrl) => queryClient.setQueryData(["avatar-url", path], signedUrl))
-        .catch(() => queryClient.invalidateQueries({ queryKey: ["avatar-url", path] }));
+        .then((signedUrl) => {
+          if (mountedRef.current) queryClient.setQueryData(["avatar-url", path], signedUrl);
+        })
+        .catch(() => {
+          if (mountedRef.current)
+            void queryClient.invalidateQueries({ queryKey: ["avatar-url", path] });
+        });
+      void queryClient.invalidateQueries({ queryKey: ["public-profile", accountId] });
       toast.success(language === "zh-CN" ? "头像已更新" : "Photo updated");
     },
     onError: (error) => {
+      if (!mountedRef.current) return;
       if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
       avatarPreviewRef.current = null;
       setAvatarPreview(null);
@@ -187,7 +211,11 @@ function ProfilePage() {
             : "Photo upload failed",
       );
     },
+    onSettled: () => {
+      operationRef.current = null;
+    },
   });
+  const busy = save.isPending || upload.isPending;
   const displayedAvatar = avatarPreview ?? avatarUrl;
   const display = name.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const initials = display.slice(0, 1).toUpperCase();
@@ -196,11 +224,37 @@ function ProfilePage() {
     [dives],
   );
   const complete = Math.round(
-    ([name.trim(), cert, Number(tanks) > 0, displayedAvatar, bio.trim()].filter(Boolean).length / 5) * 100,
+    ([name.trim(), cert, Number(tanks) > 0, displayedAvatar, bio.trim()].filter(Boolean).length /
+      5) *
+      100,
   );
   function changed(setter: (value: string) => void, value: string) {
+    if (operationRef.current) return;
     setter(value);
     setSaved(false);
+  }
+  function saveProfile() {
+    if (operationRef.current || isPending || isError || !profile) return;
+    const count = Number(tanks);
+    if (!Number.isInteger(count) || count < 0 || count > 2147483647) {
+      toast.error(
+        language === "zh-CN"
+          ? "潜水瓶数请填写有效的非负整数"
+          : "Enter a valid non-negative whole number of tanks.",
+      );
+      return;
+    }
+    operationRef.current = "save";
+    setSaved(false);
+    save.mutate({
+      accountId: profile.id,
+      values: {
+        display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
+        cert_level: cert || null,
+        tank_count: count,
+        bio: bio.trim().slice(0, 300) || null,
+      },
+    });
   }
   async function signOut() {
     await supabase.auth.signOut();
@@ -217,8 +271,15 @@ function ProfilePage() {
         </section>
         {isPending ? (
           <div className="do-profile-loading">{c.load}</div>
+        ) : isError || !profile ? (
+          <div className="do-profile-loading" role="alert">
+            <p>{c.loadError}</p>
+            <button type="button" className="do-profile-save" onClick={() => void refetch()}>
+              {c.retry}
+            </button>
+          </div>
         ) : (
-          <div className="do-profile-layout">
+          <div className="do-profile-layout" aria-busy={busy}>
             <aside className="do-profile-identity-card">
               <div className="do-profile-avatar-wrap">
                 <Avatar className="do-profile-avatar">
@@ -228,7 +289,7 @@ function ProfilePage() {
                 <button
                   type="button"
                   aria-label={c.changeAvatar}
-                  disabled={upload.isPending}
+                  disabled={busy}
                   onClick={() => fileRef.current?.click()}
                 >
                   <Camera aria-hidden="true" />
@@ -239,14 +300,16 @@ function ProfilePage() {
                 type="file"
                 accept="image/*"
                 hidden
+                disabled={busy}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) {
+                  if (file && !operationRef.current && profile && !isError) {
+                    operationRef.current = "upload";
                     if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
                     const previewUrl = URL.createObjectURL(file);
                     avatarPreviewRef.current = previewUrl;
                     setAvatarPreview(previewUrl);
-                    upload.mutate(file);
+                    upload.mutate({ file, accountId: profile.id });
                   }
                   event.target.value = "";
                 }}
@@ -294,11 +357,7 @@ function ProfilePage() {
                   <strong>{c.changeAvatar}</strong>
                   <p>{c.avatarHint}</p>
                 </div>
-                <button
-                  type="button"
-                  disabled={upload.isPending}
-                  onClick={() => fileRef.current?.click()}
-                >
+                <button type="button" disabled={busy} onClick={() => fileRef.current?.click()}>
                   <Camera aria-hidden="true" />
                   {upload.isPending ? c.uploading : c.changeAvatar}
                 </button>
@@ -308,6 +367,7 @@ function ProfilePage() {
                   <span>{c.displayName}</span>
                   <input
                     value={name}
+                    disabled={busy}
                     maxLength={40}
                     onChange={(event) => changed(setName, event.target.value)}
                   />
@@ -316,6 +376,7 @@ function ProfilePage() {
                   <span>{c.bio}</span>
                   <textarea
                     value={bio}
+                    disabled={busy}
                     maxLength={300}
                     rows={4}
                     placeholder={c.bioPlaceholder}
@@ -334,7 +395,11 @@ function ProfilePage() {
               <div className="do-profile-fields">
                 <label>
                   <span>{c.cert}</span>
-                  <select value={cert} onChange={(event) => changed(setCert, event.target.value)}>
+                  <select
+                    disabled={busy}
+                    value={cert}
+                    onChange={(event) => changed(setCert, event.target.value)}
+                  >
                     <option value="">—</option>
                     {CERT_LEVELS.map((level) => (
                       <option key={level} value={level}>
@@ -348,6 +413,9 @@ function ProfilePage() {
                   <input
                     type="number"
                     min="0"
+                    max="2147483647"
+                    step="1"
+                    disabled={busy}
                     value={tanks}
                     onChange={(event) => changed(setTanks, event.target.value)}
                   />
@@ -365,8 +433,8 @@ function ProfilePage() {
                 <button
                   type="button"
                   className="do-profile-save"
-                  disabled={save.isPending}
-                  onClick={() => save.mutate()}
+                  disabled={busy}
+                  onClick={saveProfile}
                 >
                   {save.isPending ? (
                     <Waves aria-hidden="true" />

@@ -23,5 +23,7 @@ export function useProfile(enabled = true) {
     profile: profileQuery.data ?? null,
     avatarUrl: avatarQuery.data ?? null,
     isPending: profileQuery.isPending,
+    isError: profileQuery.isError,
+    refetch: profileQuery.refetch,
   };
 }
