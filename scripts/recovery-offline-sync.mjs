@@ -136,6 +136,20 @@ try {
   await page.getByText('同步完成：1 条记录已保存到账号。', { exact: true }).waitFor();
   check((await localDrafts()).length === 0 && (await cloudDrafts()).length === 2, 'Retry duplicated data');
   pass('retry_checks_existing_content_without_duplicate_or_data_loss');
+  await page.getByRole('link', { name: '新建离线记录', exact: true }).click();
+  await page.getByLabel('潜水国家', { exact: true }).fill('Indonesia');
+  await page.getByLabel('潜点名称', { exact: true }).fill('OFFLINE-C-' + suffix);
+  await page.getByRole('button', { name: '保存到此设备', exact: true }).click();
+  await page.getByText('OFFLINE-C-' + suffix, { exact: true }).waitFor();
+  await page.goto(site + '/dives', { waitUntil: 'networkidle' });
+  const banner = page.getByRole('complementary', { name: '离线记录待同步' });
+  await banner.waitFor({ state: 'visible' });
+  page.once('dialog', dialog => dialog.accept());
+  await banner.getByRole('button', { name: '同步到我的账号', exact: true }).click();
+  await banner.waitFor({ state: 'hidden' });
+  await waitCloud(3);
+  check((await localDrafts()).length === 0, 'Passport banner did not remove synced draft');
+  pass('existing_passport_banner_sync_remains_compatible_with_account_confirmation');
 } catch (error) {
   console.error(`Offline test incomplete after ${stage} (${error.constructor.name}); details suppressed.`);
   process.exitCode = 1;
