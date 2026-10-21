@@ -71,6 +71,7 @@ try {
   await login(users[0]);
   stage = 'first account log render';
   await page.getByText(users[0].siteName, { exact: true }).waitFor({ state: 'visible' });
+  await page.locator('.do-member-header').getByText(users[0].name, { exact: true }).waitFor({ state: 'visible' });
   record('account_A_profile_and_log_rendered', (await page.locator('.do-member-header').innerText()).includes(users[0].name));
   // Preserve this exact document and router cache across logout/login.
   const documentId = await page.evaluate(() => performance.timeOrigin);
