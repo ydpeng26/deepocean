@@ -72,7 +72,7 @@ try {
   failRead = false;
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
   const name = page.getByLabel('显示名称', { exact: true });
-  const bio = page.getByLabel('个人简介', { exact: true });
+  const bio = page.getByLabel(/^个人简介/);
   const cert = page.getByLabel('当前最高证书', { exact: true });
   const tanks = page.getByLabel('累计潜水瓶数', { exact: true });
   const save = page.getByRole('button', { name: '保存个人资料', exact: true });
@@ -113,8 +113,8 @@ try {
   await poll(() => name.inputValue(), value => value === edited);
   check(await bio.inputValue() === confirmed.bio && await cert.inputValue() === confirmed.cert_level && await tanks.inputValue() === '15', 'Reload lost confirmed data');
   await page.goto(site + '/dives', { waitUntil: 'networkidle' });
-  await page.locator('#passport-identity-title').getByText(edited, { exact: true }).waitFor();
-  await page.locator('#passport-cert-title').getByText('AOW 进阶开放水域', { exact: true }).waitFor();
+  await page.locator('#passport-identity-title').filter({ hasText: edited }).waitFor();
+  await page.locator('#passport-cert-title').filter({ hasText: 'AOW 进阶开放水域' }).waitFor();
   await page.locator('.do-passport-identity-row').filter({ hasText: '现有瓶数' }).getByText('15', { exact: true }).waitFor();
   pass('reload_and_passport_show_the_saved_name_certification_and_tanks');
   await page.goto(site + '/divers/' + user.id, { waitUntil: 'networkidle' });
