@@ -73,7 +73,7 @@ try {
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
   const name = page.getByLabel('显示名称', { exact: true });
   const bio = page.getByLabel(/^个人简介/);
-  const cert = page.getByLabel('当前最高证书', { exact: true });
+  const cert = page.locator('.do-profile-fields select');
   const tanks = page.getByLabel('累计潜水瓶数', { exact: true });
   const save = page.getByRole('button', { name: '保存个人资料', exact: true });
   await poll(() => name.inputValue(), value => value === original);
