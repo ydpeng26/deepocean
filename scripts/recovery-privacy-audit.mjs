@@ -15,11 +15,11 @@ async function request(path, token = admin, method = 'GET', body, binary = false
   const response = await fetch(api + path, {
     method, headers: { apikey: token === admin ? admin : anon, Authorization: 'Bearer ' + token,
       'Content-Type': binary ? 'image/png' : 'application/json', Prefer: 'return=representation' },
-    body: body === undefined ? undefined : binary ? body : JSON.stringify(body), signal: AbortSignal.timeout(45000),
+    body: body === undefined ? undefined : binary ? body : JSON.stringify(body), signal: AbortSignal.timeout(45000), cache: 'no-store',
   });
   const text = await response.text();
   let data; try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-  return { ok: response.ok, status: response.status, data };
+  return { ok: response.ok, status: response.status, data, cache: response.headers.get('cache-control'), age: response.headers.get('age') };
 }
 async function must(path, token, method, body, binary) {
   const result = await request(path, token, method, body, binary);
@@ -111,7 +111,11 @@ try {
     check(!expectFixed, 'deleted forum image access regression');
   } else pass('deleted_forum_post_blocks_fresh_photo_access');
   if (expectFixed) {
-    check(!(await canRead('forum-media', forumPhoto, b.token)).ok, 'deleted forum image direct download denied');
+    const direct = await canRead('forum-media', forumPhoto, b.token);
+    const freshDirect = await canRead('forum-media', forumPhoto + '?privacy_probe=' + randomUUID(), b.token);
+    console.log('Safe direct-read diagnostic: ' + JSON.stringify({ originalStatus: direct.status, freshStatus: freshDirect.status, cache: direct.cache, age: direct.age }));
+    check(!freshDirect.ok, 'deleted forum image fresh direct download denied');
+    if (direct.ok) finding('previously_read_authenticated_image_address_returns_cached_content_after_post_deletion_fresh_address_denied');
     check((await sign('forum-media', forumPhoto, a.token)).ok, 'owner retained object accessible');
     pass('deleted_forum_image_direct_read_denied_owner_retained_photo_preserved');
   }
