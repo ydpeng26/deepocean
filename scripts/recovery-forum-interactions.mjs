@@ -149,12 +149,15 @@ try{
   pass('browser_block_hides_author_after_reload_and_block_list_is_private');
   const unblockControl=await page.getByRole('button',{name:/取消屏蔽|解除屏蔽|Unblock/i}).count();
   if(repaired){
+    stage='open blocked author management';
     await page.getByRole('button',{name:'管理已屏蔽用户',exact:true}).click();
     const panel=page.getByRole('region',{name:'屏蔽管理',exact:true});await panel.getByRole('button',{name:'解除屏蔽',exact:true}).waitFor();
-    await panel.getByText(marker+'-1',{exact:true}).waitFor();
+    stage='blocked author public name';
+    await panel.locator('li').filter({hasText:marker+'-1'}).getByRole('button',{name:'解除屏蔽',exact:true}).waitFor();
     let failUnblock=true;
     await context.route(api+'/rest/v1/forum_blocks*',route=>route.request().method()==='DELETE'&&failUnblock?route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic unblock failure"}'}):route.continue());
-    await panel.getByRole('button',{name:'解除屏蔽',exact:true}).click();await panel.getByRole('alert').waitFor();check((await privateRows('forum_blocks','blocker_id=eq.'+a.id+'&blocked_id=eq.'+b.id)).length===1,'Failed unblock removed row');
+    stage='rejected unblock';await panel.getByRole('button',{name:'解除屏蔽',exact:true}).click();await panel.getByRole('alert').waitFor();check((await privateRows('forum_blocks','blocker_id=eq.'+a.id+'&blocked_id=eq.'+b.id)).length===1,'Failed unblock removed row');
+    stage='unblock retry and reload';
     failUnblock=false;await panel.getByRole('button',{name:'解除屏蔽',exact:true}).click();await poll(()=>privateRows('forum_blocks','blocker_id=eq.'+a.id+'&blocked_id=eq.'+b.id),rows=>rows.length===0);await card().waitFor();
     await page.reload({waitUntil:'networkidle'});await card().waitFor();pass('unblock_failure_retry_restores_author_and_persists_after_reload');
   }else if(!unblockControl)finding('forum_has_no_visible_unblock_management_control');
