@@ -1,4 +1,4 @@
-name: Recovery PC forum volume diagnosis
+name: Recovery PC forum volume acceptance
 on:
   workflow_dispatch:
 permissions:
@@ -29,5 +29,6 @@ jobs:
       - name: Diagnose generated recovery-only forum volume and clean exact fixtures
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          FORUM_VOLUME_EXPECT_FIXED: 'true'
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/forum-browser/node_modules/playwright/index.mjs
         run: node scripts/recovery-forum-volume.mjs

@@ -7,6 +7,7 @@ const site = 'https://supdiver-recovery-test.vercel.app';
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const anon = (await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8')).match(/const anon = '([^']+)'/)[1];
 const users = [], findings = [];
+const repaired = process.env.FORUM_VOLUME_EXPECT_FIXED === 'true';
 let browser, stage = 'guard', failed = false, productionTraffic = false;
 const check = (ok, message) => { if (!ok) throw Error(message); };
 const pass = message => console.log('PASS: ' + message);
@@ -85,30 +86,74 @@ try {
   stage = 'feed completeness browser';
   await page.goto(site + '/forum', { waitUntil: 'networkidle', timeout: 90000 });
   const target = page.locator('#post-' + missingBookmark.id);
-  await target.waitFor();
-  check(await page.locator('#post-' + searchOld.id).count() === 0, 'Old sentinel beyond returned feed');
+  const search = page.getByPlaceholder('搜索潜点、海洋生物或用户', { exact: true });
+  if (repaired) {
+    await page.locator('.do-forum-post').first().waitFor();
+    check(await page.locator('.do-forum-post').count() === 40, 'Initial feed render is bounded');
+    await page.getByRole('button', { name: /^继续查看帖子/ }).click();
+    check(await page.locator('.do-forum-post').count() === 80, 'Feed next window');
+    pass('desktop_first_40_posts_and_explicit_next_40');
+  } else {
+    await target.waitFor();
+    check(await page.locator('#post-' + searchOld.id).count() === 0, 'Old sentinel beyond returned feed');
+  }
   const tail = await req('/rest/v1/forum_posts?id=eq.' + searchOld.id + '&select=id', { token: viewer.token });
   check(tail.data.length === 1, 'Old sentinel independently readable under same user RLS');
-  finding('real_1006_plus_posts_old_readable_post_missing_from_desktop_feed');
-  const search = page.getByPlaceholder('搜索潜点、海洋生物或用户', { exact: true });
+  if (!repaired) finding('real_1006_plus_posts_old_readable_post_missing_from_desktop_feed');
   await search.fill(searchOld.title);
-  check(await page.locator('.do-forum-post').count() === 0, 'Search missing old fixture');
-  finding('desktop_search_reports_no_post_for_existing_old_sentinel');
-  await search.fill('');
-  check(await target.getByRole('button', { name: '收藏', exact: true }).getAttribute('data-active') === 'false', 'Omitted bookmark renders unsaved');
+  if (repaired) {
+    await page.locator('#post-' + searchOld.id).waitFor();
+    pass('old_sentinel_beyond_first_1000_is_searchable');
+    await page.locator('.do-forum-feed-tabs').getByRole('button', { name: '关注', exact: true }).click();
+    await page.locator('#post-' + searchOld.id).waitFor();
+    pass('following_filter_includes_old_followed_author_post');
+    await page.locator('.do-forum-feed-tabs').getByRole('button', { name: '推荐', exact: true }).click();
+    await search.fill(missingBookmark.title);
+    await target.waitFor();
+  } else {
+    check(await page.locator('.do-forum-post').count() === 0, 'Search missing old fixture');
+    finding('desktop_search_reports_no_post_for_existing_old_sentinel');
+    await search.fill('');
+  }
+  check(await target.getByRole('button', { name: '收藏', exact: true }).getAttribute('data-active') === (repaired ? 'true' : 'false'), 'Bookmark completeness state');
   check((await req('/rest/v1/forum_bookmarks?user_id=eq.' + viewer.id + '&post_id=eq.' + missingBookmark.id + '&select=post_id', { token: viewer.token })).data.length === 1, 'Omitted bookmark exists owner scope');
-  finding('real_1006_bookmarks_existing_saved_post_renders_unsaved');
+  if (repaired) pass('saved_state_beyond_first_1000_private_rows_is_correct');
+  else finding('real_1006_bookmarks_existing_saved_post_renders_unsaved');
   stage = 'comment list completeness browser';
+  if (repaired) await search.fill(rows[1004].title);
   const commentCard = page.locator('#post-' + rows[1004].id);
   await commentCard.getByRole('button', { name: '阅读全文', exact: true }).click();
   await page.getByRole('dialog').waitFor();
   const commentResponse = await req('/rest/v1/forum_comments?post_id=eq.' + rows[1004].id + '&select=id&order=created_at', { token: viewer.token });
   check(commentResponse.count === 1005 && commentResponse.data.length === 1000, 'Actual comments cap confirmed');
   await page.getByRole('dialog').getByText(marker + '-COMMENT-0', { exact: true }).waitFor();
-  const rendered = await page.getByRole('dialog').getByText(new RegExp('^' + marker + '-COMMENT-')).count();
-  check(rendered === 1000, 'Rendered comment cap confirmed');
+  const renderedComments = () => page.getByRole('dialog').getByText(new RegExp('^' + marker + '-COMMENT-')).count();
+  check(await renderedComments() === (repaired ? 50 : 1000), 'Rendered comment window');
+  if (repaired) {
+    for (let expected = 100; expected <= 1050; expected += 50) {
+      await page.getByRole('dialog').getByRole('button', { name: /^继续查看回应/ }).click();
+      check(await renderedComments() === Math.min(expected, 1005), 'Next comments window complete');
+    }
+    check(await page.getByRole('dialog').getByRole('button', { name: /^继续查看回应/ }).count() === 0, 'No more control only at real end');
+  }
   check((await req('/rest/v1/forum_comments?post_id=eq.' + rows[1004].id + '&select=id&order=created_at&offset=1000', { token: viewer.token })).data.length === 5, 'Remaining five comments readable');
-  finding('real_1005_comments_only_first_1000_rendered_no_remaining_page');
+  if (repaired) {
+    pass('all_1005_comments_reachable_in_explicit_50_row_windows');
+    await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click();
+    stage = 'second page private read failure and recovery';
+    let rejectSecondPage = true;
+    const pattern = api + '/rest/v1/forum_bookmarks*';
+    await context.route(pattern, route => rejectSecondPage && new URL(route.request().url()).searchParams.get('offset') === '500'
+      ? route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic later-page failure"}' }) : route.continue());
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.getByText('论坛暂时无法加载，请稍后重试。', { exact: true }).waitFor({ timeout: 30000 });
+    check(await page.locator('.do-forum-post').count() === 0, 'No partial private state exposed');
+    rejectSecondPage = false;
+    await page.getByRole('button', { name: '重新加载论坛', exact: true }).click();
+    await page.locator('.do-forum-post').first().waitFor();
+    await context.unroute(pattern);
+    pass('second_page_bookmark_failure_hides_feed_and_explicit_retry_recovers');
+  } else finding('real_1005_comments_only_first_1000_rendered_no_remaining_page');
   check(!productionTraffic, 'Production traffic forbidden');
 } catch (error) {
   failed = true; console.error('INCOMPLETE: forum_volume stage=' + stage + ' type=' + error.constructor.name);

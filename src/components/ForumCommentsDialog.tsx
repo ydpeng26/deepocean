@@ -36,6 +36,9 @@ export function ForumCommentsDialog({
     [error, setError] = useState("");
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [commentWindow, setCommentWindow] = useState({ key: "", size: 50 });
+  const windowKey = `${ownerId}:${post.id}`;
+  const windowSize = commentWindow.key === windowKey ? commentWindow.size : 50;
   const t = (zh: string, en: string) => (language === "en" ? en : zh);
   const key = ["forum-comments", ownerId, post.id];
   const query = useQuery({
@@ -125,7 +128,7 @@ export function ForumCommentsDialog({
           ) : query.isPending ? (
             <p>{t("正在读取回应…", "Loading responses…")}</p>
           ) : query.data?.length ? (
-            query.data.map((comment) => (
+            query.data.slice(0, windowSize).map((comment) => (
               <article key={comment.id}>
                 <Avatar>
                   <AvatarImage src={comment.avatarUrl ?? undefined} alt={comment.author} />
@@ -236,6 +239,17 @@ export function ForumCommentsDialog({
             <p>{t("还没有回应。", "No responses yet.")}</p>
           )}
         </div>
+        {!query.isError && (query.data?.length ?? 0) > windowSize && (
+          <div className="do-forum-comment-actions">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setCommentWindow({ key: windowKey, size: windowSize + 50 })}
+            >
+              {t("继续查看回应", "Show more responses")} · {windowSize} / {query.data?.length}
+            </button>
+          </div>
+        )}
         {!preview && (
           <div className="do-forum-comment-form">
             <textarea

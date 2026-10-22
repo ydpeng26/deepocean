@@ -46,38 +46,102 @@ async function currentUserId(expectedId?: string) {
 async function signedUrls(bucket: string, paths: Array<string | null | undefined>) {
   const unique = Array.from(new Set(paths.filter(Boolean) as string[]));
   if (!unique.length) return new Map<string, string>();
-  const { data } = await supabase.storage.from(bucket).createSignedUrls(unique, 60 * 60);
+  const data = [];
+  for (let start = 0; start < unique.length; start += 100) {
+    const result = await supabase.storage
+      .from(bucket)
+      .createSignedUrls(unique.slice(start, start + 100), 60 * 60);
+    if (result.error) throw result.error;
+    data.push(...(result.data ?? []));
+  }
   return new Map(
     (data ?? []).flatMap((item) => (item.signedUrl ? [[item.path, item.signedUrl] as const] : [])),
   );
 }
 
+// A successful HTTP response may still contain only the server's first batch.
+// Never publish a partial private list (especially blocks) as complete state.
+async function completeForumRows(makeQuery: () => any, key: string, owner: string) {
+  const rows: any[] = [],
+    seen = new Set<string>();
+  let expected: number | null = null;
+  for (let offset = 0; ; offset += 500) {
+    await currentUserId(owner);
+    const { data, error, count } = await makeQuery()
+      .order(key)
+      .range(offset, offset + 499);
+    if (error) throw error;
+    await currentUserId(owner);
+    if (!Number.isSafeInteger(count) || count < 0 || (expected !== null && count !== expected))
+      throw new Error(
+        "论坛数据变化或超出安全读取范围，请重新加载 / Forum data changed or exceeds the safe read limit; reload.",
+      );
+    if (count > 20000)
+      throw new Error(
+        "论坛数据超出单次安全读取范围，请联系支持 / Forum data exceeds the safe read limit; contact support.",
+      );
+    expected = Number(count);
+    for (const row of data ?? []) {
+      if (!row[key] || seen.has(row[key]))
+        throw new Error("论坛数据未完整读取，请重新加载 / Incomplete forum data; reload.");
+      seen.add(row[key]);
+      rows.push(row);
+    }
+    if (rows.length === expected) return rows;
+    if ((data?.length ?? 0) < 500 || rows.length > expected)
+      throw new Error("论坛数据未完整读取，请重新加载 / Incomplete forum data; reload.");
+  }
+}
+
 export async function listForumPosts(): Promise<ForumPost[]> {
   const userId = await currentUserId();
-  const [postsResult, bookmarksResult, followsResult, blocksResult] = await Promise.all([
-    db
-      .from("forum_posts")
-      .select(
-        "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,forum_likes(user_id),forum_comments(id)",
-      )
-      .order("created_at", { ascending: false }),
-    db.from("forum_bookmarks").select("post_id").eq("user_id", userId),
-    db.from("forum_follows").select("following_id").eq("follower_id", userId),
-    db.from("forum_blocks").select("blocked_id").eq("blocker_id", userId),
+  const [rows, bookmarks, follows, blocks, likes] = await Promise.all([
+    completeForumRows(
+      () =>
+        db
+          .from("forum_posts")
+          .select(
+            "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,forum_likes(count),forum_comments(count)",
+            { count: "exact" },
+          ),
+      "id",
+      userId,
+    ),
+    completeForumRows(
+      () => db.from("forum_bookmarks").select("post_id", { count: "exact" }).eq("user_id", userId),
+      "post_id",
+      userId,
+    ),
+    completeForumRows(
+      () =>
+        db
+          .from("forum_follows")
+          .select("following_id", { count: "exact" })
+          .eq("follower_id", userId),
+      "following_id",
+      userId,
+    ),
+    completeForumRows(
+      () =>
+        db.from("forum_blocks").select("blocked_id", { count: "exact" }).eq("blocker_id", userId),
+      "blocked_id",
+      userId,
+    ),
+    completeForumRows(
+      () => db.from("forum_likes").select("post_id", { count: "exact" }).eq("user_id", userId),
+      "post_id",
+      userId,
+    ),
   ]);
-  for (const result of [postsResult, bookmarksResult, followsResult, blocksResult]) {
-    if (result.error) throw result.error;
-  }
   await currentUserId(userId);
-  const { data: rows } = postsResult;
-  const { data: bookmarks } = bookmarksResult;
-  const { data: follows } = followsResult;
-  const { data: blocks } = blocksResult;
 
   const blocked = new Set((blocks ?? []).map((row: any) => row.blocked_id));
   const saved = new Set((bookmarks ?? []).map((row: any) => row.post_id));
   const following = new Set((follows ?? []).map((row: any) => row.following_id));
-  const visible = (rows ?? []).filter((row: any) => !blocked.has(row.user_id));
+  const liked = new Set(likes.map((row: any) => row.post_id));
+  const visible = rows
+    .filter((row: any) => !blocked.has(row.user_id))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
   const imageUrls = await signedUrls(
     FORUM_MEDIA_BUCKET,
     visible.map((row: any) => row.image_path),
@@ -96,9 +160,9 @@ export async function listForumPosts(): Promise<ForumPost[]> {
     title: row.title || "",
     body: row.body,
     topic: row.topic,
-    likes: row.forum_likes?.length ?? 0,
-    comments: row.forum_comments?.length ?? 0,
-    liked: Boolean(row.forum_likes?.some((like: any) => like.user_id === userId)),
+    likes: row.forum_likes?.[0]?.count ?? 0,
+    comments: row.forum_comments?.[0]?.count ?? 0,
+    liked: liked.has(row.id),
     saved: saved.has(row.id),
     following: following.has(row.user_id),
     linkedDiveId: row.linked_dive_id ?? null,
@@ -250,12 +314,17 @@ export async function reportForumPost(postId: string) {
 }
 
 export async function listForumComments(postId: string): Promise<ForumComment[]> {
-  const { data: rows, error } = await db
-    .from("forum_comments")
-    .select("id,user_id,author_name,body,created_at")
-    .eq("post_id", postId)
-    .order("created_at");
-  if (error) throw error;
+  const owner = await currentUserId();
+  const rows = await completeForumRows(
+    () =>
+      db
+        .from("forum_comments")
+        .select("id,user_id,author_name,body,created_at", { count: "exact" })
+        .eq("post_id", postId),
+    "id",
+    owner,
+  );
+  rows.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
   return (rows ?? []).map((row: any) => ({
     id: row.id,
     userId: row.user_id,
@@ -376,23 +445,32 @@ export async function listBlockedForumAuthors(
   expectedUserId: string,
 ): Promise<BlockedForumAuthor[]> {
   const userId = await currentUserId(expectedUserId);
-  const { data: rows, error } = await db
-    .from("forum_blocks")
-    .select("blocked_id")
-    .eq("blocker_id", userId);
-  if (error) throw error;
+  const rows = await completeForumRows(
+    () => db.from("forum_blocks").select("blocked_id", { count: "exact" }).eq("blocker_id", userId),
+    "blocked_id",
+    userId,
+  );
   const ids = (rows ?? []).map((row: { blocked_id: string }) => row.blocked_id);
   if (!ids.length) return [];
   // Other profiles remain private; use the existing authenticated public-summary RPC.
-  return Promise.all(
-    ids.map(async (id: string) => {
-      const { data, error: profileError } = await db.rpc("get_public_diver_profile", {
-        target_user_id: id,
-      });
-      if (profileError) throw profileError;
-      return { id, name: data?.[0]?.display_name?.trim() || "Diver" };
-    }),
-  );
+  const authors: BlockedForumAuthor[] = [];
+  // Bound profile-summary concurrency; never fan out thousands of RPCs together.
+  for (let start = 0; start < ids.length; start += 5) {
+    await currentUserId(userId);
+    authors.push(
+      ...(await Promise.all(
+        ids.slice(start, start + 5).map(async (id: string) => {
+          const { data, error: profileError } = await db.rpc("get_public_diver_profile", {
+            target_user_id: id,
+          });
+          if (profileError) throw profileError;
+          return { id, name: data?.[0]?.display_name?.trim() || "Diver" };
+        }),
+      )),
+    );
+  }
+  await currentUserId(userId);
+  return authors;
 }
 
 export async function unblockForumAuthor(authorId: string, expectedUserId: string) {

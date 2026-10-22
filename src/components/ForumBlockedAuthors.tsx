@@ -17,6 +17,8 @@ export function ForumBlockedAuthors({
     [error, setError] = useState("");
   const t = (zh: string, en: string) => (language === "en" ? en : zh);
   const key = ["forum-blocks", ownerId];
+  const [authorWindow, setAuthorWindow] = useState({ owner: "", size: 50 });
+  const windowSize = authorWindow.owner === ownerId ? authorWindow.size : 50;
   const query = useQuery({
     queryKey: key,
     queryFn: () => listBlockedForumAuthors(ownerId),
@@ -79,7 +81,7 @@ export function ForumBlockedAuthors({
             <p>{t("正在读取屏蔽名单…", "Loading blocked divers…")}</p>
           ) : query.data?.length ? (
             <ul>
-              {query.data.map((author) => (
+              {query.data.slice(0, windowSize).map((author) => (
                 <li key={author.id}>
                   <span>
                     {author.name}
@@ -93,6 +95,16 @@ export function ForumBlockedAuthors({
             </ul>
           ) : (
             <p>{t("暂无已屏蔽用户。", "No blocked divers.")}</p>
+          )}
+          {!query.isError && (query.data?.length ?? 0) > windowSize && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setAuthorWindow({ owner: ownerId, size: windowSize + 50 })}
+            >
+              {t("继续查看屏蔽名单", "Show more blocked divers")} · {windowSize} /{" "}
+              {query.data?.length}
+            </button>
           )}
           <button
             type="button"

@@ -5,14 +5,14 @@ import assert from 'node:assert/strict';
 import ts from 'typescript';
 function load(path,require){const code=ts.transpileModule(fs.readFileSync(new URL('../'+path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;const module={exports:{}};vm.runInNewContext(code,{require,module,exports:module.exports,crypto:{randomUUID:()=> 'next-id'},fetch(){throw Error('Network forbidden');}});return module.exports;}
 const state={owner:'a',comments:new Map(),blocks:[{blocker_id:'a',blocked_id:'b'}],writes:0,lost:false,fail:false,swap:false};
-function query(table){let action='read',body,filters=[];const chain={select(){return chain;},eq(key,value){filters.push([key,value]);return chain;},order(){return chain;},insert(value){action='insert';body=value;return chain;},update(value){action='update';body=value;return chain;},delete(){action='delete';return chain;},then(resolve,reject){return execute(false).then(resolve,reject);},single(){return execute(true);},maybeSingle(){return execute(false,true);}};
+function query(table){let action='read',body,filters=[],range=null;const chain={select(){return chain;},eq(key,value){filters.push([key,value]);return chain;},order(){return chain;},range(a,b){range=[a,b];return chain;},insert(value){action='insert';body=value;return chain;},update(value){action='update';body=value;return chain;},delete(){action='delete';return chain;},then(resolve,reject){return execute(false).then(resolve,reject);},single(){return execute(true);},maybeSingle(){return execute(false,true);}};
   async function execute(single,maybe){let rows=table==='forum_comments'?[...state.comments.values()]:state.blocks;rows=rows.filter(row=>filters.every(([key,value])=>row[key]===value));
     if(action==='insert'){state.writes++;if(state.comments.has(body.id))return{data:null,error:{code:'23505'}};if(state.fail)return{data:null,error:{message:'Rejected'}};const row={...body,author_name:'Synthetic',created_at:'2026-10-22'};state.comments.set(row.id,row);if(state.lost){state.lost=false;return{data:null,error:{message:'Lost response'}};}rows=[row];}
     if(action==='update'){state.writes++;rows=rows.map(row=>{Object.assign(row,body);return row;});}
     if(action==='delete'){state.writes++;if(table==='forum_comments')for(const row of rows)state.comments.delete(row.id);else state.blocks=state.blocks.filter(row=>!rows.includes(row));}
     if(single&&!rows.length)return{data:null,error:{code:'PGRST116'}};
     if(maybe&&state.swap)state.owner='b';
-    return{data:single||maybe?(rows[0]??null):rows,error:null};
+    const count=rows.length;if(range)rows=rows.slice(range[0],range[1]+1);return{data:single||maybe?(rows[0]??null):rows,count,error:null};
   }return chain;
 }
 const supabase={auth:{getSession:async()=>({data:{session:{user:{id:state.owner}}}})},from:query,rpc:async()=>({data:[{display_name:'Synthetic B'}],error:null})};
@@ -47,3 +47,8 @@ console.log('PASS: real_dialog_synchronous_lock_pending_fields_failure_draft_and
 s=component();s.query={...s.query,isError:true};assert.ok(s.button('重新加载回应'));assert.equal(s.render().some(n=>text(n.props?.children)==='还没有回应。'),false);
 s=component();s.button('发送').props.onClick();s.unmount();s.resolve();await tick();assert.equal(s.changes,0);assert.equal(s.invalidations,0);
 console.log('PASS: real_dialog_error_not_empty_and_no_late_updates_after_unmount');
+s=component();s.query.data=Array.from({length:105},(_,i)=>({id:'comment-'+i,userId:'other',author:'Synthetic',body:'Body '+i}));
+assert.equal(s.render().filter(n=>n.type==='article').length,50);
+for(const expected of [100,105]){s.render().find(n=>n.type==='button'&&text(n.props.children).startsWith('继续查看回应')).props.onClick();assert.equal(s.render().filter(n=>n.type==='article').length,expected);}
+assert.equal(s.render().some(n=>n.type==='button'&&text(n.props.children).startsWith('继续查看回应')),false);
+console.log('PASS: real_comment_dialog_bounded_50_row_windows_reach_last_comment_and_end_control_disappears');

@@ -369,6 +369,9 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const [feed, setFeed] = useState<"recommended" | "following" | "latest">("recommended");
   const [topic, setTopic] = useState<"all" | ForumTopic>("all");
   const [search, setSearch] = useState("");
+  const [postWindow, setPostWindow] = useState({ key: "", size: 40 });
+  const postWindowKey = JSON.stringify([profile?.id, search, topic, feed]);
+  const postWindowSize = postWindow.key === postWindowKey ? postWindow.size : 40;
   const [liked, setLiked] = useState<string[]>(["mola"]);
   const [saved, setSaved] = useState<string[]>([]);
   const [followed, setFollowed] = useState<string[]>(["Raiyan"]);
@@ -716,7 +719,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
               </button>
             )}
             <div className="do-forum-posts">
-              {visiblePosts.map((post, index) => {
+              {visiblePosts.slice(0, postWindowSize).map((post, index) => {
                 const isLiked = preview ? liked.includes(post.id) : Boolean(post.liked);
                 const isSaved = preview ? saved.includes(post.id) : Boolean(post.saved);
                 return (
@@ -860,6 +863,16 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                 );
               })}
             </div>
+            {!forumQuery.isError && visiblePosts.length > postWindowSize && (
+              <button
+                type="button"
+                className="do-forum-empty"
+                onClick={() => setPostWindow({ key: postWindowKey, size: postWindowSize + 40 })}
+              >
+                {language === "zh-CN" ? "继续查看帖子" : "Show more posts"}
+                {` · ${Math.min(postWindowSize, visiblePosts.length)} / ${visiblePosts.length}`}
+              </button>
+            )}
           </section>
           <aside className="do-forum-right">
             <section className="do-forum-side-panel">
