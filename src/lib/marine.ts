@@ -168,7 +168,7 @@ export async function listSuggestions(id: string): Promise<Suggestion[]> {
 export async function addSuggestion(
   id: string,
   body: string,
-  requestId = crypto.randomUUID(),
+  requestId: string = crypto.randomUUID(),
   expectedUser?: string,
 ): Promise<Suggestion> {
   const current = await user(expectedUser);
