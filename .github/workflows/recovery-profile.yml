@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   profile:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/pc-profile-recovery'
+    if: github.ref == 'refs/heads/codex/forum-interaction-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -20,9 +20,14 @@ jobs:
           node-version: '22'
       - name: Install cloud browser
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
-          npx playwright install --with-deps chromium
-      - name: Verify profile and avatar on recovery only
+          npm install --prefix "$RUNNER_TEMP/forum-browser" --no-save --package-lock=false playwright@1.56.1
+          if command -v google-chrome >/dev/null; then
+            echo 'RECOVERY_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
+          else
+            node "$RUNNER_TEMP/forum-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
+      - name: Diagnose forum interactions using disposable recovery accounts only
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
-        run: node scripts/recovery-profile.mjs
+          RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/forum-browser/node_modules/playwright/index.mjs
+        run: node scripts/recovery-forum-interactions.mjs
