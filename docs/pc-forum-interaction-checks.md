@@ -73,3 +73,9 @@ Complete acceptance run https://github.com/ydpeng26/deepocean/actions/runs/39764
 - Both generated accounts and all dependent interaction rows were removed and verified absent. No media was uploaded.
 
 The registered profile workflow is restored byte-for-byte to baseline 0893f6d. The dedicated manual-only interaction workflow now enables strict `FORUM_EXPECT_FIXED=true` assertions. No production branch promotion or authenticated production writes occurred; production remains at 0893f6d and awaits separate user approval. This acceptance does not cover moderator operations, every social-toggle failure variant, mobile, or the remaining PC modules.
+
+## Authorized production release — 2026-10-22
+
+The user explicitly confirmed production release. Main was fast-forwarded with an expected-old-SHA guard from 0893f6d to 4d93dce; no published history was rewritten. The final source is identical to the recovery-tested app cc24cb9, with later runner/record-only changes. The original profile workflow is unchanged from production baseline. No database migrations, permission changes or existing user-data edits were needed.
+
+Native Vercel verification confirmed **Ready / Production / main / 4d93dce / Current www.supdiver.com** at https://vercel.com/ydpeng26s-projects/deepocean/BzkVbTq52ppAx5Wp82BkJLJ52vU8 . Production stateful acceptance remains the recovery two-account run 39764160935; no authenticated production comments or block rows were created as a release test. Remaining PC checks and moderator operations are not implicitly marked complete by this release.
