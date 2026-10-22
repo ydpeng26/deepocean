@@ -142,10 +142,10 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             <div className="do-passport-panel-heading"><span className="do-passport-serial">SUPDIVER / 01</span></div>
             <div className="do-passport-identity-person"><Avatar className="do-passport-profile-avatar"><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback className="do-passport-profile-avatar-fallback">{name.slice(0, 1)}</AvatarFallback></Avatar><div><h2 id="passport-identity-title">{name}</h2>{profile?.bio && <p className="do-passport-profile-bio">{profile.bio}</p>}</div></div>
             <div className="do-passport-community-stats" aria-label={language === "zh-CN" ? "社区数据" : "Community stats"}><span><ScubaTankIcon /><strong>{preview ? "1,286" : "0"}</strong><small>{c.likesReceived}</small></span><span><Bookmark aria-hidden="true" /><strong>{preview ? "318" : "0"}</strong><small>{c.savesReceived}</small></span><span><Users aria-hidden="true" /><strong>{preview ? "246" : "0"}</strong><small>{c.followers}</small></span></div>
-            <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending ? "—" : dives.length}</strong></div>
-            <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending ? "—" : countries.length}</strong></div>
-            <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || !totalMinutes ? "—" : timeDisplay}</strong></div>
-            <div className="do-passport-identity-row"><span>{c.maxDepth}</span><strong>{isPending || !maxDepth ? "—" : `${maxDepth}m`}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : dives.length}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending || isError ? "—" : countries.length}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.maxDepth}</span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong></div>
             <div className="do-passport-identity-row"><span>{c.tanks}</span><strong>{profile?.tank_count ?? 0}</strong></div>
             <Link to={profileHref} className="do-passport-panel-link">{c.editProfile}<ChevronRight aria-hidden="true" /></Link>
           </section>
@@ -155,14 +155,14 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
           <section className="do-passport-summary" aria-labelledby="passport-summary-title">
             <div className="do-passport-summary-photo" />
             <div className="do-passport-summary-content"><span className="do-passport-section-label">02 / {c.journey}</span><h2 id="passport-summary-title">{c.journey}</h2><p>{c.intro}</p>
-              <div className="do-passport-summary-stats"><span><strong>{isPending ? "—" : dives.length}</strong>{c.dives}</span><span><strong>{isPending ? "—" : countries.length}</strong>{c.countries}</span><span><strong>{isPending || !totalMinutes ? "—" : timeDisplay}</strong>{c.underwater}</span><span><strong>{isPending || !maxDepth ? "—" : `${maxDepth}m`}</strong>{c.maxDepth}</span></div>
+              <div className="do-passport-summary-stats"><span><strong>{isPending || isError ? "—" : dives.length}</strong>{c.dives}</span><span><strong>{isPending || isError ? "—" : countries.length}</strong>{c.countries}</span><span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong>{c.underwater}</span><span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong>{c.maxDepth}</span></div>
             </div>
           </section>
           <section className="do-passport-map-panel" aria-label={c.mapTitle}>
             <div className="do-passport-panel-heading"><span>03 / {c.mapTitle}</span><Compass aria-hidden="true" /></div>
             <div className="do-passport-map-layout">
               <div className="do-passport-map-sidebar">
-                <div className="do-passport-map-count"><strong>{isPending ? "—" : String(countries.length).padStart(2, "0")}</strong><span>{c.countryCount}</span></div>
+                <div className="do-passport-map-count"><strong>{isPending || isError ? "—" : String(countries.length).padStart(2, "0")}</strong><span>{c.countryCount}</span></div>
                 {countries.length > 0 && <ul className="do-passport-map-places">{countries.map((country) => <li key={country}><span className="do-passport-country-flag" aria-hidden="true">{countryFlag(country)}</span><span>{country}</span></li>)}</ul>}
               </div>
               <div className="do-passport-map-canvas"><DiveWorldMap visits={dives.map((dive) => dive.country)} english={language === "en"} /></div>

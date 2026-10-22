@@ -119,6 +119,7 @@ function DiveLogsPage() {
     data: dives = [],
     isPending,
     isError,
+    refetch,
   } = useQuery({ queryKey: ["dives"], queryFn: listDives });
   const logPhotoPaths = useMemo(
     () =>
@@ -152,7 +153,9 @@ function DiveLogsPage() {
         return (
           (country === "all" || dive.country === country) &&
           (!search ||
-            `${dive.site_name} ${dive.region ?? ""} ${dive.country} ${dive.notes ?? ""}`.toLowerCase().includes(search))
+            `${dive.site_name} ${dive.region ?? ""} ${dive.country} ${dive.notes ?? ""}`
+              .toLowerCase()
+              .includes(search))
         );
       }),
     [country, dives, query],
@@ -193,16 +196,18 @@ function DiveLogsPage() {
         </section>
         <section className="do-logs-overview">
           <div>
-            <strong>{isPending ? "—" : dives.length}</strong>
+            <strong>{isPending || isError ? "—" : dives.length}</strong>
             <span>{c.entries}</span>
           </div>
           <div>
-            <strong>{isPending ? "—" : countries.length}</strong>
+            <strong>{isPending || isError ? "—" : countries.length}</strong>
             <span>{c.countries}</span>
           </div>
           <div>
             <strong>
-              {isPending ? "—" : `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`}
+              {isPending || isError
+                ? "—"
+                : `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`}
             </strong>
             <span>{c.underwater}</span>
           </div>
@@ -246,7 +251,7 @@ function DiveLogsPage() {
             </div>
             <div className="do-logs-filter-result">
               <span>{c.result}</span>
-              <strong>{filtered.length}</strong>
+              <strong>{isPending || isError ? "—" : filtered.length}</strong>
               <small>{c.entries}</small>
             </div>
             <div className="do-logs-watermark">
@@ -272,6 +277,9 @@ function DiveLogsPage() {
               <div className="do-logs-empty">
                 <Waves aria-hidden="true" />
                 <p>{c.error}</p>
+                <button type="button" onClick={() => refetch()}>
+                  {language === "zh-CN" ? "重新加载" : "Try again"}
+                </button>
               </div>
             ) : filtered.length ? (
               filtered.map((dive, index) => {

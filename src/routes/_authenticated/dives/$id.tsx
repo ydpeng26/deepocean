@@ -22,7 +22,10 @@ export const Route = createFileRoute("/_authenticated/dives/$id")({
       { title: "潜水记录详情 · 深蓝" },
       { name: "description", content: "查看这一次下潜的潜点、天气、水温、潜伴、照片与备注。" },
       { property: "og:title", content: "潜水记录详情 · 深蓝" },
-      { property: "og:description", content: "查看这一次下潜的潜点、天气、水温、潜伴、照片与备注。" },
+      {
+        property: "og:description",
+        content: "查看这一次下潜的潜点、天气、水温、潜伴、照片与备注。",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -47,8 +50,13 @@ function DiveDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const { data: dive, isPending, error } = useQuery({
+  const {
+    data: dive,
+    isPending,
+    error,
+  } = useQuery({
     queryKey: ["dive", id],
     queryFn: () => getDive(id),
   });
@@ -56,7 +64,7 @@ function DiveDetail() {
   const photoPaths = dive?.photo_urls ?? [];
   const { data: photos = [] } = useQuery({
     queryKey: ["dive-photos", id, photoPaths],
-    queryFn: async () => (await signedPhotoUrls(photoPaths)).filter(Boolean),
+    queryFn: () => signedPhotoUrls(photoPaths),
     enabled: photoPaths.length > 0,
     staleTime: 55 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
@@ -86,7 +94,9 @@ function DiveDetail() {
   if (error || !dive) {
     return (
       <AppShell>
-        <p role="alert" className="text-sm text-muted-foreground">找不到这条潜水记录。</p>
+        <p role="alert" className="text-sm text-muted-foreground">
+          找不到这条潜水记录。
+        </p>
       </AppShell>
     );
   }
@@ -95,6 +105,7 @@ function DiveDetail() {
     return (
       <AppShell>
         <button
+          disabled={saving}
           onClick={() => setEditing(false)}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
         >
@@ -102,7 +113,7 @@ function DiveDetail() {
           返回详情
         </button>
         <h1 className="mb-10 mt-4 text-3xl font-normal tracking-tight text-primary">编辑记录</h1>
-        <DiveForm dive={dive} />
+        <DiveForm dive={dive} onBusyChange={setSaving} onSaved={() => setEditing(false)} />
       </AppShell>
     );
   }
@@ -128,7 +139,10 @@ function DiveDetail() {
 
   return (
     <AppShell>
-      <Link to="/dives" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+      <Link
+        to="/dives"
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+      >
         <ArrowLeft className="h-3 w-3" />
         返回日志
       </Link>
@@ -161,21 +175,50 @@ function DiveDetail() {
         ))}
       </dl>
 
-      {photos.length > 0 && (
+      {photoPaths.length > 0 && (
         <section className="mt-12">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">照片与视频</h2>
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            照片与视频
+          </h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {photos.map((url, i) => (
-              isVideoPath(photoPaths[i] ?? "") ? <video key={url} src={url} controls preload="metadata" className="aspect-square w-full bg-black object-contain" /> : <img key={url} src={url} alt={`${dive.site_name} 潜水照片 ${i + 1}`} loading="lazy" className="aspect-square w-full object-cover" />
-            ))}
+            {photoPaths.map((path, i) =>
+              !photos[i] ? (
+                <div
+                  key={`${path}-${i}`}
+                  className="flex aspect-square items-center justify-center border text-sm text-muted-foreground"
+                >
+                  附件暂不可用
+                </div>
+              ) : isVideoPath(path) ? (
+                <video
+                  key={`${path}-${i}`}
+                  src={photos[i]}
+                  controls
+                  preload="metadata"
+                  className="aspect-square w-full bg-black object-contain"
+                />
+              ) : (
+                <img
+                  key={`${path}-${i}`}
+                  src={photos[i]}
+                  alt={`${dive.site_name} 潜水照片 ${i + 1}`}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover"
+                />
+              ),
+            )}
           </div>
         </section>
       )}
 
       {dive.notes && (
         <section className="mt-12 border-t border-border pt-8">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">个人备注</h2>
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{dive.notes}</p>
+          <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            个人备注
+          </h2>
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            {dive.notes}
+          </p>
         </section>
       )}
     </AppShell>

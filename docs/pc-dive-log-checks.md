@@ -1,5 +1,13 @@
 # PC dive log boundary audit — 2026-10-22
 
+## Repair work authorized after the audit
+
+The user subsequently authorized repairing the seven categories below, recovery first, with a separate production release confirmation. No production deployment or historical row/object cleanup is included in that authorization.
+
+Implemented for recovery validation: strict optional numeric parsing (valid negative temperatures retained); synchronous form lock and disabled fieldset/cancel/back while pending; mount-time expected owner; stable create UUID with matching-payload confirmation on retries; immutable owner/request/content-hash upload paths with duplicate-object reuse; path-keyed media previews and unavailable-item placeholders; six-file cap across existing and new media; ordered 500-row pagination with exact count/account/duplicate checks; nonnumeric unavailable totals and list retry. Existing community placeholders remain deferred.
+
+Local synthetic script `scripts/dive-log-regression.mjs` exercises numeric boundaries, 1017-row pagination and page failures/account switch, ambiguous create/race retries, changed payload and owner checks, stable photo/thumbnail retry, oversized video, partial signing, and the real form synchronous lock/draft/unmount behavior. Local tests passed. Production build passed; targeted semantic lint passed with the existing unformatted passport file's formatting rule excluded. Full TypeScript checking still reports pre-existing errors in `__root.tsx`, `forum-post-preview.tsx`, and `profile-preview.tsx`, not the modified dive files. Recovery cloud strict acceptance is pending; do not interpret older diagnostic green runs as repair acceptance.
+
 ## Scope and evidence
 
 The user approved continuing PC inspection after the forum release. Diagnosis only: no application fixes, schema/permission changes, production branch updates, or website promotions. Community counters, saved-post integration and preview-only features remain deferred; mobile is excluded.
