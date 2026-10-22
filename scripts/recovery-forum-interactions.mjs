@@ -49,6 +49,38 @@ try{
   const send=()=>dialog().locator('.do-forum-comment-form button');
   const close=()=>dialog().getByRole('button',{name:'取消',exact:true}).click();
   await forum();
+  if(process.env.FORUM_SOCIAL_EXPECT_FIXED==='true'){
+    stage='private relation read failures';
+    for(const table of ['forum_bookmarks','forum_follows','forum_blocks']){
+      const pattern=api+'/rest/v1/'+table+'*';let fail=true;
+      await context.route(pattern,route=>route.request().method()==='GET'&&fail?route.fulfill({status:400,contentType:'application/json',body:'{"message":"Synthetic private state read failure"}'}):route.continue());
+      await page.reload({waitUntil:'networkidle'});await page.getByText('论坛暂时无法加载，请稍后重试。',{exact:true}).waitFor();check(await page.locator('.do-forum-post').count()===0&&await card().count()===0,'Private read failure must not expose cached posts');
+      fail=false;await page.getByRole('button',{name:'重新加载论坛',exact:true}).click();await card().waitFor();await context.unroute(pattern);
+    }
+    pass('bookmark_follow_and_block_read_failures_hide_feed_and_retry_restores_it');
+    for(const relation of ['like','bookmark','follow']){
+      stage='social recovery '+relation;
+      const table=relation==='like'?'forum_likes':relation==='bookmark'?'forum_bookmarks':'forum_follows';
+      const filter=relation==='follow'?'follower_id=eq.'+a.id+'&following_id=eq.'+b.id:'post_id=eq.'+post.id;
+      const button=()=>relation==='like'?card().locator('footer > div').first().getByRole('button').first():relation==='bookmark'?card().getByRole('button',{name:'收藏',exact:true}):page.locator('.do-forum-people article').filter({has:page.locator('a[href="/divers/'+b.id+'"]')}).getByRole('button');
+      const attribute=relation==='follow'?'data-followed':'data-active';let mode='reject',writes=0;
+      const pattern=api+'/rest/v1/'+table+'*';
+      await context.route(pattern,async route=>{
+        if(['POST','DELETE'].includes(route.request().method())){
+          writes++;await new Promise(resolve=>setTimeout(resolve,700));
+          if(mode==='reject')return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic rejected social action"}'});
+          if(mode==='lost'){const response=await route.fetch();check(response.ok(),'Social fixture write commits');return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic lost social reply"}'});}
+        }
+        return route.continue();
+      });
+      await button().evaluate(element=>{element.click();element.click();});await poll(()=>writes,v=>v===1);check(await button().isDisabled(),'Pending social button must lock');await poll(()=>button().isEnabled(),Boolean);check((await privateRows(table,filter)).length===0,'Rejected social action must not write');
+      mode='lost';await button().click();await poll(()=>privateRows(table,filter),rows=>rows.length===1);await poll(()=>button().isEnabled(),Boolean);check(await button().getAttribute(attribute)==='false','Lost add reply keeps last confirmed UI');
+      mode='pass';await button().click();await poll(()=>button().getAttribute(attribute),v=>v==='true');check((await privateRows(table,filter)).length===1,'Lost add retry must leave one relation');
+      mode='lost';await button().click();await poll(()=>privateRows(table,filter),rows=>rows.length===0);await poll(()=>button().isEnabled(),Boolean);mode='pass';await button().click();await poll(()=>button().getAttribute(attribute),v=>v==='false');check((await privateRows(table,filter)).length===0,'Lost remove retry stays absent');
+      await context.unroute(pattern);await page.reload({waitUntil:'networkidle'});await card().waitFor();check(await button().getAttribute(attribute)==='false','Social final state survives reload');
+      pass(relation+'_reject_double_click_pending_lock_lost_add_remove_retry_and_reload');
+    }
+  }
   stage='likes';
   const like=()=>card().locator('footer > div').first().getByRole('button').first();
   await like().click();await poll(()=>privateRows('forum_likes','post_id=eq.'+post.id),rows=>rows.length===1);await poll(()=>like().getAttribute('data-active'),v=>v==='true');

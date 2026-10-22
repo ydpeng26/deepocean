@@ -54,19 +54,25 @@ async function signedUrls(bucket: string, paths: Array<string | null | undefined
 
 export async function listForumPosts(): Promise<ForumPost[]> {
   const userId = await currentUserId();
-  const [{ data: rows, error }, { data: bookmarks }, { data: follows }, { data: blocks }] =
-    await Promise.all([
-      db
-        .from("forum_posts")
-        .select(
-          "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,forum_likes(user_id),forum_comments(id)",
-        )
-        .order("created_at", { ascending: false }),
-      db.from("forum_bookmarks").select("post_id").eq("user_id", userId),
-      db.from("forum_follows").select("following_id").eq("follower_id", userId),
-      db.from("forum_blocks").select("blocked_id").eq("blocker_id", userId),
-    ]);
-  if (error) throw error;
+  const [postsResult, bookmarksResult, followsResult, blocksResult] = await Promise.all([
+    db
+      .from("forum_posts")
+      .select(
+        "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,forum_likes(user_id),forum_comments(id)",
+      )
+      .order("created_at", { ascending: false }),
+    db.from("forum_bookmarks").select("post_id").eq("user_id", userId),
+    db.from("forum_follows").select("following_id").eq("follower_id", userId),
+    db.from("forum_blocks").select("blocked_id").eq("blocker_id", userId),
+  ]);
+  for (const result of [postsResult, bookmarksResult, followsResult, blocksResult]) {
+    if (result.error) throw result.error;
+  }
+  await currentUserId(userId);
+  const { data: rows } = postsResult;
+  const { data: bookmarks } = bookmarksResult;
+  const { data: follows } = followsResult;
+  const { data: blocks } = blocksResult;
 
   const blocked = new Set((blocks ?? []).map((row: any) => row.blocked_id));
   const saved = new Set((bookmarks ?? []).map((row: any) => row.post_id));
@@ -76,6 +82,7 @@ export async function listForumPosts(): Promise<ForumPost[]> {
     FORUM_MEDIA_BUCKET,
     visible.map((row: any) => row.image_path),
   );
+  await currentUserId(userId);
 
   return visible.map((row: any) => ({
     id: row.id,
@@ -185,31 +192,45 @@ export async function deleteForumPost(id: string) {
   if (error) throw error;
 }
 
-export async function toggleForumLike(postId: string, active: boolean) {
-  const userId = await currentUserId();
-  const query = active
-    ? db.from("forum_likes").delete().eq("post_id", postId).eq("user_id", userId)
-    : db.from("forum_likes").insert({ post_id: postId, user_id: userId });
-  const { error } = await query;
-  if (error) throw error;
+async function setForumRelation(
+  table: string,
+  keys: Record<string, string>,
+  active: boolean,
+  owner: string,
+) {
+  await currentUserId(owner);
+  let mutation = active ? db.from(table).delete() : db.from(table).insert(keys);
+  if (active) for (const [key, value] of Object.entries(keys)) mutation = mutation.eq(key, value);
+  const { error } = await mutation;
+  if (error && error.code !== "23505") throw error;
+  await currentUserId(owner);
+  let read = db.from(table).select(Object.keys(keys).join(","));
+  for (const [key, value] of Object.entries(keys)) read = read.eq(key, value);
+  const confirmed = await read.maybeSingle();
+  if (confirmed.error) throw confirmed.error;
+  await currentUserId(owner);
+  if (Boolean(confirmed.data) === active)
+    throw new Error("互动状态未确认，请重新加载后重试 / Reload to confirm this action.");
 }
 
-export async function toggleForumBookmark(postId: string, active: boolean) {
-  const userId = await currentUserId();
-  const query = active
-    ? db.from("forum_bookmarks").delete().eq("post_id", postId).eq("user_id", userId)
-    : db.from("forum_bookmarks").insert({ post_id: postId, user_id: userId });
-  const { error } = await query;
-  if (error) throw error;
+export async function toggleForumLike(postId: string, active: boolean, expectedOwner?: string) {
+  const owner = await currentUserId(expectedOwner);
+  await setForumRelation("forum_likes", { post_id: postId, user_id: owner }, active, owner);
 }
 
-export async function toggleForumFollow(authorId: string, active: boolean) {
-  const userId = await currentUserId();
-  const query = active
-    ? db.from("forum_follows").delete().eq("follower_id", userId).eq("following_id", authorId)
-    : db.from("forum_follows").insert({ follower_id: userId, following_id: authorId });
-  const { error } = await query;
-  if (error) throw error;
+export async function toggleForumBookmark(postId: string, active: boolean, expectedOwner?: string) {
+  const owner = await currentUserId(expectedOwner);
+  await setForumRelation("forum_bookmarks", { post_id: postId, user_id: owner }, active, owner);
+}
+
+export async function toggleForumFollow(authorId: string, active: boolean, expectedOwner?: string) {
+  const owner = await currentUserId(expectedOwner);
+  await setForumRelation(
+    "forum_follows",
+    { follower_id: owner, following_id: authorId },
+    active,
+    owner,
+  );
 }
 
 export async function blockForumAuthor(authorId: string) {

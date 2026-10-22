@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForumAction } from "@/hooks/useForumAction";
 import { toast } from "sonner";
 import {
   Bookmark,
@@ -401,32 +402,34 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setCommentPost(post);
   }
 
-  const livePosts: Post[] = (forumQuery.data ?? []).map((post, index) => ({
-    id: post.id,
-    userId: post.userId,
-    author: post.author,
-    badge: post.badge,
-    avatar: post.avatarUrl,
-    image: post.imageUrl,
-    location: post.location,
-    date: new Intl.DateTimeFormat(language === "zh-CN" ? "zh-CN" : "en", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(post.date)),
-    titleZh: post.title || post.body.slice(0, 32),
-    titleEn: post.title || post.body.slice(0, 32),
-    textZh: post.body,
-    textEn: post.body,
-    topic: post.topic,
-    likes: post.likes,
-    comments: post.comments,
-    liked: post.liked,
-    saved: post.saved,
-    following: post.following,
-    linkedDiveId: post.linkedDiveId,
-    ratio: post.imageUrl ? (index % 3 === 1 ? "portrait" : "wide") : "standard",
-  }));
+  const livePosts: Post[] = (forumQuery.isError ? [] : (forumQuery.data ?? [])).map(
+    (post, index) => ({
+      id: post.id,
+      userId: post.userId,
+      author: post.author,
+      badge: post.badge,
+      avatar: post.avatarUrl,
+      image: post.imageUrl,
+      location: post.location,
+      date: new Intl.DateTimeFormat(language === "zh-CN" ? "zh-CN" : "en", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date(post.date)),
+      titleZh: post.title || post.body.slice(0, 32),
+      titleEn: post.title || post.body.slice(0, 32),
+      textZh: post.body,
+      textEn: post.body,
+      topic: post.topic,
+      likes: post.likes,
+      comments: post.comments,
+      liked: post.liked,
+      saved: post.saved,
+      following: post.following,
+      linkedDiveId: post.linkedDiveId,
+      ratio: post.imageUrl ? (index % 3 === 1 ? "portrait" : "wide") : "standard",
+    }),
+  );
   const sourcePosts = preview ? posts : livePosts;
   const visiblePosts = useMemo(
     () =>
@@ -471,16 +474,15 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   }
   async function refreshForum() {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["forum-posts"] }),
+      queryClient.invalidateQueries({ queryKey: ["forum-posts"] }, { throwOnError: true }),
       queryClient.invalidateQueries({ queryKey: ["forum-blocks"] }),
     ]);
   }
-  async function run(action: () => Promise<unknown>, success?: string) {
-    try {
-      await action();
-      await refreshForum();
-      if (success) showNotice(success);
-    } catch (error) {
+  const { busy: interactionBusy, run } = useForumAction({
+    ownerId: profile?.id,
+    refresh: refreshForum,
+    onSuccess: showNotice,
+    onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
@@ -488,8 +490,8 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
             ? "操作失败，请重试"
             : "Action failed",
       );
-    }
-  }
+    },
+  });
   function resetComposer() {
     if (publishingRef.current) return;
     requestIdRef.current = null;
@@ -700,7 +702,14 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
               ))}
             </div>
             {!preview && forumQuery.isPending && <div className="do-forum-empty">{c.loading}</div>}
-            {!preview && forumQuery.isError && <div className="do-forum-empty">{c.loadError}</div>}
+            {!preview && forumQuery.isError && (
+              <div className="do-forum-empty" role="alert">
+                <p>{c.loadError}</p>
+                <button type="button" onClick={() => forumQuery.refetch()}>
+                  {language === "zh-CN" ? "重新加载论坛" : "Reload forum"}
+                </button>
+              </div>
+            )}
             {!forumQuery.isPending && !forumQuery.isError && !visiblePosts.length && (
               <button type="button" className="do-forum-empty" onClick={openComposer}>
                 {c.empty}
@@ -807,10 +816,11 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                         <button
                           type="button"
                           data-active={isLiked}
+                          disabled={!preview && interactionBusy}
                           onClick={() =>
                             preview
                               ? toggleList(setLiked, post.id)
-                              : void run(() => toggleForumLike(post.id, isLiked))
+                              : void run(() => toggleForumLike(post.id, isLiked, profile?.id))
                           }
                         >
                           <ScubaTankIcon />
@@ -833,10 +843,11 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                         <button
                           type="button"
                           data-active={isSaved}
+                          disabled={!preview && interactionBusy}
                           onClick={() =>
                             preview
                               ? toggleList(setSaved, post.id)
-                              : void run(() => toggleForumBookmark(post.id, isSaved))
+                              : void run(() => toggleForumBookmark(post.id, isSaved, profile?.id))
                           }
                           aria-label={c.save}
                         >
@@ -916,11 +927,12 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                       <button
                         type="button"
                         data-followed={active}
+                        disabled={!preview && interactionBusy}
                         onClick={() =>
                           preview
                             ? toggleList(setFollowed, person.author)
                             : person.userId &&
-                              void run(() => toggleForumFollow(person.userId!, active))
+                              void run(() => toggleForumFollow(person.userId!, active, profile?.id))
                         }
                       >
                         {active ? c.followed : c.follow}

@@ -21,7 +21,11 @@ Local synthetic script `scripts/dive-log-regression.mjs` exercises numeric bound
 - Both disposable fixture accounts and all their generated logs/photos/thumbnails were cleaned, with absence verified. No existing human rows, legacy orphan uploads, production data, SMTP settings, credentials or database permissions changed.
 - The original profile workflow was restored byte-for-byte to baseline before preparing the release branch. Dedicated dive workflow remains manual-only and strict. Local profile, certificate, forum and marine/gear regression suites also pass.
 
-Production release remains pending explicit user confirmation. This acceptance does not extend the coverage boundaries listed below (all video formats, every browser/date case, mobile or a new full restore drill).
+Production release was subsequently authorized and verified below. This acceptance does not extend the coverage boundaries listed below (all video formats, every browser/date case, mobile or a new full restore drill).
+
+### Authorized production release — 2026-10-23
+
+User confirmed release and continuing the remaining work. Main fast-forwarded from `2c7576d` to `d4a3922d61365e236a20d2e976e4f6fee188125d` with an expected-old-SHA guard, without rewriting history. Native Vercel promotion rebuilt this tested version using production environment settings. Verified Ready / Production / `www.supdiver.com` / source `d4a3922` at https://vercel.com/ydpeng26s-projects/deepocean/7SPx1xfhdZuNy5sJwBUeoGqHjWxx . The production app source is unchanged from recovery-tested `14e3d1c`; later changes only restore the profile workflow and record acceptance. No schema migration or authenticated production fixture writes were performed.
 
 ## Scope and evidence
 
