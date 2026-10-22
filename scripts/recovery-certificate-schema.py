@@ -1,7 +1,7 @@
 """Cloud-only, recovery-only additive certificate schema. No production credentials."""
 import os
 from pathlib import Path
-from urllib.parse import urlsplit, unquote
+from urllib.parse import urlsplit, unquote, parse_qsl
 import psycopg
 
 stage = 'preflight'
@@ -13,7 +13,9 @@ try:
     if not (parsed.scheme in ('postgresql', 'postgres')
             and unquote(parsed.username or '') == 'postgres.esovqvampbrhuhamkfcs'
             and (parsed.hostname or '').endswith('.pooler.supabase.com')
-            and parsed.port == 5432 and parsed.path == '/postgres' and parsed.password):
+            and parsed.port == 5432 and parsed.path == '/postgres' and parsed.password
+            and not parsed.fragment
+            and all(key == 'sslmode' and value in ('require', 'verify-ca', 'verify-full') for key, value in parse_qsl(parsed.query))):
         raise RuntimeError('Recovery session URI required')
     stage = 'recovery schema transaction'
     with psycopg.connect(uri, sslmode='require', connect_timeout=20) as db:
