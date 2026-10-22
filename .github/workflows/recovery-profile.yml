@@ -26,9 +26,14 @@ jobs:
         run: python scripts/recovery-certificate-schema.py
       - name: Install cloud browser
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/certificate-browser" --no-save --package-lock=false playwright@1.56.1
+          if command -v google-chrome >/dev/null; then
+            echo 'CERTIFICATE_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
+          else
+            node "$RUNNER_TEMP/certificate-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
       - name: Verify certificate archive and privacy on recovery only
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          CERTIFICATE_PLAYWRIGHT_MODULE: ${{ runner.temp }}/certificate-browser/node_modules/playwright/index.mjs
         run: node scripts/recovery-certificates.mjs

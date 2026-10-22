@@ -1,5 +1,5 @@
 // Recovery only. Disposable synthetic accounts; no screenshots, artifacts or real-user edits.
-import { chromium } from 'playwright';
+const { chromium } = await import(process.env.CERTIFICATE_PLAYWRIGHT_MODULE || 'playwright');
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 const api = 'https://esovqvampbrhuhamkfcs.supabase.co';
@@ -49,7 +49,7 @@ try {
   await req(`/rest/v1/diver_certificates?id=eq.${fixture.id}`, { method: 'DELETE', token: a.token });
   pass('api_owner_isolation_forgery_denials_public_allowlist_and_archive');
   stage = 'PC browser';
-  browser = await chromium.launch();
+  browser = await chromium.launch({ channel: process.env.CERTIFICATE_BROWSER_CHANNEL || undefined });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'zh-CN' });
   await context.route('**/*', route => {
     const url = new URL(route.request().url());
