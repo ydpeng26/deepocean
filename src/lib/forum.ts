@@ -34,10 +34,12 @@ export type ForumComment = {
   createdAt: string;
 };
 
-async function currentUserId() {
+async function currentUserId(expectedId?: string) {
   const { data } = await supabase.auth.getSession();
   const id = data.session?.user.id;
   if (!id) throw new Error("请先登录");
+  if (expectedId && id !== expectedId)
+    throw new Error("账号已变化，请重新打开论坛 / Account changed; reopen the forum.");
   return id;
 }
 
@@ -243,10 +245,144 @@ export async function listForumComments(postId: string): Promise<ForumComment[]>
   }));
 }
 
-export async function addForumComment(postId: string, body: string) {
-  const userId = await currentUserId();
-  const { error } = await db
+function commentBody(body: string) {
+  const text = body.trim();
+  if (!text || Array.from(text).length > 1000)
+    throw new Error("回应请填写 1–1000 字 / Use 1–1000 characters.");
+  return text;
+}
+
+const commentFields = "id,user_id,post_id,author_name,body,created_at";
+type CommentRow = {
+  id: string;
+  user_id: string;
+  post_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+};
+function savedComment(row: CommentRow): ForumComment {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    author: row.author_name || "Diver",
+    avatarUrl: null,
+    body: row.body,
+    createdAt: row.created_at,
+  };
+}
+
+export async function addForumComment(
+  postId: string,
+  body: string,
+  requestId: string = crypto.randomUUID(),
+  expectedUserId?: string,
+): Promise<ForumComment> {
+  const userId = await currentUserId(expectedUserId);
+  const payload = { id: requestId, post_id: postId, user_id: userId, body: commentBody(body) };
+  async function existing() {
+    const { data, error } = await db
+      .from("forum_comments")
+      .select(commentFields)
+      .eq("id", requestId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    if (!Object.entries(payload).every(([key, value]) => data[key] === value))
+      throw new Error(
+        "这条回应可能已发送，请刷新列表确认后再编辑 / This response may already be sent. Refresh to check before editing.",
+      );
+    return savedComment(data);
+  }
+  const prior = await existing();
+  if (prior) return prior;
+  await currentUserId(userId);
+  const { data, error } = await db
     .from("forum_comments")
-    .insert({ post_id: postId, user_id: userId, body: body.trim() });
+    .insert(payload)
+    .select(commentFields)
+    .single();
+  if (error) {
+    if (error.code === "23505") {
+      const prior = await existing();
+      if (prior) return prior;
+    }
+    throw error;
+  }
+  if (!data || data.id !== requestId || data.user_id !== userId || data.post_id !== postId)
+    throw new Error("回应保存未确认 / Response save not confirmed.");
+  return savedComment(data);
+}
+
+export async function updateForumComment(
+  id: string,
+  postId: string,
+  body: string,
+  expectedUserId: string,
+): Promise<ForumComment> {
+  const userId = await currentUserId(expectedUserId);
+  const { data, error } = await db
+    .from("forum_comments")
+    .update({ body: commentBody(body) })
+    .eq("id", id)
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .select(commentFields)
+    .single();
   if (error) throw error;
+  if (!data || data.id !== id || data.user_id !== userId || data.post_id !== postId)
+    throw new Error("回应修改未确认 / Response edit not confirmed.");
+  return savedComment(data);
+}
+
+export async function deleteForumComment(id: string, postId: string, expectedUserId: string) {
+  const userId = await currentUserId(expectedUserId);
+  const { data, error } = await db
+    .from("forum_comments")
+    .delete()
+    .eq("id", id)
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .select("id")
+    .single();
+  if (error) throw error;
+  if (data?.id !== id) throw new Error("回应删除未确认 / Response deletion not confirmed.");
+}
+
+export type BlockedForumAuthor = { id: string; name: string };
+export async function listBlockedForumAuthors(
+  expectedUserId: string,
+): Promise<BlockedForumAuthor[]> {
+  const userId = await currentUserId(expectedUserId);
+  const { data: rows, error } = await db
+    .from("forum_blocks")
+    .select("blocked_id")
+    .eq("blocker_id", userId);
+  if (error) throw error;
+  const ids = (rows ?? []).map((row: { blocked_id: string }) => row.blocked_id);
+  if (!ids.length) return [];
+  // Other profiles remain private; use the existing authenticated public-summary RPC.
+  return Promise.all(
+    ids.map(async (id: string) => {
+      const { data, error: profileError } = await db.rpc("get_public_diver_profile", {
+        target_user_id: id,
+      });
+      if (profileError) throw profileError;
+      return { id, name: data?.[0]?.display_name?.trim() || "Diver" };
+    }),
+  );
+}
+
+export async function unblockForumAuthor(authorId: string, expectedUserId: string) {
+  const userId = await currentUserId(expectedUserId);
+  const { data, error } = await db
+    .from("forum_blocks")
+    .delete()
+    .eq("blocker_id", userId)
+    .eq("blocked_id", authorId)
+    .select("blocked_id")
+    .single();
+  if (error) throw error;
+  if (data?.blocked_id !== authorId) throw new Error("解除屏蔽未确认 / Unblock not confirmed.");
 }

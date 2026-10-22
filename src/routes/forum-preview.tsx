@@ -28,16 +28,16 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ForumPostMenu } from "@/components/ForumPostMenu";
+import { ForumCommentsDialog, type ForumCommentDraft } from "@/components/ForumCommentsDialog";
+import { ForumBlockedAuthors } from "@/components/ForumBlockedAuthors";
 import { ScubaTankIcon } from "@/components/ScubaTankIcon";
 import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { listDives } from "@/lib/dives";
 import {
-  addForumComment,
   blockForumAuthor,
   createForumPost,
   deleteForumPost,
-  listForumComments,
   listForumPosts,
   reportForumPost,
   toggleForumBookmark,
@@ -391,12 +391,15 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const [blockedAuthors, setBlockedAuthors] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [commentPost, setCommentPost] = useState<Post | null>(null);
-  const [commentDraft, setCommentDraft] = useState("");
-  const commentsQuery = useQuery({
-    queryKey: ["forum-comments", commentPost?.id],
-    queryFn: () => listForumComments(commentPost!.id),
-    enabled: !preview && Boolean(commentPost),
-  });
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, ForumCommentDraft>>({});
+  const commentKey = `${profile?.id ?? "preview"}:${commentPost?.id ?? ""}`;
+  function openComments(post: Post) {
+    const key = `${profile?.id ?? "preview"}:${post.id}`;
+    setCommentDrafts((items) =>
+      items[key] ? items : { ...items, [key]: { body: "", requestId: crypto.randomUUID() } },
+    );
+    setCommentPost(post);
+  }
 
   const livePosts: Post[] = (forumQuery.data ?? []).map((post, index) => ({
     id: post.id,
@@ -467,7 +470,10 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     window.setTimeout(() => setNotice(""), 2200);
   }
   async function refreshForum() {
-    await queryClient.invalidateQueries({ queryKey: ["forum-posts"] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["forum-posts"] }),
+      queryClient.invalidateQueries({ queryKey: ["forum-blocks"] }),
+    ]);
   }
   async function run(action: () => Promise<unknown>, success?: string) {
     try {
@@ -790,7 +796,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                       <button
                         type="button"
                         className="do-forum-read"
-                        onClick={() => setCommentPost(post)}
+                        onClick={() => openComments(post)}
                       >
                         {c.read}
                         <ChevronRight />
@@ -810,7 +816,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                           <ScubaTankIcon />
                           {post.likes + (preview && isLiked ? 1 : 0)} <span>{c.likes}</span>
                         </button>
-                        <button type="button" onClick={() => setCommentPost(post)}>
+                        <button type="button" onClick={() => openComments(post)}>
                           <MessageCircle />
                           {post.comments} <span>{c.comments}</span>
                         </button>
@@ -924,6 +930,9 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                 })}
               </div>
             </section>
+            {!preview && profile?.id && (
+              <ForumBlockedAuthors key={profile.id} ownerId={profile.id} language={language} />
+            )}
           </aside>
         </div>
       </main>
@@ -1070,74 +1079,22 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
           </section>
         </div>
       )}
-      {commentPost && (
-        <div className="do-forum-composer-backdrop">
-          <section
-            className="do-forum-composer do-forum-comments"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="forum-comments-title"
-          >
-            <header>
-              <div>
-                <span>OCEAN RESPONSES</span>
-                <h2 id="forum-comments-title">{c.commentsTitle}</h2>
-                <p>{commentPost.titleZh}</p>
-              </div>
-              <button type="button" onClick={() => setCommentPost(null)} aria-label={c.cancel}>
-                <X />
-              </button>
-            </header>
-            <div className="do-forum-comment-list">
-              {preview ? (
-                <p>{c.noComments}</p>
-              ) : commentsQuery.isPending ? (
-                <p>{c.loading}</p>
-              ) : commentsQuery.data?.length ? (
-                commentsQuery.data.map((comment) => (
-                  <article key={comment.id}>
-                    <Avatar>
-                      <AvatarImage src={comment.avatarUrl ?? undefined} alt={comment.author} />
-                      <AvatarFallback>{comment.author[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <strong>{comment.author}</strong>
-                      <p>{comment.body}</p>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <p>{c.noComments}</p>
-              )}
-            </div>
-            {!preview && (
-              <div className="do-forum-comment-form">
-                <textarea
-                  value={commentDraft}
-                  onChange={(event) => setCommentDraft(event.target.value)}
-                  placeholder={c.commentPlaceholder}
-                  maxLength={1000}
-                />
-                <button
-                  type="button"
-                  disabled={!commentDraft.trim()}
-                  onClick={() =>
-                    void run(async () => {
-                      await addForumComment(commentPost.id, commentDraft);
-                      setCommentDraft("");
-                      await queryClient.invalidateQueries({
-                        queryKey: ["forum-comments", commentPost.id],
-                      });
-                    }, c.sendComment)
-                  }
-                >
-                  <Send />
-                  {c.sendComment}
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
+      {commentPost && commentDrafts[commentKey] && (
+        <ForumCommentsDialog
+          key={commentKey}
+          post={{
+            id: commentPost.id,
+            title: language === "en" ? commentPost.titleEn : commentPost.titleZh,
+          }}
+          ownerId={profile?.id ?? ""}
+          language={language}
+          preview={preview}
+          draft={commentDrafts[commentKey]}
+          onDraftChange={(draft) =>
+            setCommentDrafts((items) => ({ ...items, [commentKey]: draft }))
+          }
+          onClose={() => setCommentPost(null)}
+        />
       )}
     </div>
   );

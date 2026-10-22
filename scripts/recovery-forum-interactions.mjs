@@ -6,9 +6,11 @@ const api='https://esovqvampbrhuhamkfcs.supabase.co', site='https://supdiver-rec
 const admin=process.env.RECOVERY_SERVICE_ROLE_KEY;
 const anon=(await readFile(new URL('./recovery-browser.mjs',import.meta.url),'utf8')).match(/const anon = '([^']+)'/)[1];
 const users=[],findings=[];let browser,page,stage='preflight',failed=false,productionTraffic=false;
+const repaired=process.env.FORUM_EXPECT_FIXED==='true';
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const pass=text=>console.log('PASS: '+text);
 const finding=text=>{findings.push(text);console.log('FINDING: '+text);};
+function observe(bad,text,success){if(bad){check(!repaired,text);finding(text);}else pass(success);}
 async function request(path,{method='GET',body,token=admin}={}){
   check(path.startsWith('/')&&!path.startsWith('//'),'relative recovery path');
   const r=await fetch(api+path,{method,headers:{apikey:token===admin?admin:anon,Authorization:'Bearer '+token,'Content-Type':'application/json',Prefer:'return=representation'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(45000)});
@@ -43,8 +45,8 @@ try{
   async function menu(name){await card().getByRole('button',{name:'更多操作',exact:true}).click();await card().getByRole('menuitem',{name,exact:true}).click();}
   async function openComments(){await card().getByRole('button',{name:'阅读全文',exact:true}).click();await page.getByRole('dialog').waitFor();}
   const dialog=()=>page.getByRole('dialog');
-  const draft=()=>dialog().locator('textarea');
-  const send=()=>dialog().getByRole('button',{name:'发送',exact:true});
+  const draft=()=>dialog().locator('.do-forum-comment-form textarea');
+  const send=()=>dialog().locator('.do-forum-comment-form button');
   const close=()=>dialog().getByRole('button',{name:'取消',exact:true}).click();
   await forum();
   stage='likes';
@@ -74,7 +76,7 @@ try{
   await openComments();await draft().fill('SYNTHETIC NORMAL');await send().click();await poll(comments,rows=>rows.length===1);await poll(()=>draft().inputValue(),v=>v==='');
   await dialog().getByText('SYNTHETIC NORMAL',{exact:true}).waitFor();
   const editControls=await dialog().getByRole('button',{name:/编辑|删除/}).count();
-  if(!editControls)finding('own_comment_has_no_edit_or_delete_control_in_current_comment_dialog');
+  observe(!editControls,'own_comment_has_no_edit_or_delete_control_in_current_comment_dialog','own_comment_edit_and_delete_controls_visible');
   pass('browser_comment_submit_persisted_and_rendered');
   await close();await req('/rest/v1/forum_comments?post_id=eq.'+post.id,{method:'DELETE'});
   let mode='pass',writeCount=0;
@@ -85,7 +87,9 @@ try{
       writeCount++;await new Promise(r=>setTimeout(r,900));
       if(mode==='before')return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic comment write failure"}'});
       if(mode==='lost'){const response=await route.fetch();check(response.ok(),'Synthetic comment commit');return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic lost comment response"}'});}
-    }return route.continue();
+    }
+    if((method==='PATCH'&&mode==='edit-fail')||(method==='DELETE'&&mode==='delete-fail'))return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic comment management failure"}'});
+    return route.continue();
   });
   stage='comment failure retry';mode='before';await openComments();await draft().fill('SYNTHETIC RETAINED');let before=writeCount;await send().click();await poll(()=>writeCount,v=>v===before+1);await page.waitForTimeout(1600);
   check((await comments()).length===0&&await draft().inputValue()==='SYNTHETIC RETAINED','Rejected comment draft lost');
@@ -95,23 +99,45 @@ try{
   stage='comment duplicate click';await openComments();await draft().fill('SYNTHETIC DOUBLE');before=writeCount;
   await send().evaluate(button=>{button.click();button.click();});await poll(()=>writeCount,v=>v>=before+1);await page.waitForTimeout(2000);
   const doubled=await comments();
-  if(doubled.length>1)finding('synchronous_double_send_creates_duplicate_comments');else pass('comment_double_send_has_one_persisted_row');
+  check(doubled.length>=1,'Double-send fixture did not persist');
+  observe(doubled.length>1,'synchronous_double_send_creates_duplicate_comments','comment_double_send_has_one_persisted_row');
   await close();await req('/rest/v1/forum_comments?post_id=eq.'+post.id,{method:'DELETE'});
   stage='comment lost response';mode='lost';await openComments();await draft().fill('SYNTHETIC LOST');await send().click();await poll(comments,rows=>rows.length===1);await page.waitForTimeout(1400);
-  check(await draft().inputValue()==='SYNTHETIC LOST','Lost response draft not retained');mode='pass';await send().click();await poll(comments,rows=>rows.length>=2);
-  finding('committed_comment_lost_response_then_retry_creates_second_comment');
+  check(await draft().inputValue()==='SYNTHETIC LOST','Lost response draft not retained');mode='pass';const requestsBeforeRetry=writeCount;await send().click();await poll(()=>draft().inputValue(),v=>v==='');
+  const afterRetry=await comments();observe(afterRetry.length>1,'committed_comment_lost_response_then_retry_creates_second_comment','lost_comment_response_retry_has_one_row');
+  check(afterRetry.length>=1,'Lost-response fixture missing after retry');
+  if(repaired)check(writeCount===requestsBeforeRetry,'Retry must confirm existing row without another INSERT');
   await poll(()=>draft().inputValue(),v=>v==='');await close();await req('/rest/v1/forum_comments?post_id=eq.'+post.id,{method:'DELETE'});
   stage='comment pending draft';await openComments();await draft().fill('SYNTHETIC SENT');await send().click();
   const canEdit=await draft().isEnabled();if(canEdit)await draft().fill('SYNTHETIC NEXT UNSENT DRAFT');
   await poll(comments,rows=>rows.length===1);await page.waitForTimeout(800);
-  if(canEdit&&await draft().inputValue()==='')finding('comment_response_clears_new_text_typed_while_previous_send_pending');
+  observe(canEdit&&await draft().inputValue()==='','comment_response_clears_new_text_typed_while_previous_send_pending','comment_input_locked_while_previous_send_pending');
   await draft().fill('SYNTHETIC FOR FIRST POST');await close();await page.locator('#post-'+second.id).getByRole('button',{name:'阅读全文',exact:true}).click();
-  if(await draft().inputValue()==='SYNTHETIC FOR FIRST POST')finding('unsent_comment_draft_carries_into_different_post_dialog');
+  observe(await draft().inputValue()==='SYNTHETIC FOR FIRST POST','unsent_comment_draft_carries_into_different_post_dialog','comment_drafts_isolated_by_post');
   await draft().fill('');await close();
+  if(repaired){await openComments();check(await draft().inputValue()==='SYNTHETIC FOR FIRST POST','Original post draft not preserved');await draft().fill('');await close();pass('return_to_original_post_preserves_its_own_draft');}
   stage='comment read failure';mode='read-fail';await page.reload({waitUntil:'networkidle'});await openComments();await page.waitForTimeout(12000);
-  if(await dialog().getByText('还没有回应。',{exact:true}).count())finding('comment_load_error_displayed_as_no_comments_instead_of_retry_error');
-  else pass('comment_read_failure_not_empty_state');
-  mode='pass';await close();
+  observe(await dialog().getByText('还没有回应。',{exact:true}).count()>0,'comment_load_error_displayed_as_no_comments_instead_of_retry_error','comment_read_failure_not_empty_state');
+  mode='pass';
+  if(repaired){await dialog().getByRole('button',{name:'重新加载回应',exact:true}).click();await dialog().getByText('SYNTHETIC SENT',{exact:true}).waitFor();pass('comment_load_error_retry_restores_actual_list');}
+  await close();
+  if(repaired){
+    stage='comment owner management';
+    await req('/rest/v1/forum_comments',{method:'POST',token:b.token,body:{post_id:post.id,user_id:b.id,body:'SYNTHETIC OTHER AUTHOR'}});
+    await openComments();await dialog().getByRole('button',{name:'重新加载回应',exact:true}).click();
+    const other=dialog().locator('article').filter({hasText:'SYNTHETIC OTHER AUTHOR'});await other.waitFor();check(await other.getByRole('button',{name:/编辑回应|删除回应/}).count()===0,'Foreign comment management exposed');
+    const mine=()=>dialog().locator('article').filter({hasText:'SYNTHETIC SENT'});
+    await mine().getByRole('button',{name:'编辑回应',exact:true}).click();const editor=()=>dialog().getByLabel('编辑回应内容',{exact:true});
+    await editor().fill('SYNTHETIC EDITED');mode='edit-fail';await dialog().getByRole('button',{name:'保存回应修改',exact:true}).click();await dialog().getByRole('alert').filter({hasText:'操作未确认'}).waitFor();
+    check(await editor().inputValue()==='SYNTHETIC EDITED'&&(await comments()).some(row=>row.body==='SYNTHETIC SENT'),'Failed edit draft/row lost');
+    mode='pass';await dialog().getByRole('button',{name:'保存回应修改',exact:true}).click();await dialog().getByText('SYNTHETIC EDITED',{exact:true}).waitFor();
+    await close();await page.reload({waitUntil:'networkidle'});await openComments();const edited=()=>dialog().locator('article').filter({hasText:'SYNTHETIC EDITED'});await edited().waitFor();
+    await edited().getByRole('button',{name:'删除回应',exact:true}).click();mode='delete-fail';await edited().getByRole('button',{name:'确认删除回应',exact:true}).click();await dialog().getByRole('alert').filter({hasText:'操作未确认'}).waitFor();check((await comments()).some(row=>row.body==='SYNTHETIC EDITED'),'Rejected deletion removed comment');
+    mode='pass';await edited().getByRole('button',{name:'确认删除回应',exact:true}).click();await edited().waitFor({state:'hidden'});check((await comments()).length===1&&(await comments())[0].user_id===b.id,'Owner delete affected another account');
+    await close();await req('/rest/v1/forum_comments?post_id=eq.'+post.id,{method:'DELETE'});
+    await req('/rest/v1/forum_comments',{method:'POST',token:a.token,body:{post_id:post.id,user_id:a.id,body:'SYNTHETIC GUARD'}});
+    pass('own_comment_edit_delete_failure_retry_reload_and_foreign_controls_denial');
+  }
   stage='post edit delete UI';const ownCard=()=>page.locator('#post-'+own.id);
   await ownCard().getByRole('button',{name:'更多操作',exact:true}).click();await ownCard().getByRole('menuitem',{name:'编辑帖子',exact:true}).click();
   await dialog().locator('textarea').fill('SYNTHETIC OWN EDITED');await dialog().getByRole('button',{name:'保存修改',exact:true}).click();await dialog().waitFor({state:'hidden'});
@@ -122,7 +148,16 @@ try{
   check(await card().count()===0&&(await privateRows('forum_blocks','blocker_id=eq.'+a.id,b.token)).length===0,'Block visibility/privacy');
   pass('browser_block_hides_author_after_reload_and_block_list_is_private');
   const unblockControl=await page.getByRole('button',{name:/取消屏蔽|解除屏蔽|Unblock/i}).count();
-  if(!unblockControl)finding('forum_has_no_visible_unblock_management_control');
+  if(repaired){
+    await page.getByRole('button',{name:'管理已屏蔽用户',exact:true}).click();
+    const panel=page.getByRole('region',{name:'屏蔽管理',exact:true});await panel.getByRole('button',{name:'解除屏蔽',exact:true}).waitFor();
+    await panel.getByText(marker+'-1',{exact:true}).waitFor();
+    let failUnblock=true;
+    await context.route(api+'/rest/v1/forum_blocks*',route=>route.request().method()==='DELETE'&&failUnblock?route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic unblock failure"}'}):route.continue());
+    await panel.getByRole('button',{name:'解除屏蔽',exact:true}).click();await panel.getByRole('alert').waitFor();check((await privateRows('forum_blocks','blocker_id=eq.'+a.id+'&blocked_id=eq.'+b.id)).length===1,'Failed unblock removed row');
+    failUnblock=false;await panel.getByRole('button',{name:'解除屏蔽',exact:true}).click();await poll(()=>privateRows('forum_blocks','blocker_id=eq.'+a.id+'&blocked_id=eq.'+b.id),rows=>rows.length===0);await card().waitFor();
+    await page.reload({waitUntil:'networkidle'});await card().waitFor();pass('unblock_failure_retry_restores_author_and_persists_after_reload');
+  }else if(!unblockControl)finding('forum_has_no_visible_unblock_management_control');
   stage='outsider write guards';
   const denied=await req('/rest/v1/forum_posts?id=eq.'+post.id,{method:'PATCH',token:a.token,body:{body:'OUTSIDER'}});check(denied.length===0,'Outsider edited post');
   check((await req('/rest/v1/forum_posts?id=eq.'+post.id,{method:'DELETE',token:a.token})).length===0,'Outsider deleted post');
