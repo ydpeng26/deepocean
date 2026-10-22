@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   interactions:
-    if: github.ref == 'refs/heads/codex/forum-volume-audit'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/forum-interaction-audit' || github.ref == 'refs/heads/codex/forum-social-resilience'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -32,4 +32,4 @@ jobs:
           FORUM_EXPECT_FIXED: 'true'
           FORUM_SOCIAL_EXPECT_FIXED: 'true'
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/forum-browser/node_modules/playwright/index.mjs
-        run: node scripts/recovery-forum-volume.mjs
+        run: node scripts/recovery-forum-interactions.mjs
