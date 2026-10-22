@@ -86,4 +86,39 @@ const gearInput = { category:'mask',brand:'Fixture',model:'M',purchased_on:null,
   for(const count of [-1,1.5,Infinity,2147483648])assert.throws(()=>gear.validateGear({...gearInput,dive_count:count}));
   console.log('PASS: gear stable retry, changed retry rejection, zero-row edit failure and integer bounds');
 }
-console.log('Scope: local mocked API checks, no real credentials, network or data changes.');
+function nodes(value, result=[]) {if(Array.isArray(value))value.forEach(v=>nodes(v,result));else if(value&&typeof value==='object'){if(value.type)result.push(value);nodes(value.props?.children,result);}return result;}
+function content(value){if(Array.isArray(value))return value.map(content).join('');if(value&&typeof value==='object')return content(value.props?.children);return value==null?'':String(value);}
+function gearEditor(readError=false) {
+  const state={items:readError?undefined:[{...gearInput,id:'fixture-gear',user_id:'fixture-owner',created_at:'2026-10-22'}],cells:[],effects:new Map(),readError,writes:[],saving:null};
+  let cursor=0,effects=[],dirty=false;
+  const react={useState(initial){const i=cursor++;if(!(i in state.cells))state.cells[i]=typeof initial==='function'?initial():initial;return[state.cells[i],value=>{const next=typeof value==='function'?value(state.cells[i]):value;dirty ||= !Object.is(next,state.cells[i]);state.cells[i]=next;}];},useRef(initial){const i=cursor++;return state.cells[i]??={current:initial};},useEffect(fn,deps){const i=cursor++,previous=state.effects.get(i);if(!previous||deps.some((value,n)=>value!==previous.deps[n])){state.effects.set(i,{deps});effects.push(()=>{previous?.cleanup?.();state.effects.get(i).cleanup=fn();});}}};
+  const jsx=(type,props)=>({type,props});
+  const component=load('src/routes/_authenticated/gear.tsx',name=>{
+    if(name==='react')return react;if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};
+    if(name==='@tanstack/react-router')return{createFileRoute:()=>options=>options,Link:'Link'};
+    if(name==='@tanstack/react-query')return{useQuery:()=>({data:state.items,isPending:false,isError:state.readError,refetch(){state.readError=false;}}),useQueryClient:()=>({setQueryData:(_key,fn)=>{state.writes.push('cache');state.items=fn(state.items);},invalidateQueries:async()=>{}})};
+    if(name==='@/hooks/useProfile')return{useProfile:()=>({profile:{id:'fixture-owner'},isPending:false,isError:false,refetch(){}})};
+    if(name==='@/lib/gear')return{validateGear:input=>({...input}),updateGear:async(id,input,owner)=>{state.writes.push({id,input,owner});return new Promise((resolve,reject)=>{state.saving={resolve,reject};});}};
+    if(name==='sonner')return{toast:{error(){},success(){}}};
+    return new Proxy({}, {get:(_,key)=>key});
+  }).Route.component;
+  state.render=()=>{for(let n=0;n<8;n++){cursor=0;effects=[];dirty=false;state.tree=component();for(const effect of effects)effect();if(!dirty)return;}throw Error('Unsettled editor');};
+  state.field=label=>nodes(nodes(state.tree).find(node=>node.type==='label'&&content(node).startsWith(label))).find(node=>node.type==='Input'||node.type==='Textarea');
+  state.button=label=>nodes(state.tree).find(node=>node.type==='Button'&&content(node).includes(label));
+  state.render();return state;
+}
+{
+  const editor=gearEditor();editor.field('品牌').props.onChange({target:{value:'Unsaved'}});editor.render();editor.items=[{...editor.items[0],brand:'Server refreshed'}];editor.render();assert.equal(editor.field('品牌').props.value,'Unsaved');
+  const failed=gearEditor(true);assert(nodes(failed.tree).some(node=>node.props?.role==='alert'));assert.equal(failed.field('品牌'),undefined);
+  console.log('PASS: actual gear component preserves draft across refreshed row and blocks blank form on load error');
+}
+{
+  const editor=gearEditor();editor.field('品牌').props.onChange({target:{value:'Captured'}});editor.render();const click=editor.button('保存装备').props.onClick;click();click();editor.render();
+  assert.equal(editor.writes.length,1);assert(editor.button('新增装备').props.disabled);assert(nodes(editor.tree).find(node=>node.type==='fieldset').props.disabled);
+  editor.button('新增装备').props.onClick();editor.field('品牌').props.onChange({target:{value:'Must be ignored'}});editor.render();assert.equal(editor.field('品牌').props.value,'Captured');
+  editor.saving.reject(Error('Fixture failure'));await new Promise(resolve=>setImmediate(resolve));editor.render();assert.equal(editor.field('品牌').props.value,'Captured');assert.equal(editor.button('新增装备').props.disabled,false);
+  editor.button('保存装备').props.onClick();editor.render();for(const effect of editor.effects.values())effect.cleanup?.();editor.saving.resolve({...editor.items[0],brand:'Captured'});await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(editor.writes.filter(value=>value==='cache').length,0);
+  console.log('PASS: gear shared synchronous lock, retained failure draft and no late cache write after unmount');
+}
+console.log('Scope: local mocked callbacks/API checks, no real credentials, network or data changes.');

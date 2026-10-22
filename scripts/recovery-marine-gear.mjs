@@ -88,7 +88,7 @@ try {
   let gearReadFail=true,gearMode='pass',gearWrites=0;
   await context.route(api+'/rest/v1/gear_items*',async route=>{
     const method=route.request().method();
-    if(method==='GET'){gearReads++;if(gearReadFail)return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic gear read failure"}'});}
+    if(method==='GET'){gearReads++;if(gearReadFail)return route.fulfill({status:400,contentType:'application/json',body:'{"message":"Synthetic terminal gear read failure"}'});}
     if(method==='PATCH'||method==='POST'){
       gearWrites++;await new Promise(r=>setTimeout(r,1600));
       if(gearMode==='before')return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic gear write failure"}'});
