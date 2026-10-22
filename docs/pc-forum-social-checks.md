@@ -22,3 +22,9 @@ Cloud strict acceptance is pending. The recovery-only interaction script now add
 - Local dive/profile/certificate regressions also pass. Full TypeScript checking still has the previously documented root and preview-page errors, not new errors in this repair.
 
 Production remains at authorized dive repair `d4a3922` (main rechecked), and native signed-out production `/dives/logs` correctly redirects to `/auth`. The social repair awaits separate production confirmation. This is targeted recovery PC Chromium acceptance, not every concurrent cross-device social toggle, moderator procedure, large-feed/private-state pagination, all browsers/keyboard/English cases, mobile or the deferred passport/preview features.
+
+## Authorized production release — 2026-10-23
+
+The user explicitly confirmed this release. Main was fast-forwarded with an expected-old-SHA guard from `d4a3922` to `d5fbdef5cc0f602a28905f45d9e89a609c09b529`, then re-read to confirm. No history rewriting, schema/permission changes, SMTP work or authenticated production fixtures were involved. `git diff 8e7da88 d5fbdef -- src` is empty: the production application matches the recovery-tested application.
+
+Native Vercel promotion rebuilt with production environment settings. Verified **Ready / Production / www.supdiver.com / source d5fbdef** at https://vercel.com/ydpeng26s-projects/deepocean/6TUezVP2M8i59xHtesQtoA6g22w1 . Native signed-out `https://supdiver.com/forum` correctly redirects to `/auth` and displays the login form. Stateful behavior remains backed by the two-account recovery run above; no human production posts or relationships were created as a release test. Remaining coverage boundaries and deferred features are unchanged.
