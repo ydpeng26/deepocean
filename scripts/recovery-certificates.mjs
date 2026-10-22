@@ -34,9 +34,10 @@ try {
   }
   const [a,b] = users, fixture = { id: randomUUID(), user_id: a.id, agency: 'PADI', level: 'API-PRIVATE', certificate_number: 'NEVER-PUBLIC', is_public: false };
   await req('/rest/v1/diver_certificates', { method: 'POST', token: a.token, body: fixture });
-  check((await rows(a)).length === 1 && (await rows(b)).length === 0, 'Owner only');
+  check((await rows(a)).length === 1 && (await req('/rest/v1/diver_certificates?select=*', { token: b.token })).length === 0, 'Owner only, including unfiltered malicious read');
   check(!(await response('/rest/v1/diver_certificates', { method: 'POST', token: b.token, body: { ...fixture, id: randomUUID() } })).ok, 'Forged owner insert denied');
   check((await req(`/rest/v1/diver_certificates?id=eq.${fixture.id}`, { method: 'PATCH', token: b.token, body: { level: 'FORGED' } })).length === 0, 'Other owner update denied');
+  check(!(await fetch(api + '/rest/v1/diver_certificates?on_conflict=id', { method: 'POST', headers: { apikey: anon, Authorization: `Bearer ${b.token}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify({ ...fixture, user_id: b.id }), signal: AbortSignal.timeout(45000) })).ok, 'Cannot take over another certificate through upsert');
   check(!(await response('/rest/v1/diver_certificates?select=*', { token: anon })).ok, 'Anonymous table denied');
   check((await req('/rest/v1/rpc/get_public_diver_certificates', { method: 'POST', token: b.token, body: { target_user_id: a.id } })).length === 0, 'Private summary hidden');
   await req(`/rest/v1/diver_certificates?id=eq.${fixture.id}`, { method: 'PATCH', token: a.token, body: { is_public: true } });
@@ -111,7 +112,9 @@ try {
   check(!(await response(`/storage/v1/object/sign/${bucket}/${saved.front_photo_path}`, { method: 'POST', token: b.token, body: { expiresIn: 60 } })).ok, 'Other owner cannot sign public credential photo');
   check(!(await response(`/storage/v1/object/authenticated/${bucket}/${saved.front_photo_path}`, { token: b.token })).ok, 'Other owner cannot read private photo');
   check(!(await response(`/storage/v1/object/public/${bucket}/${saved.front_photo_path}`, { token: anon })).ok, 'No public image endpoint');
-  check((await rows(b)).length === 0, 'Public credential raw row still private');
+  check((await req(`/rest/v1/diver_certificates?user_id=eq.${a.id}&select=*`, { token: b.token })).length === 0, 'Public credential raw row still private');
+  const maliciousWrite = await fetch(api + '/storage/v1/object/' + bucket + '/' + saved.front_photo_path, { method: 'PUT', headers: { apikey: anon, Authorization: `Bearer ${b.token}`, 'Content-Type': 'image/jpeg' }, body: Buffer.from('synthetic-forbidden-overwrite'), signal: AbortSignal.timeout(45000) });
+  check(!maliciousWrite.ok, 'Other owner cannot overwrite photo');
   pass('multiple_records_public_summary_still_blocks_private_number_and_photo');
   await context.clearCookies();
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
