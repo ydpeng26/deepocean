@@ -70,7 +70,7 @@ function MarineWall() {
   useEffect(() => {
     if (!editor && !selected) return;
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !lock.current) {
+      if (event.key === "Escape" && !lock.current && !busy) {
         setEditor(false);
         setSelected(null);
       }
