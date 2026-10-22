@@ -392,6 +392,9 @@ function ProfilePage() {
                 </div>
                 <Waves aria-hidden="true" />
               </div>
+              <Link to="/certificates" className="do-profile-cert-link" style={{ margin: "18px 28px 0" }}>
+                <Award aria-hidden="true" />{language === "zh-CN" ? "管理我的证书档案与正面照片" : "Manage my certificates and front photos"}
+              </Link>
               <div className="do-profile-fields">
                 <label>
                   <span>{c.cert}</span>

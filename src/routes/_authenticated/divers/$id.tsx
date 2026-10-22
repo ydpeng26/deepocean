@@ -4,6 +4,7 @@ import { ArrowLeft, Award, CalendarDays, Waves } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getPublicProfile, signedAvatarUrl } from "@/lib/profile";
+import { PublicCertificateSummary } from "@/components/PublicCertificateSummary";
 
 export const Route = createFileRoute("/_authenticated/divers/$id")({
   head: () => ({ meta: [{ title: "潜水员主页 · SupDiver" }, { name: "description", content: "查看 SupDiver 潜水员的公开资料。" }] }),
@@ -32,5 +33,6 @@ function PublicDiverPage() {
         </div>
       </div>
     </section>
+    <PublicCertificateSummary userId={id} />
   </AppShell>;
 }

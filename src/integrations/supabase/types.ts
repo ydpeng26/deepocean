@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      diver_certificates: {
+        Row: {
+          id: string
+          user_id: string
+          agency: string
+          level: string
+          certificate_number: string | null
+          issued_on: string | null
+          issued_at: string | null
+          is_public: boolean
+          front_photo_path: string | null
+          deleted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          agency: string
+          level: string
+          certificate_number?: string | null
+          issued_on?: string | null
+          issued_at?: string | null
+          is_public?: boolean
+          front_photo_path?: string | null
+          deleted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database["public"]["Tables"]["diver_certificates"]["Insert"]>
+        Relationships: []
+      }
       dives: {
         Row: {
           buddy_name: string | null
@@ -163,6 +195,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_diver_certificates: {
+        Args: { target_user_id: string }
+        Returns: {
+          id: string
+          agency: string
+          level: string
+          issued_on: string | null
+          issued_at: string | null
+        }[]
+      }
       get_public_diver_profile: {
         Args: { target_user_id: string }
         Returns: {

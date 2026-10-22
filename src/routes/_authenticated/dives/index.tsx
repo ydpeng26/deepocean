@@ -35,7 +35,7 @@ const copy = {
     retry: "重新加载", loadError: "暂时无法读取潜水记录，请稍后重试。", loading: "正在载入你的海洋故事…",
     noSite: "未命名潜点", duration: "分钟", photoAlt: "最近一次潜水的照片",
     previewNote: "设计预览 · 以下为示例数据；正式页面将显示你的个人记录",
-    displayName: "显示名称", userId: "用户ID", mapTitle: "我的潜水地图", gear: "我的装备", gearEmpty: "整理常用装备与保养记录，让每一次出发更安心。", gearManage: "管理我的装备", certificate: "潜水证书登记", certHint: "当前证书级别来自个人资料", certManage: "前往资料页登记", recent: "最近潜水", recentIntro: "刚刚写下的海洋记忆", countryCount: "已到访海域", noFootprints: "记录第一次下潜后，这里会出现你的海洋足迹。", likesReceived: "被喜欢", savesReceived: "被收藏", followers: "粉丝", favorites: "我的收藏", favoritesIntro: "那些让你想再次回到海里的故事", favoritesEmpty: "收藏论坛里的潜水故事后，它们会出现在这里。", viewForum: "去深蓝论坛看看", viewAllFavorites: "查看全部收藏",
+    displayName: "显示名称", userId: "用户ID", mapTitle: "我的潜水地图", gear: "我的装备", gearEmpty: "整理常用装备与保养记录，让每一次出发更安心。", gearManage: "管理我的装备", certificate: "潜水证书登记", certHint: "当前证书级别来自个人资料", certManage: "管理证书档案", recent: "最近潜水", recentIntro: "刚刚写下的海洋记忆", countryCount: "已到访海域", noFootprints: "记录第一次下潜后，这里会出现你的海洋足迹。", likesReceived: "被喜欢", savesReceived: "被收藏", followers: "粉丝", favorites: "我的收藏", favoritesIntro: "那些让你想再次回到海里的故事", favoritesEmpty: "收藏论坛里的潜水故事后，它们会出现在这里。", viewForum: "去深蓝论坛看看", viewAllFavorites: "查看全部收藏",
   },
   en: {
     navPassport: "Ocean Passport", navLogs: "Dive Logs", navForum: "Deep Blue Forum", navProfile: "Profile", logout: "Sign out", offlineSync: "Offline drafts & sync",
@@ -49,7 +49,7 @@ const copy = {
     retry: "Try again", loadError: "We couldn't load your dives. Please try again.", loading: "Loading your ocean story…",
     noSite: "Untitled dive site", duration: "min", photoAlt: "Photo from the latest dive",
     previewNote: "Design preview · Sample data only; your own records appear after sign-in",
-    displayName: "Display name", userId: "User ID", mapTitle: "My Dive Map", gear: "My Gear", gearEmpty: "Keep everyday gear and service records together for every departure.", gearManage: "Manage my gear", certificate: "Dive Certifications", certHint: "Your current level comes from your profile", certManage: "Register in profile", recent: "Recent dives", recentIntro: "Your latest ocean memories", countryCount: "Places visited", noFootprints: "Log your first dive to begin your ocean map.", likesReceived: "Likes", savesReceived: "Saves", followers: "Followers", favorites: "My saved posts", favoritesIntro: "Stories that make you want to return to the ocean", favoritesEmpty: "Stories you save in the forum will appear here.", viewForum: "Explore the forum", viewAllFavorites: "View all saved stories",
+    displayName: "Display name", userId: "User ID", mapTitle: "My Dive Map", gear: "My Gear", gearEmpty: "Keep everyday gear and service records together for every departure.", gearManage: "Manage my gear", certificate: "Dive Certifications", certHint: "Your current level comes from your profile", certManage: "Manage certificate archive", recent: "Recent dives", recentIntro: "Your latest ocean memories", countryCount: "Places visited", noFootprints: "Log your first dive to begin your ocean map.", likesReceived: "Likes", savesReceived: "Saves", followers: "Followers", favorites: "My saved posts", favoritesIntro: "Stories that make you want to return to the ocean", favoritesEmpty: "Stories you save in the forum will appear here.", viewForum: "Explore the forum", viewAllFavorites: "View all saved stories",
   },
 } as const;
 
@@ -115,7 +115,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   });
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const profileHref = preview ? "/profile-preview" : "/profile";
-  const certificatesHref = preview ? "/certificates-preview" : "/profile";
+  const certificatesHref = preview ? "/certificates-preview" : "/certificates";
   const gearHref = preview ? "/gear-preview" : "/gear";
   const countries = Array.from(new Set(dives.map((d) => d.country.trim()).filter(Boolean)));
   const maxDepth = dives.reduce((max, d) => Math.max(max, Number(d.max_depth) || 0), 0);

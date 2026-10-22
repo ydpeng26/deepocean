@@ -9,7 +9,7 @@ export function MainNavigation() {
     { to: "/dives/logs", zh: "潜水日志", en: "Dive logs", active: pathname.startsWith("/dives/") && pathname !== "/dives/" },
     { to: "/forum", zh: "深蓝论坛", en: "Deep blue forum", active: pathname.startsWith("/forum") },
     { to: "/marine", zh: "海洋生物", en: "Ocean encounters", active: pathname.startsWith("/marine") },
-    { to: "/profile", zh: "个人资料", en: "Profile", active: pathname.startsWith("/profile") },
+    { to: "/profile", zh: "个人资料", en: "Profile", active: pathname.startsWith("/profile") || pathname.startsWith("/certificates") },
   ] as const;
   return <nav className="do-main-navigation" aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}>{links.map(link => <Link key={link.to} to={link.to} aria-current={link.active ? "page" : undefined}>{language === "zh-CN" ? link.zh : link.en}</Link>)}</nav>;
 }

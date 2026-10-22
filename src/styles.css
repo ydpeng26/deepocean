@@ -1661,3 +1661,33 @@
 .do-forum-standalone-search .do-forum-search { display: flex; max-width: 420px; }
 @media (min-width: 1151px) { .do-member-header > nav.do-main-navigation { height: 82px; } }
 @media (max-width: 1150px) { .do-member-header > nav.do-main-navigation { justify-content: flex-start; } }
+
+/* Saved certificate archive: isolated from the visual-only preview. */
+.do-cert-live-layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
+.do-cert-live .do-cert-summary-panel, .do-cert-live .do-cert-detail-panel { min-width: 0; padding: 28px; position: relative; top: auto; grid-column: auto; }
+.do-cert-live .do-cert-add, .do-cert-live .do-cert-edit, .do-cert-live .do-cert-form-actions button { font-size: 12px; }
+.do-cert-live button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.do-cert-live button svg { width: 17px; height: 17px; flex: none; }
+.do-cert-live button:disabled { opacity: .55; cursor: not-allowed; }
+.do-cert-live button:focus-visible, .do-cert-live input:focus-visible, .do-cert-live select:focus-visible { outline: 2px solid #8bded7; outline-offset: 3px; }
+.do-cert-live-list { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 10px; }
+.do-cert-live-list button { width: 100%; text-align: left; justify-content: flex-start; padding: 14px; color: inherit; background: rgba(255,255,255,.025); border: 1px solid rgba(168,214,216,.14); border-radius: 10px; }
+.do-cert-live-list button[data-active="true"] { background: rgba(116,203,196,.1); border-color: #76bbb7; }
+.do-cert-live-list span { min-width: 0; display: grid; gap: 7px; overflow-wrap: anywhere; }
+.do-cert-live-list small { font-size: 11px; line-height: 1.6; opacity: .65; }
+.do-cert-live-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px; border: 0; padding: 24px 0; margin: 0; }
+.do-cert-live-fields label { display: grid; gap: 10px; font-size: 13px; color: #b7c8ce; }
+.do-cert-live-fields input, .do-cert-live-fields select { min-width: 0; width: 100%; box-sizing: border-box; background: #0c1b28; color: #e3eeef; border: 1px solid #304450; border-radius: 8px; padding: 12px; font: inherit; color-scheme: dark; }
+.do-cert-live-fields input:disabled, .do-cert-live-fields select:disabled { opacity: 1; border-color: transparent; background: rgba(255,255,255,.025); }
+.do-cert-privacy-note { display: flex; align-items: flex-start; gap: 10px; color: #a2b7bd; font-size: 12px; line-height: 1.8; margin: 20px 0; }
+.do-cert-privacy-note svg { width: 18px; flex: none; }
+.do-cert-live-photo { margin: 24px 0; padding: 22px; border: 1px dashed #344c57; border-radius: 12px; }
+.do-cert-live-photo h3 { font-size: 14px; margin: 0 0 20px; }
+.do-cert-live-photo img { display: block; width: 100%; max-height: 430px; object-fit: contain; margin-bottom: 18px; background: #08131d; border-radius: 8px; }
+.do-cert-live-photo button { margin: 8px 12px 8px 0; padding: 10px 14px; border: 1px solid #344c57; border-radius: 8px; background: transparent; color: #d1e4e6; }
+.do-cert-live-photo small { display: block; color: #8ca3ad; font-size: 11px; line-height: 1.8; margin-top: 10px; }
+.do-cert-live-empty { text-align: center; padding: 70px 20px; color: #9cb3bd; }
+.do-cert-live-empty > svg { width: 46px; height: 46px; margin: 0 auto 20px; }
+.do-cert-live-empty h2 { color: #d6e5e9; }
+.do-cert-live-remove { padding: 10px 0; color: #d9aaaa; background: transparent; border: 0; font-size: 12px; }
+@media (max-width: 800px) { .do-cert-live-layout { grid-template-columns: 1fr; } .do-cert-live-fields { grid-template-columns: 1fr; } }
