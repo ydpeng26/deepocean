@@ -6,6 +6,7 @@ const api='https://esovqvampbrhuhamkfcs.supabase.co', site='https://supdiver-rec
 const admin=process.env.RECOVERY_SERVICE_ROLE_KEY;
 const anon=(await readFile(new URL('./recovery-browser.mjs',import.meta.url),'utf8')).match(/const anon = '([^']+)'/)[1];
 let user,browser,page,stage='preflight',failed=false;
+let gearReads=0;const pageErrors=[];
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const pass=name=>{stage=name;console.log('PASS: '+name);};
 async function req(path,{method='GET',body}={}) {
@@ -25,7 +26,7 @@ try {
   const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'zh-CN'});
   await context.route('**/*',route=>{const url=new URL(route.request().url());if((url.hostname.endsWith('.supabase.co')&&url.origin!==api)||['supdiver.com','www.supdiver.com'].includes(url.hostname)){failed=true;return route.abort();}return route.continue();});
   await context.addInitScript(()=>localStorage.setItem('deepocean-language','zh-CN'));
-  page=await context.newPage();page.on('dialog',dialog=>dialog.accept());
+  page=await context.newPage();page.on('dialog',dialog=>dialog.accept());page.on('pageerror',error=>pageErrors.push(error.name+': '+error.message.slice(0,180)));
   async function login(){await page.goto(site+'/auth',{waitUntil:'networkidle',timeout:90000});await page.getByLabel('邮箱',{exact:true}).fill(email);await page.getByLabel('密码',{exact:true}).fill(password);await page.getByRole('button',{name:'登录',exact:true}).click();await page.waitForURL(url=>url.pathname!=='/auth',{timeout:60000});}
   await login();
   let marineMode='before',marinePosts=0,marinePatches=0;
@@ -84,7 +85,7 @@ try {
   await settle(()=>dialog.getByRole('button',{name:'保存相遇',exact:true}).isEnabled(),Boolean);
   check(await dialog.isVisible()&&(await rows('marine_encounters')).length===0&&(await photoList()).length===2,'Missing update stays open and does not delete photos');
   pass('marine_zero_row_edit_fails_without_false_success_or_photo_deletion');
-  let gearReadFail=true,gearMode='pass',gearReads=0,gearWrites=0;
+  let gearReadFail=true,gearMode='pass',gearWrites=0;
   await context.route(api+'/rest/v1/gear_items*',async route=>{
     const method=route.request().method();
     if(method==='GET'){gearReads++;if(gearReadFail)return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Synthetic gear read failure"}'});}
@@ -128,7 +129,9 @@ try {
   await page.getByText('新装备已添加',{exact:true}).waitFor();check(gearWrites===writesBeforeRetry&&(await rows('gear_items')).length===2,'No duplicate gear after lost response');
   pass('gear_committed_lost_response_retry_confirms_existing_row_without_duplicate');
   check(!failed,'Production traffic forbidden');
-} catch(error){console.error(`Marine/gear test incomplete during ${stage} (${error.constructor.name}); details suppressed.`);failed=true;}
+} catch(error){console.error(`Marine/gear test incomplete during ${stage} (${error.constructor.name}); details suppressed.`);failed=true;
+  if(page)console.log('Safe diagnostic: '+JSON.stringify({path:new URL(page.url()).pathname,gearReads,errorHeading:await page.getByText('暂时无法读取装备资料',{exact:true}).count(),alerts:await page.getByRole('alert').count(),loading:await page.getByText('正在载入装备…',{exact:true}).count(),brandFields:await page.getByLabel('品牌',{exact:true}).count(),pageErrors}));
+}
 finally {
   await browser?.close();
   if(user)try {
