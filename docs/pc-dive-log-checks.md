@@ -8,6 +8,21 @@ Implemented for recovery validation: strict optional numeric parsing (valid nega
 
 Local synthetic script `scripts/dive-log-regression.mjs` exercises numeric boundaries, 1017-row pagination and page failures/account switch, ambiguous create/race retries, changed payload and owner checks, stable photo/thumbnail retry, oversized video, partial signing, and the real form synchronous lock/draft/unmount behavior. Local tests passed. Production build passed; targeted semantic lint passed with the existing unformatted passport file's formatting rule excluded. Full TypeScript checking still reports pre-existing errors in `__root.tsx`, `forum-post-preview.tsx`, and `profile-preview.tsx`, not the modified dive files. Recovery cloud strict acceptance is pending; do not interpret older diagnostic green runs as repair acceptance.
 
+### Repair recovery acceptance (completed)
+
+- Application and strict runner commit: `14e3d1cdfaffbad25290b24b713f72807648c335`.
+- Recovery-only deployment: https://vercel.com/ydpeng26s-projects/supdiver-recovery-test/9zjPLTVibvyniLmjueEKWZgicoLD — native UI verified Ready, Production environment of the **recovery project**, fixed domain `supdiver-recovery-test.vercel.app`, source `14e3d1c`. This is not the production app project.
+- Strict cloud run: https://github.com/ydpeng26/deepocean/actions/runs/39810869775 — job `119936439076`, completed success; `AUDIT: complete=true findings=0 strict=true`.
+- Independent invalid-field tests reject negative depth, negative/fractional duration, malformed temperatures while retaining the draft. Corrupt PNG and over-100MiB video remain rejected. Local tests also verify valid negative temperature and account-change guards.
+- Rejected row-save and committed-but-lost-response retries preserve one record and exactly two uploaded private objects (main photo plus thumbnail). Synchronous double submit creates one record; pending editor and cancel are disabled.
+- Missing first media remains an unavailable slot, the remaining valid PNG remains an image, and removing it removes its own reference rather than the missing slot. Existing six media cannot gain a seventh.
+- Load failure displays unavailable counts rather than zero; in-page retry restores all records. After adding 1005 generated historical logs, server total and rendered cards both equal **1014** (lower than the diagnostic run because invalid/duplicate rows are no longer created). All generated rows are included.
+- Baseline ordering, combined search/filter, passport/map metrics, existing country normalization, and cross-account private-log isolation still pass.
+- Both disposable fixture accounts and all their generated logs/photos/thumbnails were cleaned, with absence verified. No existing human rows, legacy orphan uploads, production data, SMTP settings, credentials or database permissions changed.
+- The original profile workflow was restored byte-for-byte to baseline before preparing the release branch. Dedicated dive workflow remains manual-only and strict. Local profile, certificate, forum and marine/gear regression suites also pass.
+
+Production release remains pending explicit user confirmation. This acceptance does not extend the coverage boundaries listed below (all video formats, every browser/date case, mobile or a new full restore drill).
+
 ## Scope and evidence
 
 The user approved continuing PC inspection after the forum release. Diagnosis only: no application fixes, schema/permission changes, production branch updates, or website promotions. Community counters, saved-post integration and preview-only features remain deferred; mobile is excluded.
