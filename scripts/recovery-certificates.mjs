@@ -97,12 +97,21 @@ try {
   check(await page.getByRole('img', { name: '证书正面', exact: true }).evaluate(img => img.complete && img.naturalWidth > 0), 'Real image decoded');
   pass('browser_private_front_photo_failed_save_retry_and_reload');
   await page.getByRole('button', { name: '编辑证书', exact: true }).click();
+  const originalPhoto = saved.front_photo_path;
+  const replacement = await page.evaluate(() => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 2;
+    const painter = canvas.getContext('2d'); painter.fillStyle = '#278dba'; painter.fillRect(0, 0, 2, 2);
+    return canvas.toDataURL('image/png').split(',')[1];
+  });
+  await page.locator('input[type=file]').setInputFiles({ name: 'synthetic-replacement.png', mimeType: 'image/png', buffer: Buffer.from(replacement, 'base64') });
   await page.getByLabel('证书等级', { exact: true }).fill('AOW-SYNTHETIC');
   await page.locator('select').selectOption('public');
   await page.getByRole('button', { name: '保存证书', exact: true }).click();
   await page.getByRole('button', { name: '编辑证书', exact: true }).waitFor();
   saved = (await rows(a))[0];
   check(saved.level === 'AOW-SYNTHETIC' && saved.is_public, 'Edit and visibility persisted');
+  check(saved.front_photo_path !== originalPhoto, 'Replacement stored at a new private path');
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Desktop has no horizontal overflow');
   await page.getByRole('button', { name: '新增证书', exact: true }).click();
   await page.getByLabel('认证机构', { exact: true }).fill('SSI');
   await page.getByLabel('证书等级', { exact: true }).fill('NITROX-PRIVATE');
