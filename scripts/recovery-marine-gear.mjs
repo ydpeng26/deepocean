@@ -105,7 +105,10 @@ try {
   await page.getByLabel('品牌',{exact:true}).fill('UNSAVED-BRAND');
   await req('/rest/v1/gear_items?user_id=eq.'+user.id,{method:'PATCH',body:{brand:'SERVER-REFRESH'}});
   await page.waitForTimeout(31000);
-  const readsBefore=gearReads;await context.setOffline(true);await page.waitForTimeout(500);await context.setOffline(false);
+  const readsBefore=gearReads;await context.setOffline(true);await page.waitForTimeout(500);
+  const refetched=page.waitForResponse(response=>response.url().startsWith(api+'/rest/v1/gear_items')&&response.request().method()==='GET'&&response.ok(),{timeout:30000});
+  await context.setOffline(false);
+  const refetchResponse=await refetched;check((await refetchResponse.json())[0]?.brand==='SERVER-REFRESH','Actual fresh server data returned');
   await settle(()=>Promise.resolve(gearReads),value=>value>readsBefore);
   await page.waitForTimeout(800);check(await page.getByLabel('品牌',{exact:true}).inputValue()==='UNSAVED-BRAND','Draft survives refetch');
   pass('gear_real_reconnect_refetch_preserves_unsaved_draft');
