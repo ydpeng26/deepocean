@@ -1,0 +1,31 @@
+name: Recovery photo reference privacy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: recovery-photo-privacy
+  cancel-in-progress: false
+jobs:
+  privacy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/pc-privacy-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install recovery schema client
+        run: python -m pip install 'psycopg[binary]==3.2.10'
+      - name: Apply photo reference repair to recovery only
+        env:
+          RECOVERY_DB_URL: ${{ secrets.RECOVERY_DB_URL }}
+        run: python scripts/recovery-privacy-schema.py
+      - name: Verify repaired photo privacy using disposable recovery fixtures
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          PRIVACY_EXPECT_FIXED: 'true'
+        run: node scripts/recovery-privacy-audit.mjs

@@ -35,3 +35,27 @@ Priority: seek authorization for the two privacy access-control repairs, validat
 After privacy: full forum interactions/comment failure paths → dive input/filter/map/statistics/media edge cases → PC browser/width/zoom/keyboard/English checks → fresh restore coverage including certificates and external configuration reconstruction. Fresh full restore requires a clean isolated destination; never overwrite the populated recovery project.
 
 Community counters, saved-post integration, and preview-only settings/share card remain deferred as requested.
+
+## Authorized recovery-only repair — 2026-10-22
+
+The user approved the two access-control repairs and recovery validation, not production rollout. Migration `20261022070000_photo_reference_privacy.sql` was applied only to recovery using `RECOVERY_DB_URL`, with a strict cloud/project/host/port/database guard and a transaction plus migration-history record. No production credential is available to this workflow.
+
+- Marine and forum CHECK constraints require new/updated records' image paths to belong to their author. They are NOT VALID to avoid scanning or rewriting existing rows. Legacy invalid rows are not repaired; editing one will require correcting its photo reference. The read predicates independently require the referencing author to match the object path owner, preventing legacy foreign references from granting access.
+- Member photo reads require either ownership or a currently visible, owner-matching open-help encounter/forum post. A restrictive SELECT policy prevents another permissive policy from bypassing this boundary. Other buckets are outside this new restriction.
+- The original author can still read retained uploads privately. No existing photos, posts or encounters were purged, rewritten or mass-updated. Closing marine help does not retract a separately shared forum copy.
+- Supporting indexes were added for exact photo-path lookups.
+
+First repair run: https://github.com/ydpeng26/deepocean/actions/runs/39736075451 (job 119681938603, commit 6294ce5). Schema and ownership/signing checks passed, but the final direct-download assertion failed because a previously requested authenticated URL still returned 200 immediately after deletion. Both test accounts/rows/photos were cleaned and verified. Do not describe this run as an overall pass.
+
+Follow-up complete run: https://github.com/ydpeng26/deepocean/actions/runs/39737265541 (job 119685800065, commit 6666f5a). Same migration, with an explicit distinction between previously read URLs and fresh cache-bypassing requests:
+
+- Private marine row/photo and anonymous/outsider access checks passed.
+- Normal help opening/closing, normal second-account help and owner-only idempotent forum sharing passed.
+- Both INSERT and UPDATE attempts to attach another author's photo were rejected with CHECK violation, for marine encounters and forum posts.
+- Unpublished forum uploads cannot be freshly signed by other members. After deleting the post, other members cannot issue fresh signed links or perform a fresh cache-bypassing authenticated download. The author retains access to their own private upload.
+- An eight-second test signed URL was rejected after expiration in this tested recovery environment.
+- Two generated accounts, their dependent rows, and exact UUID-prefixed generated images were cleaned and verified absent.
+
+**Residual access boundary, not an immediate-revocation claim:** an earlier authenticated download URL still returned 200 immediately after deletion, while the same path with a new nonce returned 400. Response header was `private, no-cache`, no Age header. This is consistent with cached URL access; its expiry duration was not established. Existing signed links also survived closing help during their test validity period. Supabase documents that cached content can outlive token expiry with Smart CDN; do not infer a universal one-hour cutoff or claim all copies are immediately inaccessible. See https://supabase.com/docs/guides/storage/cdn/smart-cdn . Downloaded copies cannot be recalled. Full immediate withdrawal would require a separate design/cleanup decision, not silent deletion of retained images.
+
+The follow-up workflow completed **with the two fresh-access exploits blocked and two residual-link/cache observations recorded**, not with zero privacy caveats. No UI source change or website redeployment was required. The registered profile workflow is restored byte-for-byte to baseline; a separate manual-only `recovery-photo-privacy.yml` preserves the repeatable repair/test procedure. Production remains unmodified and awaits separate release confirmation.

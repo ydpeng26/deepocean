@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   profile:
-    if: github.ref == 'refs/heads/codex/pc-privacy-audit'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/pc-profile-recovery'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -18,14 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install recovery schema client
-        run: python -m pip install 'psycopg[binary]==3.2.10'
-      - name: Apply photo reference repair to recovery only
-        env:
-          RECOVERY_DB_URL: ${{ secrets.RECOVERY_DB_URL }}
-        run: python scripts/recovery-privacy-schema.py
-      - name: Verify repaired photo privacy using disposable recovery fixtures
+      - name: Install cloud browser
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Verify profile and avatar on recovery only
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
-          PRIVACY_EXPECT_FIXED: 'true'
-        run: node scripts/recovery-privacy-audit.mjs
+        run: node scripts/recovery-profile.mjs
