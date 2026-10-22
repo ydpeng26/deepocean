@@ -165,24 +165,75 @@ export async function listSuggestions(id: string): Promise<Suggestion[]> {
   if (error) throw error;
   return data ?? [];
 }
-export async function addSuggestion(id: string, body: string) {
-  const current = await user();
-  const { data: profile } = await supabase
+export async function addSuggestion(
+  id: string,
+  body: string,
+  requestId = crypto.randomUUID(),
+  expectedUser?: string,
+): Promise<Suggestion> {
+  const current = await user(expectedUser);
+  const text = body.trim();
+  if (!text || text.length > 1000) throw Error("建议请填写 1 至 1000 个字符");
+  const confirm = (row: Suggestion) => {
+    if (
+      row.id !== requestId ||
+      row.encounter_id !== id ||
+      row.user_id !== current.id ||
+      row.body !== text
+    )
+      throw Error("这次建议可能已保存不同内容，请重新载入核对");
+    return row;
+  };
+  const prior = await db
+    .from("marine_suggestions")
+    .select("*")
+    .eq("id", requestId)
+    .eq("user_id", current.id)
+    .maybeSingle();
+  if (prior.error) throw prior.error;
+  await user(current.id);
+  if (prior.data) return confirm(prior.data);
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("display_name")
     .eq("id", current.id)
     .maybeSingle();
-  const { error } = await db.from("marine_suggestions").insert({
-    encounter_id: id,
-    user_id: current.id,
-    author_name: profile?.display_name || "潜水员",
-    body: body.trim(),
-  });
-  if (error) throw error;
+  if (profileError) throw profileError;
+  await user(current.id);
+  const { data, error } = await db
+    .from("marine_suggestions")
+    .insert({
+      id: requestId,
+      encounter_id: id,
+      user_id: current.id,
+      author_name: profile?.display_name || "潜水员",
+      body: text,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    if (error.code === "23505") {
+      const retry = await db
+        .from("marine_suggestions")
+        .select("*")
+        .eq("id", requestId)
+        .eq("user_id", current.id)
+        .single();
+      await user(current.id);
+      if (!retry.error && retry.data) return confirm(retry.data);
+    }
+    throw error;
+  }
+  await user(current.id);
+  if (!data) throw Error("未确认建议保存，请重试");
+  return confirm(data);
 }
 
-export async function shareEncounterToForum(encounter: Encounter): Promise<string> {
-  const current = await user();
+export async function shareEncounterToForum(
+  encounter: Encounter,
+  expectedUser?: string,
+): Promise<string> {
+  const current = await user(expectedUser);
   if (encounter.user_id !== current.id) throw Error("只能转发自己的记录");
   const { data: existing, error: lookupError } = await db
     .from("forum_posts")
@@ -190,22 +241,41 @@ export async function shareEncounterToForum(encounter: Encounter): Promise<strin
     .eq("source_encounter_id", encounter.id)
     .maybeSingle();
   if (lookupError) throw lookupError;
+  await user(current.id);
   if (existing) return existing.id;
-  const path = `${current.id}/encounter-${encounter.id}.jpg`;
+  const snapshot = await db
+    .from("marine_encounters")
+    .select("*")
+    .eq("id", encounter.id)
+    .eq("user_id", current.id)
+    .single();
+  if (snapshot.error) throw snapshot.error;
+  const source = snapshot.data as Encounter | null;
+  if (!source || source.user_id !== current.id || !source.photo_path.startsWith(current.id + "/"))
+    throw Error("无法确认相遇照片，请重新载入");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source.photo_path));
+  const version = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const path = `${current.id}/encounter-${encounter.id}-${version}.jpg`;
+  await user(current.id);
   const { data: image, error: downloadError } = await supabase.storage
     .from("marine-photos")
-    .download(encounter.photo_path);
+    .download(source.photo_path);
   if (downloadError || !image) throw downloadError ?? Error("无法读取相遇照片");
+  await user(current.id);
   const { error: uploadError } = await supabase.storage
     .from("forum-media")
     .upload(path, image, { contentType: "image/jpeg", cacheControl: "3600", upsert: false });
-  if (
-    uploadError &&
-    !["409", "Duplicate"].includes(String((uploadError as any).statusCode)) &&
-    !uploadError.message.toLowerCase().includes("already exists")
-  )
+  if (uploadError && String((uploadError as { statusCode?: string }).statusCode) !== "409")
     throw uploadError;
-  const { data, error } = await db.rpc("share_marine_encounter", { target_id: encounter.id });
+  await user(current.id);
+  const { data, error } = await db.rpc("share_marine_encounter_snapshot", {
+    target_id: encounter.id,
+    expected_photo_path: source.photo_path,
+  });
   if (error) throw error;
+  await user(current.id);
+  if (typeof data !== "string" || !data) throw Error("未确认转发，请重试");
   return data;
 }

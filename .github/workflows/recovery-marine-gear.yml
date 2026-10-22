@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   resilience:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/marine-gear-resilience'
+    if: github.ref == 'refs/heads/codex/marine-help-flow'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -26,8 +26,15 @@ jobs:
           else
             node "$RUNNER_TEMP/resilience-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
-      - name: Check synthetic marine and gear failures on recovery only
+      - name: Install recovery schema client
+        run: python -m pip install 'psycopg[binary]==3.2.10'
+      - name: Apply authorized sharing repair to recovery only
+        env:
+          RECOVERY_DB_URL: ${{ secrets.RECOVERY_DB_URL }}
+        run: python scripts/recovery-marine-help-schema.py
+      - name: Check generated marine help repair on recovery only
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/resilience-browser/node_modules/playwright/index.mjs
-        run: node scripts/recovery-marine-gear.mjs
+          MARINE_HELP_EXPECT_FIXED: 'true'
+        run: node scripts/recovery-marine-help.mjs

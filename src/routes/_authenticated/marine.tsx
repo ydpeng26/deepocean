@@ -39,6 +39,9 @@ function MarineWall() {
   const [location, setLocation] = useState("");
   const [needsHelp, setNeedsHelp] = useState(false);
   const [reply, setReply] = useState("");
+  const replyDrafts = useRef<Record<string, { body: string; requestId: string }>>({});
+  const currentOwner = useRef(profile?.id);
+  currentOwner.current = profile?.id;
   const [busy, setBusy] = useState(false);
   const lock = useRef(false),
     alive = useRef(true),
@@ -80,6 +83,17 @@ function MarineWall() {
   }, [editor, selected, busy]);
   const refresh = () =>
     alive.current ? client.invalidateQueries({ queryKey: ["marine"] }) : Promise.resolve();
+  const isCurrentOwner = (owner: string) => alive.current && currentOwner.current === owner;
+  function beginAction() {
+    if (lock.current || !profile) return null;
+    lock.current = true;
+    setBusy(true);
+    return profile.id;
+  }
+  function finishAction() {
+    lock.current = false;
+    if (alive.current) setBusy(false);
+  }
   function openEditor(item?: Encounter) {
     if (lock.current) return;
     requestId.current = item?.id ?? crypto.randomUUID();
@@ -186,8 +200,11 @@ function MarineWall() {
                 disabled={busy}
                 key={item.id}
                 onClick={() => {
+                  if (lock.current || !profile) return;
                   setSelected(item);
-                  setReply("");
+                  const key = `${profile.id}:${item.id}`;
+                  replyDrafts.current[key] ??= { body: "", requestId: crypto.randomUUID() };
+                  setReply(replyDrafts.current[key].body);
                 }}
               >
                 <div>
@@ -323,7 +340,9 @@ function MarineWall() {
                 className="do-marine-close"
                 disabled={busy}
                 aria-label="关闭"
-                onClick={() => setSelected(null)}
+                onClick={() => {
+                  if (!lock.current) setSelected(null);
+                }}
               >
                 <X />
               </button>
@@ -348,16 +367,19 @@ function MarineWall() {
                   <button
                     disabled={busy}
                     onClick={async () => {
+                      if (lock.current) return;
                       if (!confirm("删除这次海洋相遇和相关留言？")) return;
-                      setBusy(true);
+                      const owner = beginAction();
+                      if (!owner) return;
                       try {
                         await deleteEncounter(selected);
+                        if (!isCurrentOwner(owner)) return;
                         setSelected(null);
                         await refresh();
                       } catch {
-                        toast.error("删除失败，请重试");
+                        if (isCurrentOwner(owner)) toast.error("删除失败，请重试");
                       } finally {
-                        setBusy(false);
+                        finishAction();
                       }
                     }}
                   >
@@ -373,22 +395,26 @@ function MarineWall() {
                   <button
                     disabled={busy}
                     onClick={async () => {
+                      if (lock.current) return;
                       if (
                         !confirm(
                           "将此照片、生物名称、相遇时间和地点发布至深蓝论坛「生物百科」？论坛成员将能查看和评论。",
                         )
                       )
                         return;
-                      setBusy(true);
+                      const owner = beginAction();
+                      if (!owner) return;
                       try {
-                        const postId = await shareEncounterToForum(selected);
+                        const postId = await shareEncounterToForum(selected, owner);
+                        if (!isCurrentOwner(owner)) return;
                         setSharedPost({ encounterId: selected.id, postId });
                         await client.invalidateQueries({ queryKey: ["forum-posts"] });
-                        toast.success("已转发至深蓝论坛 · 生物百科");
+                        if (isCurrentOwner(owner)) toast.success("已转发至深蓝论坛 · 生物百科");
                       } catch (error) {
-                        toast.error(error instanceof Error ? error.message : "转发失败，请重试");
+                        if (isCurrentOwner(owner))
+                          toast.error(error instanceof Error ? error.message : "转发失败，请重试");
                       } finally {
-                        setBusy(false);
+                        finishAction();
                       }
                     }}
                   >
@@ -422,18 +448,31 @@ function MarineWall() {
                   onSubmit={async (event) => {
                     event.preventDefault();
                     if (!reply.trim()) return;
-                    setBusy(true);
+                    const owner = beginAction();
+                    if (!owner) return;
+                    const key = `${owner}:${selected.id}`;
+                    const snapshot = replyDrafts.current[key] ?? {
+                      body: reply,
+                      requestId: crypto.randomUUID(),
+                    };
+                    replyDrafts.current[key] = snapshot;
                     try {
-                      await addSuggestion(selected.id, reply);
-                      setReply("");
+                      await addSuggestion(selected.id, snapshot.body, snapshot.requestId, owner);
+                      if (!isCurrentOwner(owner)) return;
                       await client.invalidateQueries({
                         queryKey: ["marine-suggestions", selected.id],
                       });
+                      if (!isCurrentOwner(owner)) return;
+                      if (replyDrafts.current[key] === snapshot) {
+                        replyDrafts.current[key] = { body: "", requestId: crypto.randomUUID() };
+                        setReply("");
+                      }
                       toast.success("识别建议已发送");
                     } catch {
-                      toast.error("发送失败，请重试");
+                      if (isCurrentOwner(owner))
+                        toast.error("发送未确认，建议已保留，请重试或重新载入核对");
                     } finally {
-                      setBusy(false);
+                      finishAction();
                     }
                   }}
                 >
@@ -441,10 +480,20 @@ function MarineWall() {
                     提供识别建议
                     <textarea
                       required
+                      disabled={busy}
                       value={reply}
                       maxLength={1000}
                       placeholder="你认为是什么生物？可以补充识别特征与依据。"
-                      onChange={(event) => setReply(event.target.value)}
+                      onChange={(event) => {
+                        if (lock.current || !profile) return;
+                        const key = `${profile.id}:${selected.id}`;
+                        const previous = replyDrafts.current[key];
+                        replyDrafts.current[key] = {
+                          body: event.target.value,
+                          requestId: previous?.requestId ?? crypto.randomUUID(),
+                        };
+                        setReply(event.target.value);
+                      }}
                     />
                   </label>
                   <button disabled={busy || !reply.trim()} type="submit">
