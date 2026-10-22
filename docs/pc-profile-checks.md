@@ -31,4 +31,10 @@ The disposable example.invalid account, its profile and all avatar objects under
 
 Earlier incomplete runs 39645782786 and 39696444725 remain recorded as incomplete, not passes, and both confirmed synthetic cleanup. The timeout was ultimately isolated to an exact-label selector for the certification dropdown (its label includes option text), before any avatar upload. Switching the fixture to the actual select element resolved the timeout without another application change. The first run did not have sufficiently granular stage names to identify that location.
 
-Status: recovery-site acceptance passed for these profile scenarios; real-site release still requires user authorization. This does not establish every image format/size, every browser, cross-tab concurrency or full certificate-archive functionality. Community statistics/saved-post issues remain unchanged as requested.
+At this checkpoint, recovery-site acceptance passed for these profile scenarios and real-site release still required user authorization. This does not establish every image format/size, every browser, cross-tab concurrency or full certificate-archive functionality. Community statistics/saved-post issues remain unchanged as requested.
+
+## Authorized production release — 2026-10-22
+
+The user explicitly requested releasing the three profile fixes. Remote main was verified at c538501 before a non-forced fast-forward to 6b3e841, preserving published history. The application code is identical to the version accepted on recovery; the temporary account-switch workflow override is absent from the final tree. The local 11-check regression passed again before release. No community statistics, saved-post integration, certificate archive, backup setting or database schema was changed.
+
+Vercel reported successful deepocean Production deployment https://vercel.com/ydpeng26s-projects/deepocean/6NA965dXvcpfAMPzv2Y2Rdx3K8ge at main/6b3e841. Its deployment page showed Ready and the current custom domain www.supdiver.com (linking to supdiver.com). Production verification was non-mutating; no real profile, password or photo was edited. Stateful browser coverage remains the isolated recovery run documented above, not a new production account write test.
