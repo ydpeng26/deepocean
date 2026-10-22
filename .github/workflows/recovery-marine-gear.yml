@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   resilience:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/marine-gear-resilience' || github.ref == 'refs/heads/codex/marine-help-flow'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/marine-gear-resilience'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -30,9 +30,4 @@ jobs:
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/resilience-browser/node_modules/playwright/index.mjs
-        run: |
-          if [ "$GITHUB_REF" = 'refs/heads/codex/marine-help-flow' ]; then
-            node scripts/recovery-marine-help.mjs
-          else
-            node scripts/recovery-marine-gear.mjs
-          fi
+        run: node scripts/recovery-marine-gear.mjs
