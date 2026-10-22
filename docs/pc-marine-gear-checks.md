@@ -41,3 +41,11 @@ Earlier incomplete cloud runs https://github.com/ydpeng26/deepocean/actions/runs
 ## Remaining limits
 
 This is not a full PC product acceptance, every browser/image size, cross-tab edit arbitration, every marine suggestion/share flow or abandoned-image cleanup. No new public sharing scope is added. Community counts/saved-post work and mobile acceptance remain deferred. Production release requires the user's separate confirmation after recovery acceptance.
+
+## Authorized production release — 2026-10-22
+
+The user explicitly confirmed production release after recovery acceptance. Main was independently checked at f13cb9e, and the tested application modules/styles were confirmed identical between recovery application 49392b2 and release 182554d. The seven local marine/gear groups passed again before a non-forced fast-forward of main to 182554d. The temporary profile-workflow override is absent from the final tree; no published history was rewritten.
+
+Vercel production deployment https://vercel.com/ydpeng26s-projects/deepocean/FVTHtYDA4psDGkzZMobG6saKUpaZ showed Ready, Production, latest main/182554d and current www.supdiver.com (linking to supdiver.com). This is the production deployment, not the earlier successful branch preview BVriyT3cnU1x8a38amPpRaeEERyT. Signed-out production entry checks for /gear and /marine return to the normal login page; stateful fault/row/photo checks remain the recovery run above, not production user writes.
+
+No database migration, permissions/settings change, real-user edit or photo cleanup was performed during release. Old/uncertain marine uploads remain private rather than being automatically deleted during saves. This release-record commit changes documentation only.
