@@ -23,6 +23,7 @@ export type Dive = {
   photo_thumbnail_urls: string[];
   notes: string | null;
   created_at: string;
+  updated_at?: string;
 };
 
 export const DIVE_TYPE_LABELS: Record<DiveType, string> = {
@@ -72,7 +73,7 @@ export function parseDiveNumber(
   return number;
 }
 
-export type DivePayload = Omit<Dive, "id" | "created_at">;
+export type DivePayload = Omit<Dive, "id" | "created_at" | "updated_at">;
 
 function canonicalDiveCountry(value: string) {
   const groups = [
@@ -104,8 +105,17 @@ function canonicalDiveCountry(value: string) {
   );
 }
 
-export async function saveDive(payload: DivePayload, id: string, editing: boolean): Promise<Dive> {
+export async function saveDive(
+  payload: DivePayload,
+  id: string,
+  editing: boolean,
+  expectedRevision?: string,
+): Promise<Dive> {
   const owner = await requireDiveOwner(payload.user_id);
+  if (editing && !expectedRevision)
+    throw new Error(
+      "缺少记录版本，请先重新打开记录；当前输入尚未保存 / Reopen the record before editing.",
+    );
   if (payload.photo_urls.length > 6) throw new Error("照片和视频合计最多 6 个，请先移除部分附件");
   const existing = await supabase
     .from("dives")
@@ -128,14 +138,27 @@ export async function saveDive(payload: DivePayload, id: string, editing: boolea
   };
   if (!editing && existing.data) return confirm(existing.data as Dive);
   if (editing && !existing.data) throw new Error("记录不存在或无权修改");
+  const conflict = () =>
+    new Error(
+      "记录已被其他页面修改，请保留当前输入并重新查看最新记录，勿覆盖保存 / This record changed elsewhere. Keep your draft and review the latest record.",
+    );
+  if (editing && existing.data?.updated_at !== expectedRevision) {
+    // A committed update with a lost response may be acknowledged, never overwritten.
+    try {
+      return confirm(existing.data as Dive);
+    } catch {
+      throw conflict();
+    }
+  }
   const result = editing
     ? await supabase
         .from("dives")
         .update(payload)
         .eq("id", id)
         .eq("user_id", owner)
+        .eq("updated_at", expectedRevision!)
         .select("*")
-        .single()
+        .maybeSingle()
     : await supabase
         .from("dives")
         .insert({ ...payload, id })
@@ -157,6 +180,7 @@ export async function saveDive(payload: DivePayload, id: string, editing: boolea
     throw result.error;
   }
   await requireDiveOwner(owner);
+  if (editing && !result.data) throw conflict();
   return result.data as Dive;
 }
 

@@ -23,7 +23,64 @@ export type OfflineDiveFields = {
 export type OfflineDive = OfflineDiveFields & {
   id: string;
   saved_at: string;
+  revision?: string;
 };
+
+export class OfflineDraftConflict extends Error {
+  constructor() {
+    super(
+      "草稿已被其他页面修改、删除或同步，请保留输入后重新读取，或另存为新草稿 / Draft changed or was removed elsewhere. Keep your input, then reload or save as new.",
+    );
+    this.name = "OfflineDraftConflict";
+  }
+}
+
+function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
+  return (
+    !!a &&
+    a.id === b.id &&
+    a.saved_at === b.saved_at &&
+    a.revision === b.revision &&
+    sameFields(a, b)
+  );
+}
+
+function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
+  return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
+    (key) => a[key] === b[key],
+  );
+}
+
+// Read, compare and write in ONE transaction; another tab cannot interleave.
+async function changeDraft<T>(
+  id: string,
+  operation: (current: OfflineDive | undefined, store: IDBObjectStore) => T,
+): Promise<T> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const read = store.get(id);
+    let result: T;
+    let failure: unknown;
+    read.onsuccess = () => {
+      try {
+        result = operation(read.result, store);
+      } catch (error) {
+        failure = error;
+        tx.abort();
+      }
+    };
+    tx.oncomplete = () => {
+      db.close();
+      resolve(result);
+    };
+    tx.onabort = tx.onerror = () => {
+      db.close();
+      reject(failure ?? tx.error ?? new Error("本机保存失败"));
+    };
+  });
+}
 
 export function emptyOfflineDive(): OfflineDiveFields {
   const today = new Date();
@@ -99,6 +156,7 @@ export async function listOfflineDives(): Promise<OfflineDive[]> {
 export async function saveOfflineDive(
   fields: OfflineDiveFields,
   existingId?: string,
+  options: { expected?: OfflineDive; requestId?: string } = {},
 ): Promise<OfflineDive> {
   const draft: OfflineDive = {
     ...fields,
@@ -107,15 +165,32 @@ export async function saveOfflineDive(
     site_name: fields.site_name.trim().slice(0, 120),
     buddy_name: fields.buddy_name.trim().slice(0, 80),
     notes: fields.notes.trim().slice(0, 2000),
-    id: existingId ?? crypto.randomUUID(),
+    id: existingId ?? options.requestId ?? crypto.randomUUID(),
     saved_at: new Date().toISOString(),
+    revision: crypto.randomUUID(),
   };
-  await withStore("readwrite", (store) => store.put(draft));
-  return draft;
+  return changeDraft(draft.id, (current, store) => {
+    if (existingId) {
+      if (!options.expected || options.expected.id !== existingId || !current)
+        throw new OfflineDraftConflict();
+      if (!sameDraft(current, options.expected)) {
+        if (sameFields(current, draft)) return current; // Idempotent lost-local-reply retry.
+        throw new OfflineDraftConflict();
+      }
+    } else if (current) {
+      if (sameFields(current, draft)) return current;
+      throw new OfflineDraftConflict();
+    }
+    store.put(draft);
+    return draft;
+  });
 }
 
-export async function deleteOfflineDive(id: string): Promise<void> {
-  await withStore("readwrite", (store) => store.delete(id));
+export async function deleteOfflineDive(id: string, expected?: OfflineDive): Promise<void> {
+  await changeDraft(id, (current, store) => {
+    if (!expected || !sameDraft(current, expected)) throw new OfflineDraftConflict();
+    store.delete(id);
+  });
 }
 
 function optionalNumber(value: string): number | null {

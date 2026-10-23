@@ -40,6 +40,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const alive = useRef(true);
   const owner = useRef<Promise<string> | null>(null);
   const requestId = useRef(crypto.randomUUID());
+  // Keep the version paired with the mount-time form fields, not later cache refreshes.
+  const editRevision = useRef(dive?.updated_at);
   useEffect(() => {
     alive.current = true;
     owner.current = requireDiveOwner(dive?.user_id);
@@ -147,7 +149,12 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         notes: notes.trim().slice(0, 2000) || null,
       };
 
-      const savedDive = await saveDive(payload, dive?.id ?? requestId.current, !!dive);
+      const savedDive = await saveDive(
+        payload,
+        dive?.id ?? requestId.current,
+        !!dive,
+        editRevision.current,
+      );
       if (!alive.current) return;
       if (dive) {
         queryClient.setQueryData(["dive", dive.id], savedDive);

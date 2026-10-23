@@ -1,12 +1,16 @@
-// Diagnosis only. Actual modules with in-memory storage/API and synthetic fields.
+// Archived pre-repair diagnosis pinned to local production commit a52265d.
+// Actual modules with in-memory storage/API and synthetic fields.
 // No browser, network, credentials, real database or user data.
-import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import ts from 'typescript';
 function load(path, require, globals = {}) {
-  const code = ts.transpileModule(fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8'), {
+  const original = execFileSync('git', ['show', 'a52265d45ad2cc6a3300404f34b16cf8c606e991:' + path], {
+    cwd: new URL('../', import.meta.url), encoding: 'utf8',
+  });
+  const code = ts.transpileModule(original, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const module = { exports: {} };

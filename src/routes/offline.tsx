@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CloudOff, Languages, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import {
   emptyOfflineDive,
   listOfflineDives,
   saveOfflineDive,
+  OfflineDraftConflict,
   type OfflineDive,
   type OfflineDiveFields,
 } from "@/lib/offline-dives";
@@ -145,54 +146,115 @@ function OfflinePage() {
   const [editingId, setEditingId] = useState<string>();
   const [drafts, setDrafts] = useState<OfflineDive[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [conflict, setConflict] = useState(false);
+  const working = useRef(false);
+  const alive = useRef(true);
+  const baseline = useRef<OfflineDive | undefined>(undefined);
+  const requestId = useRef(crypto.randomUUID());
+  const storageMessage = useRef(t.storageError);
+  storageMessage.current = t.storageError;
 
   useEffect(() => {
+    alive.current = true;
+    let current = true;
+    setLoading(true);
     listOfflineDives()
       .then((items) => {
+        if (!current) return;
         setDrafts(items);
         const draft = items.find((item) => item.id === initialDraftId);
         if (draft) {
-          const { id, saved_at, ...savedFields } = draft;
+          const { id, saved_at, revision, ...savedFields } = draft;
           void saved_at;
+          void revision;
+          baseline.current = draft;
           setEditingId(id);
           setFields(savedFields);
+        } else if (initialDraftId) {
+          baseline.current = undefined;
+          setEditingId(initialDraftId);
+          setConflict(true);
         }
       })
-      .catch(() => toast.error(t.storageError));
-  }, [t.storageError, initialDraftId]);
+      .catch(() => {
+        if (current) toast.error(storageMessage.current);
+      })
+      .finally(() => {
+        if (current) setLoading(false);
+      });
+    return () => {
+      current = false;
+      alive.current = false;
+    };
+  }, [initialDraftId]);
 
   function update<K extends keyof OfflineDiveFields>(key: K, value: OfflineDiveFields[K]) {
+    if (working.current || loading) return;
     setFields((current) => ({ ...current, [key]: value }));
   }
 
   function startNew() {
+    if (working.current || loading) return;
+    baseline.current = undefined;
+    requestId.current = crypto.randomUUID();
+    setConflict(false);
     setEditingId(undefined);
     setFields(emptyOfflineDive());
     document.getElementById("offline-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function startEdit(draft: OfflineDive) {
-    const { id, saved_at, ...savedFields } = draft;
+    if (working.current || loading) return;
+    if (
+      conflict &&
+      !window.confirm(
+        language === "zh-CN"
+          ? "读取此草稿会替换当前未保存输入，确定继续吗？"
+          : "Loading this draft replaces your unsaved input. Continue?",
+      )
+    )
+      return;
+    const { id, saved_at, revision, ...savedFields } = draft;
     void saved_at;
+    void revision;
+    baseline.current = draft;
+    setConflict(false);
     setEditingId(id);
     setFields(savedFields);
     document.getElementById("offline-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function remove(id: string) {
+    if (working.current || loading) return;
     if (!window.confirm(t.removeConfirm)) return;
+    working.current = true;
+    setSaving(true);
     try {
-      await deleteOfflineDive(id);
-      setDrafts(await listOfflineDives());
-      if (editingId === id) startNew();
+      await deleteOfflineDive(
+        id,
+        drafts.find((draft) => draft.id === id),
+      );
+      const items = await listOfflineDives();
+      if (!alive.current) return;
+      setDrafts(items);
+      // Never erase an open editor's unsaved text after a list deletion.
+      if (editingId === id) setConflict(true);
       toast.success(t.deleted);
-    } catch {
-      toast.error(t.storageError);
+    } catch (error) {
+      if (alive.current) {
+        if (error instanceof OfflineDraftConflict) setConflict(true);
+        toast.error(error instanceof OfflineDraftConflict ? error.message : t.storageError);
+      }
+    } finally {
+      working.current = false;
+      if (alive.current) setSaving(false);
     }
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (working.current || loading) return;
     if (!fields.country.trim() || !fields.site_name.trim() || !fields.dive_date) {
       toast.error(t.required);
       return;
@@ -202,17 +264,64 @@ function OfflinePage() {
       toast.error(t.invalidNumber);
       return;
     }
+    working.current = true;
     setSaving(true);
     try {
-      await saveOfflineDive(fields, editingId);
-      setDrafts(await listOfflineDives());
-      startNew();
+      const saved = await saveOfflineDive(fields, editingId, {
+        expected: baseline.current,
+        requestId: requestId.current,
+      });
+      if (!alive.current) return;
+      // Keep the saved identity even if refreshing the sidebar fails.
+      baseline.current = saved;
+      setEditingId(saved.id);
+      let items: OfflineDive[];
+      try {
+        items = await listOfflineDives();
+      } catch {
+        items = [saved, ...drafts.filter((draft) => draft.id !== saved.id)];
+      }
+      if (!alive.current) return;
+      setDrafts(items);
+      baseline.current = undefined;
+      requestId.current = crypto.randomUUID();
+      setEditingId(undefined);
+      setFields(emptyOfflineDive());
+      setConflict(false);
       toast.success(t.saved);
-    } catch {
-      toast.error(t.storageError);
+    } catch (error) {
+      if (alive.current) {
+        if (error instanceof OfflineDraftConflict) setConflict(true);
+        toast.error(error instanceof OfflineDraftConflict ? error.message : t.storageError);
+      }
     } finally {
-      setSaving(false);
+      working.current = false;
+      if (alive.current) setSaving(false);
     }
+  }
+
+  async function refreshDraftList() {
+    if (working.current || loading) return;
+    working.current = true;
+    setSaving(true);
+    try {
+      const items = await listOfflineDives();
+      if (alive.current) setDrafts(items);
+    } catch {
+      if (alive.current) toast.error(t.storageError);
+    } finally {
+      working.current = false;
+      if (alive.current) setSaving(false);
+    }
+  }
+
+  function saveAsNew() {
+    if (working.current || loading) return;
+    baseline.current = undefined;
+    requestId.current = crypto.randomUUID();
+    setEditingId(undefined);
+    setConflict(false);
+    // Deliberate copy: retain every field, require a separate save click.
   }
 
   return (
@@ -229,6 +338,7 @@ function OfflinePage() {
           <button
             type="button"
             className="do-language"
+            disabled={saving || loading}
             onClick={toggleLanguage}
             aria-label={language === "zh-CN" ? "Switch to English" : "切换到中文"}
           >
@@ -256,159 +366,195 @@ function OfflinePage() {
         </div>
 
         <div className="do-offline-layout">
-          <form id="offline-form" onSubmit={save} className="do-offline-form">
-            <section>
-              <h2>{t.sectionPlace}</h2>
-              <div className="do-offline-fields">
-                <label>
-                  {t.country}
-                  <input
-                    value={fields.country}
-                    onChange={(e) => update("country", e.target.value)}
-                    maxLength={80}
-                    required
-                  />
-                </label>
-                <label>
-                  {t.region}
-                  <input
-                    value={fields.region}
-                    onChange={(e) => update("region", e.target.value)}
-                    maxLength={100}
-                  />
-                </label>
-                <label>
-                  {t.site}
-                  <input
-                    value={fields.site_name}
-                    onChange={(e) => update("site_name", e.target.value)}
-                    maxLength={120}
-                    required
-                  />
-                </label>
-                <label>
-                  {t.date}
-                  <input
-                    type="date"
-                    value={fields.dive_date}
-                    onChange={(e) => update("dive_date", e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  {t.weather}
-                  <select
-                    value={fields.weather}
-                    onChange={(e) => update("weather", e.target.value)}
-                  >
-                    <option value="">{t.noWeather}</option>
-                    {weatherOptions.map((value, index) => (
-                      <option value={value} key={value}>
-                        {t[weatherKeys[index]]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          <form
+            id="offline-form"
+            onSubmit={save}
+            className="do-offline-form"
+            aria-busy={saving || loading}
+          >
+            {loading && (
+              <p role="status">
+                {language === "zh-CN" ? "正在读取本机草稿…" : "Loading local drafts…"}
+              </p>
+            )}
+            {conflict && (
+              <div role="alert" className="mb-6 space-y-3">
+                <p>
+                  {language === "zh-CN"
+                    ? "草稿已在其他页面修改、删除或同步。当前输入仍保留，不会覆盖。可重新读取列表后选择最新草稿，或将当前输入另存为新草稿。"
+                    : "This draft changed or was removed elsewhere. Your input is retained and will not overwrite it. Refresh the list to open the latest draft, or save your input as a new draft."}
+                </p>
+                <button
+                  type="button"
+                  disabled={saving || loading}
+                  onClick={() => void refreshDraftList()}
+                >
+                  {language === "zh-CN" ? "重新读取列表" : "Refresh draft list"}
+                </button>
+                {" · "}
+                <button type="button" disabled={saving || loading} onClick={saveAsNew}>
+                  {language === "zh-CN" ? "将当前输入另存为新草稿" : "Keep input as a new draft"}
+                </button>
               </div>
-            </section>
-            <section>
-              <h2>{t.sectionDive}</h2>
-              <div className="do-offline-fields">
-                <label>
-                  {t.depth}
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max="999"
-                    step="0.1"
-                    value={fields.max_depth}
-                    onChange={(e) => update("max_depth", e.target.value)}
-                  />
-                </label>
-                <label>
-                  {t.duration}
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    max="9999"
-                    step="1"
-                    value={fields.duration_min}
-                    onChange={(e) => update("duration_min", e.target.value)}
-                  />
-                </label>
-                <label>
-                  {t.surface}
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="-20"
-                    max="60"
-                    step="0.1"
-                    value={fields.surface_temp}
-                    onChange={(e) => update("surface_temp", e.target.value)}
-                  />
-                </label>
-                <label>
-                  {t.water}
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="-20"
-                    max="60"
-                    step="0.1"
-                    value={fields.water_temp}
-                    onChange={(e) => update("water_temp", e.target.value)}
-                  />
-                </label>
-                <label>
-                  {t.type}
-                  <select
-                    value={fields.dive_type}
-                    onChange={(e) => update("dive_type", e.target.value as DiveType)}
-                  >
-                    <option value="recreational">{t.recreational}</option>
-                    <option value="freediving">{t.freediving}</option>
-                    <option value="technical">{t.technical}</option>
-                  </select>
-                </label>
-                <label>
-                  {t.role}
-                  <select
-                    value={fields.buddy_role}
-                    onChange={(e) => update("buddy_role", e.target.value as BuddyRole | "")}
-                  >
-                    <option value="">{t.noRole}</option>
-                    <option value="instructor">{t.instructor}</option>
-                    <option value="buddy">{t.buddyRole}</option>
-                  </select>
-                </label>
-                <label className="do-offline-span">
-                  {t.buddy}
-                  <input
-                    value={fields.buddy_name}
-                    onChange={(e) => update("buddy_name", e.target.value)}
-                    maxLength={80}
-                  />
-                </label>
-              </div>
-            </section>
-            <section>
-              <h2>{t.sectionStory}</h2>
-              <textarea
-                aria-label={t.sectionStory}
-                value={fields.notes}
-                onChange={(e) => update("notes", e.target.value)}
-                maxLength={2000}
-                rows={6}
-                placeholder={t.notes}
-              />
-            </section>
-            <button type="submit" disabled={saving} className="do-offline-save">
-              {saving ? t.saving : t.save}
-              <ArrowRight size={18} />
-            </button>
+            )}
+            <fieldset disabled={saving || loading} className="m-0 min-w-0 border-0 p-0">
+              <section>
+                <h2>{t.sectionPlace}</h2>
+                <div className="do-offline-fields">
+                  <label>
+                    {t.country}
+                    <input
+                      value={fields.country}
+                      onChange={(e) => update("country", e.target.value)}
+                      maxLength={80}
+                      required
+                    />
+                  </label>
+                  <label>
+                    {t.region}
+                    <input
+                      value={fields.region}
+                      onChange={(e) => update("region", e.target.value)}
+                      maxLength={100}
+                    />
+                  </label>
+                  <label>
+                    {t.site}
+                    <input
+                      value={fields.site_name}
+                      onChange={(e) => update("site_name", e.target.value)}
+                      maxLength={120}
+                      required
+                    />
+                  </label>
+                  <label>
+                    {t.date}
+                    <input
+                      type="date"
+                      value={fields.dive_date}
+                      onChange={(e) => update("dive_date", e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    {t.weather}
+                    <select
+                      value={fields.weather}
+                      onChange={(e) => update("weather", e.target.value)}
+                    >
+                      <option value="">{t.noWeather}</option>
+                      {weatherOptions.map((value, index) => (
+                        <option value={value} key={value}>
+                          {t[weatherKeys[index]]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </section>
+              <section>
+                <h2>{t.sectionDive}</h2>
+                <div className="do-offline-fields">
+                  <label>
+                    {t.depth}
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      max="999"
+                      step="0.1"
+                      value={fields.max_depth}
+                      onChange={(e) => update("max_depth", e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t.duration}
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      max="9999"
+                      step="1"
+                      value={fields.duration_min}
+                      onChange={(e) => update("duration_min", e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t.surface}
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="-20"
+                      max="60"
+                      step="0.1"
+                      value={fields.surface_temp}
+                      onChange={(e) => update("surface_temp", e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t.water}
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="-20"
+                      max="60"
+                      step="0.1"
+                      value={fields.water_temp}
+                      onChange={(e) => update("water_temp", e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t.type}
+                    <select
+                      value={fields.dive_type}
+                      onChange={(e) => update("dive_type", e.target.value as DiveType)}
+                    >
+                      <option value="recreational">{t.recreational}</option>
+                      <option value="freediving">{t.freediving}</option>
+                      <option value="technical">{t.technical}</option>
+                    </select>
+                  </label>
+                  <label>
+                    {t.role}
+                    <select
+                      value={fields.buddy_role}
+                      onChange={(e) => update("buddy_role", e.target.value as BuddyRole | "")}
+                    >
+                      <option value="">{t.noRole}</option>
+                      <option value="instructor">{t.instructor}</option>
+                      <option value="buddy">{t.buddyRole}</option>
+                    </select>
+                  </label>
+                  <label className="do-offline-span">
+                    {t.buddy}
+                    <input
+                      value={fields.buddy_name}
+                      onChange={(e) => update("buddy_name", e.target.value)}
+                      maxLength={80}
+                    />
+                  </label>
+                </div>
+              </section>
+              <section>
+                <h2>{t.sectionStory}</h2>
+                <textarea
+                  aria-label={t.sectionStory}
+                  value={fields.notes}
+                  onChange={(e) => update("notes", e.target.value)}
+                  maxLength={2000}
+                  rows={6}
+                  placeholder={t.notes}
+                />
+              </section>
+              <button
+                type="submit"
+                disabled={saving || loading || conflict}
+                className="do-offline-save"
+              >
+                {saving ? t.saving : t.save}
+                <ArrowRight size={18} />
+              </button>
+            </fieldset>
           </form>
 
           <aside className="do-offline-sidebar">
@@ -417,7 +563,7 @@ function OfflinePage() {
                 {t.drafts}
                 <span>{drafts.length}</span>
               </h2>
-              <button type="button" onClick={startNew}>
+              <button type="button" disabled={saving || loading} onClick={startNew}>
                 <Plus size={16} />
                 {t.new}
               </button>
@@ -433,11 +579,19 @@ function OfflinePage() {
                       {[draft.country, draft.region, draft.dive_date].filter(Boolean).join(" · ")}
                     </span>
                     <div>
-                      <button type="button" onClick={() => startEdit(draft)}>
+                      <button
+                        type="button"
+                        disabled={saving || loading}
+                        onClick={() => startEdit(draft)}
+                      >
                         <Pencil size={14} />
                         {t.edit}
                       </button>
-                      <button type="button" onClick={() => remove(draft.id)}>
+                      <button
+                        type="button"
+                        disabled={saving || loading}
+                        onClick={() => remove(draft.id)}
+                      >
                         <Trash2 size={14} />
                         {t.remove}
                       </button>
