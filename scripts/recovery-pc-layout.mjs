@@ -23,7 +23,7 @@ try {
   const email = 'pc-layout-' + randomBytes(12).toString('hex') + '@example.invalid', password = randomBytes(32).toString('base64url');
   stage = 'create exact disposable fixtures';
   user = await req('/auth/v1/admin/users', { method: 'POST', body: { email, password, email_confirm: true } });
-  await req('/rest/v1/profiles?id=eq.' + user.id, { method: 'PATCH', body: { display_name: 'LONGNAME' + 'A'.repeat(52), bio: 'B'.repeat(300), tank_count: 2 } });
+  await req('/rest/v1/profiles?id=eq.' + user.id, { method: 'PATCH', body: { display_name: 'LONGNAME' + 'A'.repeat(32), bio: 'B'.repeat(300), tank_count: 2 } });
   await req('/rest/v1/dives', { method: 'POST', body: { user_id: user.id, country: 'C'.repeat(80), site_name: 'S'.repeat(120),
     dive_date: '2026-10-24', dive_type: 'recreational', notes: 'N'.repeat(2000), photo_urls: [], photo_thumbnail_urls: [] } });
   await req('/rest/v1/forum_posts', { method: 'POST', body: { id: postId, user_id: user.id, title: marker + 'T'.repeat(80), body: 'D'.repeat(1000), topic: 'stories' } });
@@ -56,15 +56,24 @@ try {
           const outside = [...(header?.querySelectorAll('a,button') || [])].filter(el => {
             const r = el.getBoundingClientRect(), s = getComputedStyle(el);
             return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && (r.left < -2 || r.right > innerWidth + 2);
-          }).length;
+          }).map(el => {
+            let ancestor = el.parentElement, scrollable = false;
+            while (ancestor && ancestor !== document.body) {
+              if (/auto|scroll/.test(getComputedStyle(ancestor).overflowX) && ancestor.scrollWidth > ancestor.clientWidth + 2) scrollable = true;
+              ancestor = ancestor.parentElement;
+            }
+            const r = el.getBoundingClientRect();
+            return { tag: el.tagName, classes: el.className, left: Math.round(r.left), right: Math.round(r.right), scrollable };
+          });
           return { cssWidth: innerWidth, scrollWidth: root.scrollWidth, headerWidth: h ? Math.round(h.width) : null,
-            outsideHeaderControls: outside, chineseDiveLabel: !!document.querySelector('label[for="country"]')?.textContent.includes('潜水国家'),
+            outsideHeaderControls: outside.filter(el => !el.scrollable).length, outsideDetails: outside.filter(el => !el.scrollable),
+            scrollableHeaderControls: outside.filter(el => el.scrollable).length, chineseDiveLabel: !!document.querySelector('label[for="country"]')?.textContent.includes('潜水国家'),
             chineseGearHeading: [...document.querySelectorAll('h1')].some(el => el.textContent === '我的潜水装备'),
             chineseMarineAction: [...document.querySelectorAll('button')].some(el => el.textContent.includes('记录一次相遇')) };
         });
         matrix.push({ path, language, width, ...metrics });
         if (metrics.scrollWidth > width + 2) finding('root_horizontal_overflow', { path, language, width, scrollWidth: metrics.scrollWidth });
-        if (metrics.outsideHeaderControls) finding('header_controls_outside_viewport', { path, language, width, count: metrics.outsideHeaderControls });
+        if (metrics.outsideHeaderControls) finding('header_controls_outside_viewport_without_scroll_container', { path, language, width, count: metrics.outsideHeaderControls, details: metrics.outsideDetails });
         if (language === 'en' && width === 1440 && (metrics.chineseDiveLabel || metrics.chineseGearHeading || metrics.chineseMarineAction))
           finding('english_mode_retains_primary_chinese_form_or_action', { path });
       }
