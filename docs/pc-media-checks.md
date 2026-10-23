@@ -60,6 +60,23 @@ The user requested the repair. Conservative HEIC approach: explicitly accept JPG
 - Upload preflight validates the whole selection before hashing/uploading any sibling: invalid image format or oversized video cannot create partial new uploads from that selection. Existing ownership, immutable retry paths, six-file limit and numeric/save protections remain.
 - Local `media-regression.mjs` uses the actual API/component source: input guidance, pure-video/mixed cover, sibling preflight, signing batch/order/missing-slot/owner switch, download failure, retry lock/remount/stale callback, signing error, video error/no automatic loop, pending versus failure and unmount cases pass. Existing dive-log regression also passes, including added actual-form early HEIC rejection/draft retention; certificate, marine/gear and marine-help regressions pass.
 - Build and offline asset generation pass. Targeted functional lint passes with existing compressed passport-file formatting excluded; its original formatting was preserved to avoid a large unrelated rewrite. Whole-repo TypeScript retains only the previously documented root/preview errors, not errors in the changed modules.
-- Strict recovery runner is prepared under `MEDIA_EXPECT_FIXED=true`: actual image/video upload/playback, simulated signed-download 403→explicit retry, edit signing failure→retry without saving/losing draft, early genuine-HEIC rejection, and video-only log/passport placeholders. This strict acceptance is **not yet run**. Updating the fixed recovery site awaits user approval; formal site stays unchanged at `366efda`.
+- Strict recovery runner uses `MEDIA_EXPECT_FIXED=true`: actual image/video upload/playback, simulated signed-download 403→explicit retry, edit signing failure→retry without saving/losing draft, early genuine-HEIC rejection, and video-only log/passport placeholders. The user approved updating only the fixed recovery site; the completed acceptance is recorded below. Formal site stays unchanged at `366efda`.
 
 The existing registered dive audit workflow is temporarily redirected only on the isolated media branch for pinned manual dispatch, then restored byte-for-byte to formal main. A dedicated manual-only `recovery-media-audit.yml` preserves the diagnosis. No backup or production workflow configuration is changed.
+
+## Strict repair acceptance — recovery only
+
+Application source `ae9bcd5c4c990123bf8f6fd18ff91cab3097b478` was promoted only in Vercel project `supdiver-recovery-test`. The Ready deployment at https://vercel.com/ydpeng26s-projects/supdiver-recovery-test/6jcbj59otLuiZ5gHhmFXBbcwGGYA shows that source and the fixed https://supdiver-recovery-test.vercel.app domain.
+
+Run https://github.com/ydpeng26/deepocean/actions/runs/39959600154 ; job `120433963928`; pinned source `ae9bcd5`: completed successfully, `AUDIT: complete=true findings=0`. Necessary sanitized PASS records confirm:
+
+- Actual image orientation/conversion/dimensions, six mixed originals/thumbnails after reload, and all three generated MP4/H.264, MOV/H.264 and WebM/VP9 clips advancing playback time in desktop Chromium.
+- Simulated signed-download 403 replaces broken media with explicit errors; manual attachment reload restores all six attachments.
+- Edit signing failure is visible; retry restores media while keeping the unsaved text draft unchanged and without saving it.
+- Video larger than 100 MiB is rejected without a new record or lost text; genuine HEIC is rejected immediately at selection with conversion guidance and no save, retaining the draft.
+- Pure-video log-list and passport covers use the explicit video placeholder, not a video URL as an image background.
+- Exact generated account, rows, originals and thumbnails were cleaned and absence verified. No human records or production data were modified, and no media exports or browser artifacts were downloaded locally.
+
+The registered dive-log audit workflow is restored byte-for-byte to production main after this run; the dedicated media acceptance workflow remains. This documentation/workflow handoff does not change the accepted application source. Production remains `366efda`; separate production release authorization is still required.
+
+Limitations remain: this is desktop Chromium and the specified generated codecs, not all camera codecs/HEVC, Safari, Edge or mobile. HEIC support means clear early rejection/conversion guidance, not decoding. The expiry check injects HTTP 403; it does not independently verify real-hour expiry or immediate revocation/cache invalidation.
