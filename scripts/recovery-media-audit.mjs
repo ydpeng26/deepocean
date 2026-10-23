@@ -111,6 +111,18 @@ try {
   await poll(async () => ({ saved: (await rows()).some(x => x.site_name === marker + '-HEIC'), error: await page.getByText('无法处理该图片，请选择 JPG、PNG 或 WebP 格式', { exact: true }).count() }), v => v.saved || v.error > 0).then(v => {
     if (v.saved) pass('genuine_heic_decoded_and_saved_in_this_desktop_browser'); else finding('image_wildcard_picker_accepts_genuine_heic_but_current_desktop_converter_rejects_it');
   });
+  stage = 'video-only list cover';
+  const videoPath = record.photo_urls.find(x => x.endsWith('.mp4'));
+  check(videoPath, 'Generated mp4 fixture path');
+  await req('/rest/v1/dives', { method: 'POST', body: { user_id: user.id, country: 'Indonesia', site_name: marker + '-VIDEO-COVER', dive_date: '2026-10-23', photo_urls: [videoPath], photo_thumbnail_urls: [''] } });
+  await page.goto(site + '/dives/logs', { waitUntil: 'networkidle' });
+  const entry = page.locator('.do-log-entry').filter({ has: page.getByRole('heading', { name: marker + '-VIDEO-COVER', exact: true }) });
+  await entry.waitFor();
+  const cover = entry.locator('.do-log-photo');
+  const background = await cover.evaluate(node => getComputedStyle(node).backgroundImage);
+  if (background.includes('.mp4') && await cover.locator('video').count() === 0)
+    finding('video_only_dive_log_cover_uses_video_url_as_css_image_without_video_thumbnail_or_type_placeholder');
+  else pass('video_only_log_cover_uses_video_aware_rendering_or_placeholder');
   check(!productionTraffic, 'Production traffic forbidden');
 } catch (error) { failed = true; console.error('INCOMPLETE: media stage=' + stage + ' type=' + error.constructor.name + (error.safeDiagnostic ? ' reason=' + error.message : '')); }
 finally {
