@@ -1,0 +1,36 @@
+name: Recovery PC generated media diagnosis
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: recovery-dive-log-audit
+  cancel-in-progress: false
+jobs:
+  media-audit:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/media-boundary-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser and generated-media codecs
+        run: |
+          npm install --prefix "$RUNNER_TEMP/media-browser" --no-save --package-lock=false playwright@1.56.1 typescript@5.8.3
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg libheif-examples libheif-plugin-x265
+          if command -v google-chrome >/dev/null; then
+            echo 'RECOVERY_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
+          else
+            node "$RUNNER_TEMP/media-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
+      - name: Diagnose generated recovery-only media and clean exact fixtures
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/media-browser/node_modules/playwright/index.mjs
+          RECOVERY_TYPESCRIPT_MODULE: ${{ runner.temp }}/media-browser/node_modules/typescript/lib/typescript.js
+        run: node scripts/recovery-media-audit.mjs
