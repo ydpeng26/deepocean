@@ -84,6 +84,17 @@ try {
   const videos = await page.locator('video').evaluateAll(v => v.map(x => ({ width: x.videoWidth, height: x.videoHeight, error: !!x.error })));
   if (videos.every(v => v.width === 64 && v.height === 48 && !v.error)) pass('real_mp4_h264_mov_h264_webm_vp9_upload_reload_and_desktop_chromium_metadata_decode');
   else finding('one_or_more_generated_video_formats_upload_but_fail_desktop_chromium_decode');
+  const playback = await page.locator('video').evaluateAll(async videos => Promise.all(videos.map(async video => {
+    video.muted = true;
+    try {
+      await video.play();
+      for (let i = 0; i < 30 && video.currentTime < 0.1 && !video.ended && !video.error; i++) await new Promise(resolve => setTimeout(resolve, 100));
+      const advanced = video.currentTime >= 0.1 || video.ended;
+      video.pause(); return advanced && !video.error;
+    } catch { return false; }
+  })));
+  if (playback.length === 3 && playback.every(Boolean)) pass('all_three_generated_mp4_mov_webm_clips_actually_play_and_advance_in_desktop_chromium');
+  else finding('one_or_more_generated_video_formats_do_not_advance_when_played_in_desktop_chromium');
   await poll(() => page.locator('img[src*="/storage/"]').evaluateAll(v => v.map(x => [x.naturalWidth, x.naturalHeight])), v => v.length === 3 && v.every(x => x[0] > 0));
   const sizes = await page.locator('img[src*="/storage/"]').evaluateAll(v => v.map(x => [x.naturalWidth, x.naturalHeight]));
   check(sizes.some(x => x[0] === 80 && x[1] === 120) && sizes.some(x => x[0] === 2400 && x[1] === 1800), 'Stored image orientation/resize');
