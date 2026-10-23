@@ -64,3 +64,13 @@ The user explicitly approved updating the fixed recovery test site only. Product
 - Local 1017-row follows/blocks/private-list boundary tests remain simulation, **not** mass-account cloud acceptance. The 20,000-row safety ceiling and complete bounded initial fetch limitation are unchanged. This is not arbitrary-scale or cross-browser/mobile acceptance.
 - Fixed recovery deployment remains the already verified source `d45a3b6` at https://vercel.com/ydpeng26s-projects/supdiver-recovery-test/2dbECdsGwxFfquDsB4Ydf8Bc1qq3 ; `git diff 0ca313a HEAD -- src` is empty before recording this result. Test-only commits changed no deployed application code.
 - Temporary registered interaction workflow restored byte-for-byte to main's original definition. Dedicated manual volume acceptance workflow remains. Main/production must remain at `99147cfc0c40f0ab1071005eae20d61ad66c21d8` until separate release authorization.
+
+## Authorized production release — 2026-10-23
+
+The user explicitly requested this tested repair be released to the formal site. Rechecked remote main `99147cfc0c40f0ab1071005eae20d61ad66c21d8`, isolated branch `366efda18e9337840d56945caccb76f7b97b4ab0`, and successful strict cloud run `39898310425`. Application diff from tested `0ca313a` is empty. Database migrations, backup workflow and original interaction workflow are unchanged. The three local volume/social/comment regression scripts were rerun successfully.
+
+Main fast-forwarded using expected-old-SHA guard, without force, from `99147cf` to `366efda18e9337840d56945caccb76f7b97b4ab0`; remote main was re-read and confirmed. This automatically triggered the correct formal project's production build, so no extra manual promotion or rebuild was needed.
+
+Native Vercel verified **Ready / Production / Current / www.supdiver.com / main / source 366efda** at https://vercel.com/ydpeng26s-projects/deepocean/Gkn8z3FCqgVrMEhazHBX31yrHiUn . The formal domain points to this deployment. Native signed-out `https://supdiver.com/forum` correctly redirects to `https://supdiver.com/auth` and renders the email/password login form and forgot-password control.
+
+No authenticated production fixture, user-content mutation, SQL/schema/security change, email or photo export was performed as a release test. Stateful acceptance remains the isolated recovery evidence above, not a claim of production-account end-to-end writes. The documented 20,000-row safety ceiling, simulated thousand-account relation coverage and deferred PC/mobile tasks remain unchanged. This documentation-only release record stays on the isolated branch; formal application main remains the verified `366efda`.
