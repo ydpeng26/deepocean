@@ -1,0 +1,33 @@
+name: Recovery PC layout and keyboard diagnosis
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: recovery-pc-layout
+  cancel-in-progress: false
+jobs:
+  layout:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1
+          if command -v google-chrome >/dev/null; then
+            echo 'RECOVERY_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
+          else
+            node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
+      - name: Diagnose recovery only with disposable fixtures
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
+        run: node scripts/recovery-pc-layout.mjs
