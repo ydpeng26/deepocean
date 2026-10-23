@@ -120,6 +120,10 @@ try {
   pass('deleted_offline_draft_not_resurrected_explicit_copy_preserves_fields_and_creates_new_id');
   stage = 'synced draft cannot be resurrected';
   await openDraft(a, local[0].id);
+  // Auth deliberately uses sessionStorage: same-context tabs share IndexedDB,
+  // NOT the login session. Sign this tab in explicitly, preserving tab A.
+  stage = 'sign in separate sync tab'; diagnosticPage = b;
+  await login(b, email, password);
   stage = 'load sync workspace'; diagnosticPage = b;
   await b.goto(site + '/offline-sync', { waitUntil: 'networkidle' });
   stage = 'select copied draft for sync';
@@ -203,7 +207,7 @@ try {
   if (diagnosticPage) {
     const flags = await diagnosticPage.evaluate(() => {
       const text = document.body.innerText;
-      return { path: location.pathname, loggedIn: text.includes('当前同步账号'),
+      return { path: location.pathname, loggedIn: text.includes('同步前会再次验证并请你确认'),
         syncFailed: text.includes('同步未完成'), partialSync: text.includes('仍保留在本机'),
         syncDone: text.includes('同步完成'), storageError: text.includes('无法读取本机存储'),
         buttons: [...document.querySelectorAll('button')].filter(b => b.textContent.includes('同步到我的账号')).map(b => ({ disabled: b.disabled })),
