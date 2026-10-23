@@ -52,7 +52,8 @@ try {
   const all = [...rows, old];
   await chunks('forum_bookmarks', all.map(post => ({ user_id: viewer.id, post_id: post.id })), viewer.token);
   await chunks('forum_comments', Array.from({ length: 1005 }, (_, i) => ({ id: randomUUID(), post_id: rows[1004].id,
-    user_id: viewer.id, body: marker + '-COMMENT-' + i })), viewer.token);
+    user_id: viewer.id, body: marker + '-COMMENT-' + i,
+    created_at: new Date(Date.now() + i * 1000).toISOString() })), viewer.token);
   await chunks('forum_follows', [{ follower_id: viewer.id, following_id: followedAuthor.id }], viewer.token);
   const postProof = await req('/rest/v1/forum_posts?user_id=in.(' + author.id + ',' + followedAuthor.id + ')&select=id&limit=1', { token: viewer.token });
   const bookmarkProof = await req('/rest/v1/forum_bookmarks?user_id=eq.' + viewer.id + '&select=post_id', { token: viewer.token });
@@ -122,14 +123,21 @@ try {
   stage = 'comment list completeness browser';
   if (repaired) await search.fill(rows[1004].title);
   const commentCard = page.locator('#post-' + rows[1004].id);
+  if (repaired) {
+    await commentCard.waitFor();
+    check(await commentCard.locator('footer').getByRole('button', { name: /1005/ }).count() === 1, 'Feed comment aggregate is exact beyond 1000');
+    pass('feed_exact_1005_comment_aggregate');
+  }
   await commentCard.getByRole('button', { name: '阅读全文', exact: true }).click();
   await page.getByRole('dialog').waitFor();
   const commentResponse = await req('/rest/v1/forum_comments?post_id=eq.' + rows[1004].id + '&select=id&order=created_at', { token: viewer.token });
   check(commentResponse.count === 1005 && commentResponse.data.length === 1000, 'Actual comments cap confirmed');
+  stage = 'first comment render window';
   await page.getByRole('dialog').getByText(marker + '-COMMENT-0', { exact: true }).waitFor();
   const renderedComments = () => page.getByRole('dialog').getByText(new RegExp('^' + marker + '-COMMENT-')).count();
   check(await renderedComments() === (repaired ? 50 : 1000), 'Rendered comment window');
   if (repaired) {
+    stage = 'all comment render windows';
     for (let expected = 100; expected <= 1050; expected += 50) {
       await page.getByRole('dialog').getByRole('button', { name: /^继续查看回应/ }).click();
       check(await renderedComments() === Math.min(expected, 1005), 'Next comments window complete');
