@@ -5,7 +5,7 @@ const { chromium } = await import(process.env.RECOVERY_PLAYWRIGHT_MODULE || 'pla
 const api = 'https://esovqvampbrhuhamkfcs.supabase.co', site = 'https://supdiver-recovery-test.vercel.app';
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const anon = (await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8')).match(/const anon = '([^']+)'/)[1];
-let browser, user, stage = 'guard', failed = false, productionTraffic = false, cleaned = false;
+let browser, user, diagnosticPage, stage = 'guard', failed = false, productionTraffic = false, cleaned = false;
 const check = (ok, message) => { if (!ok) throw Error(message); };
 const pass = message => console.log('PASS: ' + message);
 async function request(path, { method = 'GET', body } = {}) {
@@ -120,11 +120,16 @@ try {
   pass('deleted_offline_draft_not_resurrected_explicit_copy_preserves_fields_and_creates_new_id');
   stage = 'synced draft cannot be resurrected';
   await openDraft(a, local[0].id);
+  stage = 'load sync workspace'; diagnosticPage = b;
   await b.goto(site + '/offline-sync', { waitUntil: 'networkidle' });
+  stage = 'select copied draft for sync';
   await b.getByRole('button', { name: '选择草稿 ' + marker + '-COPY', exact: true }).click();
+  stage = 'confirm copied draft sync';
   b.once('dialog', d => d.accept());
   await b.getByRole('button', { name: '同步到我的账号', exact: true }).click();
+  stage = 'await copied draft sync result';
   await b.getByText('同步完成：1 条记录已保存到账号。', { exact: true }).waitFor();
+  stage = 'save old tab after sync'; diagnosticPage = a;
   await a.getByLabel('潜点名称', { exact: true }).fill(marker + '-AFTER-SYNC');
   await saveLocal(a); await alert(a).waitFor();
   check((await drafts(a)).length === 0, 'Synced draft resurrected');
@@ -195,6 +200,17 @@ try {
 } catch (error) {
   failed = true;
   console.log('INCOMPLETE: stage=' + stage + ' error=' + error.constructor.name + '; details suppressed');
+  if (diagnosticPage) {
+    const flags = await diagnosticPage.evaluate(() => {
+      const text = document.body.innerText;
+      return { path: location.pathname, loggedIn: text.includes('当前同步账号'),
+        syncFailed: text.includes('同步未完成'), partialSync: text.includes('仍保留在本机'),
+        syncDone: text.includes('同步完成'), storageError: text.includes('无法读取本机存储'),
+        buttons: [...document.querySelectorAll('button')].filter(b => b.textContent.includes('同步到我的账号')).map(b => ({ disabled: b.disabled })),
+      };
+    }).catch(() => ({}));
+    console.log('INCOMPLETE: safe_state=' + JSON.stringify(flags));
+  }
 } finally {
   if (browser) await browser.close();
   if (user) {
