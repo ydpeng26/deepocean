@@ -66,3 +66,11 @@ Final strict run https://github.com/ydpeng26/deepocean/actions/runs/40036225543 
 The registered dive-log workflow is restored byte-for-byte to main after acceptance. A dedicated manual `recovery-concurrency.yml` retains the new test. Production remains `a52265d`, with no migration or credential changes. Separate production release approval is still required.
 
 Scope limits: desktop Chromium with two tabs and two independent contexts, not two physical devices, all browsers, mobile, every batch-sync account switch or simultaneous multi-tab sync. Service workers were blocked for deterministic current-source testing; this does not accept old cached bundles or true-offline page reloads, which remain separate coverage. Current-client protections do not retroactively constrain already-loaded old client code.
+
+## Authorized production release
+
+The user approved production release. Main was fast-forwarded with an expected-head guard from `a52265d45ad2cc6a3300404f34b16cf8c606e991` to `d5b9b2779ce985b57037a66af85c52670e838854`, without rewriting history. Its application source is unchanged from recovery-tested `c0462f2`/`e409fa8`; later commits adjust only test scripts, records and restore the registered workflow.
+
+Native Vercel verification: https://vercel.com/ydpeng26s-projects/deepocean/65wAZkLa2aywGf8j92GMtYFY37KQ is Ready / Production / Current, main source `d5b9b27`, with `www.supdiver.com` assigned. The live https://supdiver.com/auth page renders the login and forgot-password controls normally. This release smoke check does not repeat authenticated production mutations; detailed concurrency acceptance remains the disposable recovery run above. No database migration, credential change or production user-data mutation was performed.
+
+Refresh open editor tabs to acquire the new checks; preserve/copy any unsaved input before refreshing. This note is retained only on the isolated branch to avoid an extra production deployment.
