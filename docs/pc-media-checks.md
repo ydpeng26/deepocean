@@ -80,3 +80,11 @@ Run https://github.com/ydpeng26/deepocean/actions/runs/39959600154 ; job `120433
 The registered dive-log audit workflow is restored byte-for-byte to production main after this run; the dedicated media acceptance workflow remains. This documentation/workflow handoff does not change the accepted application source. Production remains `366efda`; separate production release authorization is still required.
 
 Limitations remain: this is desktop Chromium and the specified generated codecs, not all camera codecs/HEVC, Safari, Edge or mobile. HEIC support means clear early rejection/conversion guidance, not decoding. The expiry check injects HTTP 403; it does not independently verify real-hour expiry or immediate revocation/cache invalidation.
+
+## Authorized production release
+
+The user explicitly approved production release after the strict recovery acceptance. GitHub main was fast-forwarded with an expected-head guard from `366efda18e9337840d56945caccb76f7b97b4ab0` to `a52265d45ad2cc6a3300404f34b16cf8c606e991`, without rewriting history. Application source is byte-identical to recovery-tested `ae9bcd5`; the intervening commit only records acceptance and restores the original dive-log audit workflow.
+
+Vercel deployment https://vercel.com/ydpeng26s-projects/deepocean/HqkGJuZrj9stjXvWFNHqAHwwRR1Q was verified Ready, Production, Current, main source `a52265d`, with the `www.supdiver.com` domain. The live https://supdiver.com/auth page loads its email/password login and forgot-password control normally. This is release/domain/entry-page verification, not a new full production media write test; detailed upload/failure/playback acceptance remains the disposable recovery run above. No database migration, credential change or production user-data write was performed.
+
+This release note is retained on the isolated branch so recording it does not trigger another production deployment.
