@@ -149,14 +149,22 @@ try {
     pass('all_1005_comments_reachable_in_explicit_50_row_windows');
     await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click();
     stage = 'second page private read failure and recovery';
-    let rejectSecondPage = true;
+    let rejectSecondPage = true, rejectedReads = 0;
     const pattern = api + '/rest/v1/forum_bookmarks*';
-    await context.route(pattern, route => rejectSecondPage && new URL(route.request().url()).searchParams.get('offset') === '500'
-      ? route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Synthetic later-page failure"}' }) : route.continue());
+    await context.route(pattern, route => {
+      if (rejectSecondPage && new URL(route.request().url()).searchParams.get('offset') === '500') {
+        rejectedReads++;
+        // A definite read failure avoids stacking SDK 503 retries with query retries.
+        return route.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"Synthetic later-page failure"}' });
+      }
+      return route.continue();
+    });
     await page.reload({ waitUntil: 'networkidle' });
     await page.getByText('论坛暂时无法加载，请稍后重试。', { exact: true }).waitFor({ timeout: 30000 });
+    check(rejectedReads > 0, 'Actual second-page read intercepted');
     check(await page.locator('.do-forum-post').count() === 0, 'No partial private state exposed');
     rejectSecondPage = false;
+    stage = 'second page explicit retry';
     await page.getByRole('button', { name: '重新加载论坛', exact: true }).click();
     await page.locator('.do-forum-post').first().waitFor();
     await context.unroute(pattern);
