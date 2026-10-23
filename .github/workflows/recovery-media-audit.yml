@@ -31,6 +31,7 @@ jobs:
       - name: Diagnose generated recovery-only media and clean exact fixtures
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          MEDIA_EXPECT_FIXED: 'true'
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/media-browser/node_modules/playwright/index.mjs
           RECOVERY_TYPESCRIPT_MODULE: ${{ runner.temp }}/media-browser/node_modules/typescript/lib/typescript.js
         run: node scripts/recovery-media-audit.mjs

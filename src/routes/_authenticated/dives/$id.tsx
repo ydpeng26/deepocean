@@ -5,6 +5,7 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DiveForm } from "@/components/DiveForm";
+import { DiveMedia } from "@/components/DiveMedia";
 import { Button } from "@/components/ui/button";
 import {
   BUDDY_ROLE_LABELS,
@@ -13,7 +14,6 @@ import {
   formatDate,
   getDive,
   signedPhotoUrls,
-  isVideoPath,
 } from "@/lib/dives";
 
 export const Route = createFileRoute("/_authenticated/dives/$id")({
@@ -62,14 +62,16 @@ function DiveDetail() {
   });
 
   const photoPaths = dive?.photo_urls ?? [];
-  const { data: photos = [] } = useQuery({
-    queryKey: ["dive-photos", id, photoPaths],
-    queryFn: () => signedPhotoUrls(photoPaths),
+  const mediaQuery = useQuery({
+    queryKey: ["dive-photos", dive?.user_id, id, photoPaths],
+    queryFn: () => signedPhotoUrls(photoPaths, dive?.user_id),
     enabled: photoPaths.length > 0,
-    staleTime: 55 * 60 * 1000,
+    staleTime: 45 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 50 * 60 * 1000,
   });
+  const photos = mediaQuery.isError ? [] : (mediaQuery.data ?? []);
 
   async function handleDelete() {
     if (!confirm("确定删除这条潜水记录吗？")) return;
@@ -181,32 +183,20 @@ function DiveDetail() {
             照片与视频
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {photoPaths.map((path, i) =>
-              !photos[i] ? (
-                <div
-                  key={`${path}-${i}`}
-                  className="flex aspect-square items-center justify-center border text-sm text-muted-foreground"
-                >
-                  附件暂不可用
-                </div>
-              ) : isVideoPath(path) ? (
-                <video
-                  key={`${path}-${i}`}
-                  src={photos[i]}
-                  controls
-                  preload="metadata"
-                  className="aspect-square w-full bg-black object-contain"
-                />
-              ) : (
-                <img
-                  key={`${path}-${i}`}
-                  src={photos[i]}
-                  alt={`${dive.site_name} 潜水照片 ${i + 1}`}
-                  loading="lazy"
-                  className="aspect-square w-full object-cover"
-                />
-              ),
-            )}
+            {photoPaths.map((path, i) => (
+              <DiveMedia
+                key={`${dive.user_id}:${path}:${i}`}
+                ownerId={dive.user_id}
+                path={path}
+                url={photos[i]}
+                version={mediaQuery.dataUpdatedAt}
+                pending={mediaQuery.isFetching}
+                error={mediaQuery.isError}
+                reload={() => mediaQuery.refetch({ throwOnError: true })}
+                className="aspect-square"
+                label={`${dive.site_name} 附件 ${i + 1}`}
+              />
+            ))}
           </div>
         </section>
       )}

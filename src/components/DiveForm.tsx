@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   BUDDY_ROLE_LABELS,
@@ -10,12 +10,13 @@ import {
   type Dive,
   type DiveType,
   signedPhotoUrls,
-  isVideoPath,
   uploadPhotos,
   parseDiveNumber,
   requireDiveOwner,
   saveDive,
 } from "@/lib/dives";
+import { assertSupportedWebImage, WEB_IMAGE_ACCEPT } from "@/lib/images";
+import { DiveMedia } from "@/components/DiveMedia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,26 +68,22 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [existingThumbnailPaths, setExistingThumbnailPaths] = useState<string[]>(
     (dive?.photo_urls ?? []).map((_, index) => dive?.photo_thumbnail_urls?.[index] ?? ""),
   );
-  const [existingUrls, setExistingUrls] = useState<Record<string, string>>({});
+  const existingMedia = useQuery({
+    queryKey: ["dive-edit-photos", dive?.user_id, existingPaths],
+    queryFn: () => signedPhotoUrls(existingPaths, dive?.user_id),
+    enabled: existingPaths.length > 0,
+    staleTime: 45 * 60 * 1000,
+    refetchInterval: 50 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+  const existingUrls = Object.fromEntries(
+    existingPaths.map((path, index) => [
+      path,
+      existingMedia.isError ? "" : (existingMedia.data?.[index] ?? ""),
+    ]),
+  );
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const mediaInput = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let active = true;
-    setExistingUrls({});
-    signedPhotoUrls(existingPaths)
-      .then(
-        (urls) =>
-          active &&
-          setExistingUrls(
-            Object.fromEntries(existingPaths.map((path, index) => [path, urls[index] ?? ""])),
-          ),
-      )
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [existingPaths]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -368,25 +365,17 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
             <div className="flex flex-wrap gap-3">
               {existingPaths.map((path, i) => (
                 <div key={`${path}-${i}`} className="relative">
-                  {!existingUrls[path] ? (
-                    <div className="flex h-24 w-24 items-center justify-center border text-xs text-muted-foreground">
-                      附件暂不可用
-                    </div>
-                  ) : isVideoPath(path) ? (
-                    <video
-                      src={existingUrls[path]}
-                      className="h-24 w-24 object-cover"
-                      controls
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={existingUrls[path]}
-                      alt={`潜水照片 ${i + 1}`}
-                      loading="lazy"
-                      className="h-24 w-24 object-cover"
-                    />
-                  )}
+                  <DiveMedia
+                    ownerId={dive?.user_id}
+                    path={path}
+                    url={existingUrls[path]}
+                    version={existingMedia.dataUpdatedAt}
+                    pending={existingMedia.isFetching}
+                    error={existingMedia.isError}
+                    reload={() => existingMedia.refetch({ throwOnError: true })}
+                    label={`附件 ${i + 1}`}
+                    className="h-24 w-24"
+                  />
                   <button
                     type="button"
                     aria-label="移除照片"
@@ -411,11 +400,21 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               ref={mediaInput}
               id="photos"
               type="file"
-              accept="image/*,video/mp4,video/quicktime,video/webm"
+              accept={`${WEB_IMAGE_ACCEPT},video/mp4,video/quicktime,video/webm`}
               multiple
               hidden
               onChange={(e) => {
                 const selected = Array.from(e.target.files ?? []);
+                try {
+                  for (const file of selected)
+                    if (!file.type.startsWith("video/")) assertSupportedWebImage(file);
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error ? error.message : "请选择 JPG、PNG 或 WebP 图片",
+                  );
+                  e.target.value = "";
+                  return;
+                }
                 if (existingPaths.length + selected.length > 6) {
                   toast.error("照片和视频合计最多 6 个，请先移除部分附件");
                   e.target.value = "";
@@ -436,7 +435,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 <span>
                   <strong className="block text-sm text-foreground">上传照片 / 视频</strong>
                   <small className="mt-1 block text-muted-foreground">
-                    最多 6 个文件；单个视频不超过 100MB
+                    图片支持 JPG、PNG、WebP，HEIC/HEIF 请先转换。最多 6 个文件；单个视频不超过 100MB
                   </small>
                 </span>
               </span>

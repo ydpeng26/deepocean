@@ -23,7 +23,8 @@ function query(){let action='read',body,filters=[],range=null;const chain={
   return{data:single||maybe?(rows[0]??null):rows,count,error:null};
 }return chain;}
 const supabase={auth:{getSession:async()=>({data:{session:{user:{id:state.owner}}}})},from:query,storage:{from:()=>({upload:async(path)=>{if(state.objects.has(path))return{error:{statusCode:'409'}};state.objects.add(path);if(state.uploadLost){state.uploadLost=false;return{error:Error('Lost upload response')};}return{error:null};},createSignedUrls:async paths=>({data:paths.filter(p=>!p.includes('missing')).reverse().map(path=>({path,signedUrl:'signed:'+path})),error:null})})}};
-const api=load('src/lib/dives.ts',name=>name.endsWith('/images')?{prepareWebImage:async file=>file}:{supabase});
+const images=load('src/lib/images.ts',()=>({}));
+const api=load('src/lib/dives.ts',name=>name.endsWith('/images')?{...images,prepareWebImage:async file=>file}:{supabase});
 for(const [raw,kind] of [['-1','depth'],['-1','duration'],['1.5','duration'],['1,5','temperature'],['NaN','temperature'],['Infinity','depth'],['1.22','temperature'],['2147483648','duration']])assert.throws(()=>api.parseDiveNumber(raw,'字段',kind));
 assert.equal(api.parseDiveNumber('-2.5','温度','temperature'),-2.5);assert.equal(api.parseDiveNumber('','温度','temperature'),null);assert.equal(api.parseDiveNumber('0','深度','depth'),0);
 console.log('PASS: numeric_validation_preserves_valid_negative_temperature_rejects_malformed_negative_depth_and_fractional_duration');
@@ -52,8 +53,9 @@ const jsx=(type,props)=>({type,props});
 const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='react')return react;if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};
  if(name==='@tanstack/react-router')return{useNavigate:()=>()=>s.navigations++};
- if(name==='@tanstack/react-query')return{useQueryClient:()=>({setQueryData:()=>s.cache++,invalidateQueries:async()=>{}})};
+ if(name==='@tanstack/react-query')return{useQuery:()=>({data:[],isError:false,isFetching:false,dataUpdatedAt:1,refetch:async()=>({})}),useQueryClient:()=>({setQueryData:()=>s.cache++,invalidateQueries:async()=>{}})};
  if(name==='sonner')return{toast:{error:()=>{},success:()=>{}}};
+ if(name==='@/lib/images')return images;
  if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:()=>{s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
  return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;
@@ -66,3 +68,6 @@ let s=formHarness();s.input('country','Indonesia');s.input('site','Synthetic');c
 const retry=s.submit();await tick();s.resolve();await retry;assert.equal(s.calls,2);assert.equal(s.navigations,1);
 s=formHarness();s.input('country','Indonesia');s.input('site','Synthetic');const late=s.submit();await tick();s.unmount();s.resolve();await late;assert.equal(s.cache,0);assert.equal(s.navigations,0);
 console.log('PASS: real_form_synchronous_lock_disabled_fieldset_failure_draft_retention_and_no_late_cache_or_navigation');
+s=formHarness();s.input('country','Indonesia');s.input('site','Retained draft');const selection={files:[{name:'camera.heic',type:'image/heic'}],value:'selected'};
+s.render().find(n=>n.props.id==='photos').props.onChange({target:selection});assert.equal(selection.value,'');assert.equal(s.render().find(n=>n.props.id==='site').props.value,'Retained draft');assert.equal(s.calls,0);
+console.log('PASS: actual_form_heic_rejected_at_selection_before_save_and_keeps_location_draft');

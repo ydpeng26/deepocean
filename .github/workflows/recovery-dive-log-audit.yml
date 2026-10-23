@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dive-audit:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/dive-log-audit'
+    if: github.ref == 'refs/heads/codex/media-boundary-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -20,7 +20,9 @@ jobs:
           node-version: '22'
       - name: Install isolated cloud browser
         run: |
-          npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1
+          npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1 typescript@5.8.3
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg libheif-examples libheif-plugin-x265
           if command -v google-chrome >/dev/null; then
             echo 'RECOVERY_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
           else
@@ -30,5 +32,7 @@ jobs:
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
+          RECOVERY_TYPESCRIPT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/typescript/lib/typescript.js
+          MEDIA_EXPECT_FIXED: 'true'
           DIVE_EXPECT_FIXED: 'true'
-        run: node scripts/recovery-dive-log-audit.mjs
+        run: node scripts/recovery-media-audit.mjs

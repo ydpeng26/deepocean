@@ -4,7 +4,27 @@ export type WebImageOptions = {
   suffix?: string;
 };
 
+export const WEB_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp";
+
+function rejectHeic(file: Pick<File, "type" | "name">) {
+  if (/\.(heic|heif)$/i.test(file.name) || /^image\/hei[cf]/i.test(file.type))
+    throw new Error(
+      "暂不支持 HEIC/HEIF，请先转换为 JPG、PNG 或 WebP 后上传 / Convert HEIC/HEIF to JPG, PNG or WebP before uploading.",
+    );
+}
+
+export function assertSupportedWebImage(file: Pick<File, "type" | "name">) {
+  rejectHeic(file);
+  if (
+    !(file.type
+      ? /^(image\/jpeg|image\/png|image\/webp)$/i.test(file.type)
+      : /\.(jpe?g|png|webp)$/i.test(file.name))
+  )
+    throw new Error("请选择 JPG、PNG 或 WebP 图片 / Choose a JPG, PNG or WebP image.");
+}
+
 export async function prepareWebImage(file: File, options: WebImageOptions): Promise<File> {
+  rejectHeic(file);
   let bitmap: ImageBitmap | null = null;
   let objectUrl: string | null = null;
   try {

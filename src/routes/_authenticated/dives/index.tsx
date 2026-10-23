@@ -8,7 +8,8 @@ import { OfflineSyncBanner } from "@/components/OfflineSyncBanner";
 import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { DiveMedia } from "@/components/DiveMedia";
 import { toast } from "sonner";
 import { listGear } from "@/lib/gear";
 import { GearIllustration } from "@/components/GearIllustration";
@@ -104,14 +105,16 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   const { data: gearItems = [] } = useQuery({ queryKey: ["gear"], queryFn: listGear, enabled: !preview });
   const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18, bio: language === "zh-CN" ? "在蓝色星球上，认真记录每一次下潜。" : "Logging every descent on our blue planet." } : liveProfile;
   const latest = dives[0];
-  const latestPhotoPath = latest?.photo_thumbnail_urls?.[0] || latest?.photo_urls?.[0];
-  const { data: latestPhoto } = useQuery({
-    queryKey: ["passport-latest-photo", latestPhotoPath],
-    queryFn: async () => (await signedPhotoUrls([latestPhotoPath!]))[0] ?? null,
+  const latestCover = latest ? diveCover(latest) : { path: null, videoOnly: false };
+  const latestPhotoPath = latestCover.path;
+  const latestMedia = useQuery({
+    queryKey: ["passport-latest-photo", liveProfile?.id, latestPhotoPath],
+    queryFn: async () => (await signedPhotoUrls([latestPhotoPath!], liveProfile?.id))[0] ?? null,
     enabled: !!latestPhotoPath,
-    staleTime: 55 * 60 * 1000,
+    staleTime: 45 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 50 * 60 * 1000,
   });
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const profileHref = preview ? "/profile-preview" : "/profile";
@@ -174,7 +177,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
 
         <aside className="do-passport-right-column">
           <section className="do-passport-cert-panel" aria-labelledby="passport-cert-title"><div className="do-passport-panel-heading"><span>06 / {c.certificate}</span><Award aria-hidden="true" /></div><div className="do-passport-cert-card"><span>SUPDIVER / CERTIFICATION</span><Award aria-hidden="true" /><strong id="passport-cert-title">{profile?.cert_level && profile.cert_level !== "暂无" ? language === "en" ? englishCertifications[profile.cert_level] ?? profile.cert_level : profile.cert_level : c.certEmpty}</strong><small>{c.certHint}</small></div><Link to={certificatesHref} className="do-passport-panel-link">{c.certManage}<ChevronRight aria-hidden="true" /></Link></section>
-          <section id="passport-logs" className="do-passport-recent-panel" aria-labelledby="passport-recent-title"><div className="do-passport-panel-heading"><span>07 / {c.recent}</span><CalendarDays aria-hidden="true" /></div><h2 id="passport-recent-title">{c.recent}</h2><p className="do-passport-recent-intro">{c.recentIntro}</p>{latest && <div className="do-passport-recent-image" style={latestPhoto ? { backgroundImage: `linear-gradient(0deg, rgba(1,22,43,.35), rgba(1,22,43,.12)), url("${latestPhoto}")` } : undefined} role="img" aria-label={latestPhoto ? c.photoAlt : c.latest} />}{isPending ? <p className="do-passport-muted">{c.loading}</p> : isError ? <button type="button" className="do-passport-text-link" onClick={() => refetch()}>{c.loadError} {c.retry}<ArrowRight /></button> : dives.length ? <><ul className="do-passport-recent-list">{visibleDives.map((d) => <li key={d.id}><Link to="/dives/$id" params={{ id: d.id }}><span><strong>{d.site_name || c.noSite}</strong><small>{[d.country, d.region, date(d.dive_date)].filter(Boolean).join(" · ")}</small></span><ChevronRight aria-hidden="true" /></Link></li>)}</ul>{dives.length > 3 && <button type="button" className="do-passport-more" onClick={() => setShowAll((value) => !value)}>{showAll ? c.collapse : c.all}<ArrowRight aria-hidden="true" /></button>}</> : <div className="do-passport-recent-empty"><p>{c.latestEmpty}</p><Link to="/dives/new">{c.begin}<ArrowRight aria-hidden="true" /></Link></div>}<Link to="/dives/new" className="do-passport-recent-add"><Plus aria-hidden="true" />{c.addDive}</Link></section>
+          <section id="passport-logs" className="do-passport-recent-panel" aria-labelledby="passport-recent-title"><div className="do-passport-panel-heading"><span>07 / {c.recent}</span><CalendarDays aria-hidden="true" /></div><h2 id="passport-recent-title">{c.recent}</h2><p className="do-passport-recent-intro">{c.recentIntro}</p>{latest && <DiveMedia className="do-passport-recent-image" ownerId={latest.user_id} path={latestPhotoPath} url={latestMedia.isError ? null : latestMedia.data} version={latestMedia.dataUpdatedAt} pending={latestMedia.isFetching} error={!!latestPhotoPath && latestMedia.isError} reload={() => latestMedia.refetch({ throwOnError: true })} cover videoOnly={latestCover.videoOnly} label={latestPhotoPath ? c.photoAlt : c.latest} />}{isPending ? <p className="do-passport-muted">{c.loading}</p> : isError ? <button type="button" className="do-passport-text-link" onClick={() => refetch()}>{c.loadError} {c.retry}<ArrowRight /></button> : dives.length ? <><ul className="do-passport-recent-list">{visibleDives.map((d) => <li key={d.id}><Link to="/dives/$id" params={{ id: d.id }}><span><strong>{d.site_name || c.noSite}</strong><small>{[d.country, d.region, date(d.dive_date)].filter(Boolean).join(" · ")}</small></span><ChevronRight aria-hidden="true" /></Link></li>)}</ul>{dives.length > 3 && <button type="button" className="do-passport-more" onClick={() => setShowAll((value) => !value)}>{showAll ? c.collapse : c.all}<ArrowRight aria-hidden="true" /></button>}</> : <div className="do-passport-recent-empty"><p>{c.latestEmpty}</p><Link to="/dives/new">{c.begin}<ArrowRight aria-hidden="true" /></Link></div>}<Link to="/dives/new" className="do-passport-recent-add"><Plus aria-hidden="true" />{c.addDive}</Link></section>
         </aside>
       </div>
     </main>

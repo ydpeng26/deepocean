@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { prepareWebImage } from "@/lib/images";
+import { assertSupportedWebImage, prepareWebImage } from "@/lib/images";
 
 export type DiveType = "recreational" | "freediving" | "technical";
 export type BuddyRole = "instructor" | "buddy";
@@ -214,6 +214,12 @@ export async function uploadPhotos(
   userId: string,
   requestId: string,
 ): Promise<UploadedPhotos> {
+  // Reject the whole selection before hashing/uploading any sibling attachment.
+  for (const file of files) {
+    if (file.type.startsWith("video/")) {
+      if (file.size > 100 * 1024 * 1024) throw new Error("单个视频不能超过 100MB");
+    } else assertSupportedWebImage(file);
+  }
   const paths: string[] = [];
   const thumbnailPaths: string[] = [];
   const maxConcurrentUploads = 2;
@@ -273,13 +279,35 @@ export function isVideoPath(path: string) {
   return /\.(mp4|mov|m4v|webm)$/i.test(path.split("?")[0]);
 }
 
-export async function signedPhotoUrls(paths: string[]): Promise<string[]> {
+export async function signedPhotoUrls(paths: string[], expectedOwner?: string): Promise<string[]> {
   if (!paths.length) return [];
-  const { data, error } = await supabase.storage
-    .from(PHOTO_BUCKET)
-    .createSignedUrls(paths, 60 * 60);
-  if (error) throw error;
-  return paths.map((path) => data?.find((item) => item.path === path)?.signedUrl ?? "");
+  const owner = await requireDiveOwner(expectedOwner);
+  const urls = new Map<string, string>();
+  const unique = Array.from(new Set(paths));
+  for (let start = 0; start < unique.length; start += 100) {
+    await requireDiveOwner(owner);
+    const { data, error } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls(unique.slice(start, start + 100), 60 * 60);
+    if (error) throw error;
+    await requireDiveOwner(owner);
+    for (const item of data ?? []) if (item.signedUrl) urls.set(item.path!, item.signedUrl);
+  }
+  return paths.map((path) => urls.get(path) ?? "");
+}
+
+export function diveCover(dive: Pick<Dive, "photo_urls" | "photo_thumbnail_urls">) {
+  const index = dive.photo_urls.findIndex((path) => !isVideoPath(path));
+  const thumbnail = index >= 0 ? dive.photo_thumbnail_urls?.[index] : null;
+  return {
+    path:
+      index >= 0
+        ? thumbnail && !isVideoPath(thumbnail)
+          ? thumbnail
+          : dive.photo_urls[index]
+        : null,
+    videoOnly: index < 0 && dive.photo_urls.some(isVideoPath),
+  };
 }
 
 export function formatDate(value: string) {

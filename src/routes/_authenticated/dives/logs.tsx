@@ -16,10 +16,11 @@ import {
   Waves,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DiveMedia } from "@/components/DiveMedia";
 import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
 
 export const Route = createFileRoute("/_authenticated/dives/logs")({
   head: () => ({
@@ -92,7 +93,27 @@ const copy = {
   },
 } as const;
 
-function DivePhoto({ photo, index }: { photo: string | null; index: number }) {
+function DivePhoto({
+  photo,
+  index,
+  path,
+  videoOnly,
+  ownerId,
+  version,
+  pending,
+  error,
+  reload,
+}: {
+  photo: string | null;
+  index: number;
+  path: string | null;
+  videoOnly: boolean;
+  ownerId: string;
+  version: number;
+  pending: boolean;
+  error: boolean;
+  reload: () => Promise<unknown>;
+}) {
   const fallback = [
     "/images/user-fish-hero-preview.jpg",
     "/images/user-cave-photo-hero-preview.jpg",
@@ -102,9 +123,25 @@ function DivePhoto({ photo, index }: { photo: string | null; index: number }) {
     <div
       className="do-log-photo"
       style={{
-        backgroundImage: `linear-gradient(180deg, rgba(0,8,22,.03), rgba(0,10,27,.34)), url('${photo || fallback}')`,
+        backgroundImage:
+          path || videoOnly
+            ? "none"
+            : `linear-gradient(180deg, rgba(0,8,22,.03), rgba(0,10,27,.34)), url('${fallback}')`,
       }}
     >
+      <DiveMedia
+        ownerId={ownerId}
+        path={path}
+        url={photo}
+        version={version}
+        pending={pending}
+        error={!!path && error}
+        reload={reload}
+        cover
+        videoOnly={videoOnly}
+        label="潜水日志封面"
+        className="absolute inset-0"
+      />
       <span>#{String(index + 1).padStart(3, "0")}</span>
     </div>
   );
@@ -122,23 +159,27 @@ function DiveLogsPage() {
     refetch,
   } = useQuery({ queryKey: ["dives"], queryFn: listDives });
   const logPhotoPaths = useMemo(
-    () =>
-      dives
-        .map((dive) => dive.photo_thumbnail_urls?.[0] || dive.photo_urls?.[0])
-        .filter((path): path is string => Boolean(path)),
+    () => dives.map((dive) => diveCover(dive).path).filter((path): path is string => Boolean(path)),
     [dives],
   );
-  const { data: logPhotoUrls = [] } = useQuery({
-    queryKey: ["dive-log-photos", logPhotoPaths],
-    queryFn: () => signedPhotoUrls(logPhotoPaths),
+  const logMedia = useQuery({
+    queryKey: ["dive-log-photos", profile?.id, logPhotoPaths],
+    queryFn: () => signedPhotoUrls(logPhotoPaths, profile?.id),
     enabled: logPhotoPaths.length > 0,
-    staleTime: 55 * 60 * 1000,
+    staleTime: 45 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 50 * 60 * 1000,
   });
   const logPhotoByPath = useMemo(
-    () => new Map(logPhotoPaths.map((path, index) => [path, logPhotoUrls[index] ?? null])),
-    [logPhotoPaths, logPhotoUrls],
+    () =>
+      new Map(
+        logPhotoPaths.map((path, index) => [
+          path,
+          logMedia.isError ? null : (logMedia.data?.[index] ?? null),
+        ]),
+      ),
+    [logPhotoPaths, logMedia.data, logMedia.isError],
   );
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("all");
@@ -293,11 +334,14 @@ function DiveLogsPage() {
                     </div>
                     <DivePhoto
                       index={index}
-                      photo={
-                        logPhotoByPath.get(
-                          dive.photo_thumbnail_urls?.[0] || dive.photo_urls?.[0] || "",
-                        ) ?? null
-                      }
+                      path={diveCover(dive).path}
+                      videoOnly={diveCover(dive).videoOnly}
+                      ownerId={dive.user_id}
+                      version={logMedia.dataUpdatedAt}
+                      pending={logMedia.isFetching}
+                      error={logMedia.isError}
+                      reload={() => logMedia.refetch({ throwOnError: true })}
+                      photo={logPhotoByPath.get(diveCover(dive).path ?? "") ?? null}
                     />
                     <div className="do-log-content">
                       <div className="do-log-place">

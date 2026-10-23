@@ -10,6 +10,7 @@ const api = 'https://esovqvampbrhuhamkfcs.supabase.co', site = 'https://supdiver
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 const anon = (await readFile(new URL('./recovery-browser.mjs', import.meta.url), 'utf8')).match(/const anon = '([^']+)'/)[1];
 const findings = []; let user, browser, page, temporary, stage = 'guard', failed = false, productionTraffic = false;
+const repaired = process.env.MEDIA_EXPECT_FIXED === 'true';
 const check = (ok, message) => { if (!ok) { const e = Error(message); e.safeDiagnostic = true; throw e; } };
 const pass = message => console.log('PASS: ' + message);
 const finding = message => { findings.push(message); console.log('FINDING: ' + message); };
@@ -100,16 +101,49 @@ try {
   check(sizes.some(x => x[0] === 80 && x[1] === 120) && sizes.some(x => x[0] === 2400 && x[1] === 1800), 'Stored image orientation/resize');
   pass('actual_form_six_mixed_media_original_and_thumbnail_paths_reload_with_correct_image_dimensions');
   stage = 'expired download response';
-  let denied = 0;
-  await context.route(api + '/storage/v1/object/sign/dive-photos/**', route => { denied++; return route.fulfill({ status: 403, contentType: 'application/json', body: '{"message":"Synthetic expired signed download"}' }); });
+  let denied = 0, rejectDownloads = true;
+  await context.route(api + '/storage/v1/object/sign/dive-photos/**', route => {
+    if (!rejectDownloads) return route.continue();
+    denied++; return route.fulfill({ status: 403, contentType: 'application/json', body: '{"message":"Synthetic expired signed download"}' });
+  });
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('img[src*="/storage/"]').first().waitFor();
-  await poll(() => page.locator('img[src*="/storage/"]').evaluateAll(v => v.every(x => x.complete && x.naturalWidth === 0)), Boolean);
+  if (repaired) {
+    await page.getByRole('button', { name: '重新加载附件', exact: true }).first().waitFor();
+    await poll(() => page.locator('img[src*="/storage/"], video').count(), n => n === 0);
+  } else {
+    await page.locator('img[src*="/storage/"]').first().waitFor();
+    await poll(() => page.locator('img[src*="/storage/"]').evaluateAll(v => v.every(x => x.complete && x.naturalWidth === 0)), Boolean);
+  }
   check(denied > 0, 'Actual signed media GET rejected');
   if (await page.getByText(/附件暂不可用|链接.*过期|重新加载附件|重试.*附件/).count() === 0 && await page.getByRole('button', { name: /重试.*附件|重新加载.*附件|刷新.*附件/ }).count() === 0)
     finding('detail_signed_download_403_leaves_broken_image_or_video_without_media_error_or_in_page_retry');
   else pass('signed_download_failure_has_explicit_media_error_or_retry');
+  if (repaired) {
+    rejectDownloads = false;
+    await page.getByRole('button', { name: '重新加载附件', exact: true }).first().click();
+    await poll(() => page.locator('img[src*="/storage/"]').evaluateAll(v => v.length === 3 && v.every(x => x.naturalWidth > 0)), Boolean);
+    await poll(() => page.locator('video').evaluateAll(v => v.length === 3 && v.every(x => x.videoWidth > 0)), Boolean);
+    pass('expired_download_placeholders_replace_broken_media_and_explicit_retry_restores_all_six');
+  }
   await context.unroute(api + '/storage/v1/object/sign/dive-photos/**');
+  if (repaired) {
+    stage = 'edit signing failure retry preserves draft'; let rejectSigning = true, failedSigning = 0;
+    const signingPattern = api + '/storage/v1/object/sign/dive-photos';
+    await context.route(signingPattern, route => {
+      if (route.request().method() === 'POST' && rejectSigning) { failedSigning++; return route.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"Synthetic signing failure"}' }); }
+      return route.continue();
+    });
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
+    await page.getByRole('button', { name: '重新加载附件', exact: true }).first().waitFor({ timeout: 30000 });
+    check(failedSigning > 0, 'Actual edit signing failure intercepted');
+    await page.locator('#site').fill(marker + '-UNSAVED-DRAFT'); rejectSigning = false;
+    await page.getByRole('button', { name: '重新加载附件', exact: true }).first().click();
+    await poll(() => page.locator('img[src*="/storage/"]').evaluateAll(v => v.length === 3 && v.every(x => x.naturalWidth > 0)), Boolean);
+    check(await page.locator('#site').inputValue() === marker + '-UNSAVED-DRAFT', 'Media retry lost edit draft');
+    check((await rows())[0].site_name === marker + '-VALID', 'Media retry unexpectedly saved draft');
+    await context.unroute(signingPattern);
+    pass('edit_signing_error_is_explicit_retry_restores_media_and_unsaved_draft_is_unchanged');
+  }
   stage = 'oversized video rejection'; await form('OVERSIZE');
   await page.locator('#photos').evaluate(input => { const transfer = new DataTransfer(); transfer.items.add(new File([new Uint8Array(100 * 1024 * 1024 + 1)], 'too-large.mp4', { type: 'video/mp4' })); input.files = transfer.files; input.dispatchEvent(new Event('change', { bubbles: true })); });
   await submit().click(); await page.getByText('单个视频不能超过 100MB', { exact: true }).waitFor();
@@ -118,10 +152,18 @@ try {
   stage = 'genuine HEIC diagnosis';
   await writeFile(join(temporary, 'source.jpg'), Buffer.from(samples.jpeg));
   execFileSync('heif-enc', ['-q', '35', '-o', join(temporary, 'generated.heic'), join(temporary, 'source.jpg')], { stdio: 'ignore', timeout: 60000 });
-  await form('HEIC'); await page.locator('#photos').setInputFiles({ name: 'generated.heic', mimeType: 'image/heic', buffer: await readFile(join(temporary, 'generated.heic')) }); await submit().click();
-  await poll(async () => ({ saved: (await rows()).some(x => x.site_name === marker + '-HEIC'), error: await page.getByText('无法处理该图片，请选择 JPG、PNG 或 WebP 格式', { exact: true }).count() }), v => v.saved || v.error > 0).then(v => {
+  await form('HEIC'); await page.locator('#photos').setInputFiles({ name: 'generated.heic', mimeType: 'image/heic', buffer: await readFile(join(temporary, 'generated.heic')) });
+  if (repaired) {
+    await page.getByText(/^暂不支持 HEIC\/HEIF/).waitFor();
+    check((await rows()).length === 1 && await page.locator('#site').inputValue() === marker + '-HEIC', 'Early HEIC rejection must not save or lose draft');
+    check(!(await page.locator('#photos').getAttribute('accept')).includes('image/*') && await page.locator('#photos').evaluate(input => input.files.length) === 0, 'Picker and selection must reject HEIC explicitly');
+    pass('genuine_heic_rejected_at_selection_with_conversion_guidance_no_save_and_draft_retained');
+  } else {
+    await submit().click();
+    await poll(async () => ({ saved: (await rows()).some(x => x.site_name === marker + '-HEIC'), error: await page.getByText('无法处理该图片，请选择 JPG、PNG 或 WebP 格式', { exact: true }).count() }), v => v.saved || v.error > 0).then(v => {
     if (v.saved) pass('genuine_heic_decoded_and_saved_in_this_desktop_browser'); else finding('image_wildcard_picker_accepts_genuine_heic_but_current_desktop_converter_rejects_it');
   });
+  }
   stage = 'video-only list cover';
   const videoPath = record.photo_urls.find(x => x.endsWith('.mp4'));
   check(videoPath, 'Generated mp4 fixture path');
@@ -134,6 +176,12 @@ try {
   if (background.includes('.mp4') && await cover.locator('video').count() === 0)
     finding('video_only_dive_log_cover_uses_video_url_as_css_image_without_video_thumbnail_or_type_placeholder');
   else pass('video_only_log_cover_uses_video_aware_rendering_or_placeholder');
+  if (repaired) {
+    check(!background.includes('.mp4') && await cover.locator('[aria-label="视频附件"]').count() === 1, 'Video-only cover placeholder');
+    await page.goto(site + '/dives', { waitUntil: 'networkidle' });
+    await page.locator('.do-passport-recent-image [aria-label="视频附件"]').waitFor();
+    pass('video_only_list_and_passport_covers_use_explicit_video_placeholder_not_css_video_url');
+  }
   check(!productionTraffic, 'Production traffic forbidden');
 } catch (error) { failed = true; console.error('INCOMPLETE: media stage=' + stage + ' type=' + error.constructor.name + (error.safeDiagnostic ? ' reason=' + error.message : '')); }
 finally {
@@ -152,4 +200,4 @@ finally {
   if (temporary) await rm(temporary, { recursive: true, force: true });
 }
 console.log('AUDIT: complete=' + !failed + ' findings=' + findings.length);
-if (failed) process.exitCode = 1;
+if (failed || (repaired && findings.length)) process.exitCode = 1;
