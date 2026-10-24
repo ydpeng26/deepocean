@@ -40,3 +40,17 @@ Suggested repair order, requiring user authorization: shared modal focus entry/t
 ## Remaining scope
 
 Safari/Edge, real OAuth sign-in, all keyboard controls/screens/readers, full 200% zoom on authenticated pages, every long-language string and viewport, true offline cached updates, physical-device concurrency and a fresh complete restore/config-reconstruction drill remain unaccepted. Mobile is explicitly deferred. Do not describe this diagnostic as completion of the entire PC checklist.
+
+## Authorized repair — local verification only (2026-10-24)
+
+The user authorized repairing the diagnosed issues. The isolated branch now adds:
+
+- Shared comment/marine modal focus entry, forward/backward Tab containment, background-focus redirection, safe Escape handling and focus return to a connected opener. Only the top nested modal handles keys; IME composition is ignored and existing mutation locks still prevent closing during saves. Marine detail-to-editor replacement receives a fresh focus scope. This is keyboard containment, not a claim of comprehensive screen-reader/background-inert accessibility.
+- Auth tabs use roving tab indexes, ArrowLeft/ArrowRight wrapping and Home/End selection, with associated panel labels. Existing submission/reset/resend locks prevent switching during requests and entered credentials are retained.
+- Live dive entry, gear and marine display strings, validation guidance and accessible labels use language-aware copy. Weather/category/role values remain in their original stored representation; arbitrary user text is not translated. Client-side page titles change with language; this is not an SEO metadata overhaul or a claim that all server errors are translated.
+
+`scripts/pc-keyboard-language-regression.mjs` executes actual transpiled application hooks/components in isolated deterministic state/DOM models. It passed translation coverage, Chinese preservation, actual editor drafts and weather/category values across language switches, modal focus/Tab/IME/busy/nesting/replacement/cleanup, and auth keyboard/busy/credential-retention checks. It performs no network requests, account creation or database mutations. Models do not replace real recovery-browser acceptance.
+
+All 11 local suites passed: keyboard/language, dive log, PC concurrency, marine/gear, marine help, forum interaction, media, profile, certificates, forum volume and forum social. Targeted application ESLint, production client/server build, offline asset generation and scoped diff whitespace checks passed. Full TypeScript checking still fails on the previously recorded `__root.tsx`, `forum-post-preview.tsx` and `profile-preview.tsx` errors, with no diagnostic in this repair's changed modules; global type-check success is not claimed.
+
+Recovery-only deployment permission has been requested for this repair. At this checkpoint no fixed recovery deployment or production deployment has been changed, no migration added, and no real recovery-browser acceptance of the repair has run. The registered dive audit workflow remains restored. Production release requires separate approval after recovery acceptance.

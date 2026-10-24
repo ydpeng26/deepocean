@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useModalFocus } from "@/hooks/useModalFocus";
 import {
   addForumComment,
   deleteForumComment,
@@ -34,6 +35,8 @@ export function ForumCommentsDialog({
     alive = useRef(true);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalFocus(dialogRef, true, onClose, () => !lock.current);
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [commentWindow, setCommentWindow] = useState({ key: "", size: 50 });
@@ -84,6 +87,8 @@ export function ForumCommentsDialog({
   return (
     <div className="do-forum-composer-backdrop">
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         className="do-forum-composer do-forum-comments"
         role="dialog"
         aria-modal="true"

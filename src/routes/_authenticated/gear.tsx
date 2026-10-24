@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useLiveCopy } from "@/i18n/liveCopy";
 import {
   createGear,
   deleteGear,
@@ -66,7 +67,8 @@ const fields = (item: GearInput): GearInput => ({
 });
 
 function GearVisual({ category, compact = false }: { category: GearCategory; compact?: boolean }) {
-  const label = categories.find(([value]) => value === category)?.[1] ?? "潜水装备";
+  const t = useLiveCopy();
+  const label = categories.find(([value]) => value === category)?.[1] ?? t("潜水装备");
   return (
     <span
       className={`grid shrink-0 place-items-center bg-gradient-to-br from-sky-500/20 to-cyan-500/5 text-sky-400 ${compact ? "h-14 w-16" : "h-44 w-full"}`}
@@ -74,13 +76,14 @@ function GearVisual({ category, compact = false }: { category: GearCategory; com
       <GearIllustration
         category={category}
         className={compact ? "h-10 w-10" : "h-24 w-24"}
-        label={label}
+        label={t(label)}
       />
     </span>
   );
 }
 
 function GearPage() {
+  const t = useLiveCopy("我的潜水装备 · SupDiver");
   const queryClient = useQueryClient();
   const profileState = useProfile();
   const query = useQuery({ queryKey: ["gear"], queryFn: listGear });
@@ -113,14 +116,14 @@ function GearPage() {
     setDraft(value);
   }, [selected]);
   const discard = () =>
-    JSON.stringify(draft) === baseline.current || confirm("放弃尚未保存的装备修改？");
+    JSON.stringify(draft) === baseline.current || confirm(t("放弃尚未保存的装备修改？"));
   async function save() {
     if (lock.current || !profileState.profile || query.isError || (selectedId && !selected)) return;
     let snapshot: GearInput;
     try {
       snapshot = validateGear(draft);
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(t((error as Error).message));
       return;
     }
     const owner = profileState.profile.id,
@@ -143,18 +146,18 @@ function GearPage() {
       ]);
       setIsCreating(false);
       setSelectedId(item.id);
-      toast.success(creating ? "新装备已添加" : "装备资料已更新");
+      toast.success(creating ? t("新装备已添加") : t("装备资料已更新"));
       await queryClient.invalidateQueries({ queryKey: ["gear"] });
     } catch (error) {
       if (alive.current)
-        toast.error(error instanceof Error ? error.message : "保存失败，修改已保留，请重试");
+        toast.error(error instanceof Error ? t(error.message) : t("保存失败，修改已保留，请重试"));
     } finally {
       lock.current = false;
       if (alive.current) setBusy(false);
     }
   }
   async function remove() {
-    if (lock.current || !selected || !profileState.profile || !confirm("确定删除这件装备吗？"))
+    if (lock.current || !selected || !profileState.profile || !confirm(t("确定删除这件装备吗？")))
       return;
     const id = selected.id,
       owner = profileState.profile.id;
@@ -171,9 +174,9 @@ function GearPage() {
       setDraft(empty);
       baseline.current = JSON.stringify(empty);
       requestId.current = crypto.randomUUID();
-      toast.success("装备已删除");
+      toast.success(t("装备已删除"));
     } catch {
-      if (alive.current) toast.error("删除失败，请重新载入后重试");
+      if (alive.current) toast.error(t("删除失败，请重新载入后重试"));
     } finally {
       lock.current = false;
       if (alive.current) setBusy(false);
@@ -186,24 +189,24 @@ function GearPage() {
     return (
       <AppShell>
         <div role="alert">
-          <h1>暂时无法读取装备资料</h1>
-          <p>读取失败不代表没有装备；未保存的修改仍保留在当前页面。</p>
+          <h1>{t("暂时无法读取装备资料")}</h1>
+          <p>{t("读取失败不代表没有装备；未保存的修改仍保留在当前页面。")}</p>
           <Button
             onClick={() => {
               void query.refetch();
               void profileState.refetch();
             }}
           >
-            重新加载
+            {t("重新加载")}
           </Button>
-          <Link to="/dives">返回海洋护照</Link>
+          <Link to="/dives">{t("返回海洋护照")}</Link>
         </div>
       </AppShell>
     );
   if (isPending || profileState.isPending)
     return (
       <AppShell>
-        <p role="status">正在载入装备…</p>
+        <p role="status">{t("正在载入装备…")}</p>
       </AppShell>
     );
 
@@ -214,14 +217,16 @@ function GearPage() {
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
       >
         <ArrowLeft className="h-3 w-3" />
-        返回海洋护照
+        {t("返回海洋护照")}
       </Link>
       <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="text-xs font-medium tracking-[.24em] text-sky-500">MY DIVE LOCKER</span>
-          <h1 className="mt-2 text-4xl font-normal tracking-tight text-primary">我的潜水装备</h1>
+          <h1 className="mt-2 text-4xl font-normal tracking-tight text-primary">
+            {t("我的潜水装备")}
+          </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            记录常用装备、使用次数与下一次保养日期。
+            {t("记录常用装备、使用次数与下一次保养日期。")}
           </p>
         </div>
         <Button
@@ -238,13 +243,13 @@ function GearPage() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          新增装备
+          {t("新增装备")}
         </Button>
       </div>
       <div className="mt-10 grid gap-8 md:grid-cols-[280px_1fr]">
         <aside className="space-y-3">
           {isPending ? (
-            <p className="text-sm text-muted-foreground">正在载入装备…</p>
+            <p className="text-sm text-muted-foreground">{t("正在载入装备…")}</p>
           ) : items.length ? (
             items.map((item) => (
               <button
@@ -261,17 +266,17 @@ function GearPage() {
                 <GearVisual category={item.category} compact />
                 <span className="min-w-0">
                   <small className="block text-muted-foreground">
-                    {categories.find(([value]) => value === item.category)?.[1]}
+                    {t(categories.find(([value]) => value === item.category)?.[1] ?? t("潜水装备"))}
                   </small>
                   <strong className="block truncate">
-                    {item.brand || "未填写品牌"} {item.model}
+                    {item.brand || t("未填写品牌")} {item.model}
                   </strong>
                 </span>
               </button>
             ))
           ) : (
             <div className="border border-dashed border-border p-6 text-sm text-muted-foreground">
-              还没有登记装备。点击“新增装备”建立你的第一条装备档案。
+              {t("还没有登记装备。点击“新增装备”建立你的第一条装备档案。")}
             </div>
           )}
         </aside>
@@ -279,22 +284,24 @@ function GearPage() {
           <div className="flex items-center gap-3 border-b border-border pb-5">
             <Wrench className="h-5 w-5 text-sky-500" />
             <div>
-              <h2 className="text-xl">{selected ? "编辑装备档案" : "登记新装备"}</h2>
-              <p className="text-xs text-muted-foreground">资料只对当前账号显示。</p>
+              <h2 className="text-xl">{selected ? t("编辑装备档案") : t("登记新装备")}</h2>
+              <p className="text-xs text-muted-foreground">{t("资料只对当前账号显示。")}</p>
             </div>
           </div>
           <fieldset disabled={busy} className="mt-6 grid min-w-0 gap-5 border-0 p-0 sm:grid-cols-2">
             <div className="sm:col-span-2 grid gap-4 border border-border bg-sky-500/5 p-4 sm:grid-cols-[190px_1fr]">
               <GearVisual category={draft.category} />
               <div className="flex flex-col justify-center">
-                <strong>装备类型识别</strong>
+                <strong>{t("装备类型识别")}</strong>
                 <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                  选择装备类型后会自动切换对应图标，不再展示与实际装备不符的固定照片。品牌和型号将用于后续产品目录匹配。
+                  {t(
+                    "选择装备类型后会自动切换对应图标，不再展示与实际装备不符的固定照片。品牌和型号将用于后续产品目录匹配。",
+                  )}
                 </p>
               </div>
             </div>
             <label className="space-y-2">
-              <Label>装备类型</Label>
+              <Label>{t("装备类型")}</Label>
               <select
                 className="h-10 w-full border border-input bg-background px-3 text-sm"
                 value={draft.category}
@@ -302,13 +309,13 @@ function GearPage() {
               >
                 {categories.map(([value, label]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(label)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="space-y-2">
-              <Label>品牌</Label>
+              <Label>{t("品牌")}</Label>
               <Input
                 className="rounded-none"
                 value={draft.brand}
@@ -317,7 +324,7 @@ function GearPage() {
               />
             </label>
             <label className="space-y-2">
-              <Label>型号</Label>
+              <Label>{t("型号")}</Label>
               <Input
                 className="rounded-none"
                 value={draft.model}
@@ -326,7 +333,7 @@ function GearPage() {
               />
             </label>
             <label className="space-y-2">
-              <Label>购入日期</Label>
+              <Label>{t("购入日期")}</Label>
               <Input
                 className="rounded-none"
                 type="date"
@@ -335,7 +342,7 @@ function GearPage() {
               />
             </label>
             <label className="space-y-2">
-              <Label>下次保养日期</Label>
+              <Label>{t("下次保养日期")}</Label>
               <Input
                 className="rounded-none"
                 type="date"
@@ -344,7 +351,7 @@ function GearPage() {
               />
             </label>
             <label className="space-y-2">
-              <Label>累计使用次数</Label>
+              <Label>{t("累计使用次数")}</Label>
               <Input
                 className="rounded-none"
                 type="number"
@@ -354,7 +361,7 @@ function GearPage() {
               />
             </label>
             <label className="space-y-2 sm:col-span-2">
-              <Label>备注</Label>
+              <Label>{t("备注")}</Label>
               <Textarea
                 className="rounded-none"
                 rows={4}
@@ -375,7 +382,7 @@ function GearPage() {
                   onClick={() => void remove()}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  删除装备
+                  {t("删除装备")}
                 </Button>
               )}
             </div>
@@ -387,7 +394,7 @@ function GearPage() {
               onClick={() => void save()}
             >
               <Save className="mr-2 h-4 w-4" />
-              {busy ? "保存中…" : "保存装备"}
+              {busy ? t("保存中…") : t("保存装备")}
             </Button>
           </div>
         </section>

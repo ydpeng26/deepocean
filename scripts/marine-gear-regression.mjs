@@ -100,7 +100,7 @@ function gearEditor(readError=false) {
     if(name==='@/hooks/useProfile')return{useProfile:()=>({profile:{id:'fixture-owner'},isPending:false,isError:false,refetch(){}})};
     if(name==='@/lib/gear')return{validateGear:input=>({...input}),updateGear:async(id,input,owner)=>{state.writes.push({id,input,owner});return new Promise((resolve,reject)=>{state.saving={resolve,reject};});}};
     if(name==='sonner')return{toast:{error(){},success(){}}};
-    return new Proxy({}, {get:(_,key)=>key});
+    if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, {get:(_,key)=>key});
   }).Route.component;
   state.render=()=>{for(let n=0;n<8;n++){cursor=0;effects=[];dirty=false;state.tree=component();for(const effect of effects)effect();if(!dirty)return;}throw Error('Unsettled editor');};
   state.field=label=>nodes(nodes(state.tree).find(node=>node.type==='label'&&content(node).startsWith(label))).find(node=>node.type==='Input'||node.type==='Textarea');

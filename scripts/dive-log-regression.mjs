@@ -57,7 +57,7 @@ const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='sonner')return{toast:{error:()=>{},success:()=>{}}};
  if(name==='@/lib/images')return images;
  if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:()=>{s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
- return new Proxy({},{get:(_,key)=>key});
+ if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;
 s.render=()=>{cursor=0;s.tree=Component({onBusyChange:v=>s.busy.push(v)});return nodes(s.tree);};
 s.input=(id,value)=>s.render().find(n=>n.props.id===id).props.onChange({target:{value}});

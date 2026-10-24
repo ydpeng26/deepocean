@@ -91,6 +91,31 @@ function AuthPage() {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
   const submittingRef = useRef(false);
+  const signinTab = useRef<HTMLButtonElement>(null);
+  const signupTab = useRef<HTMLButtonElement>(null);
+  function selectMode(value: "signin" | "signup") {
+    if (submittingRef.current || loading || resetBusy || resendLoading) return;
+    setMode(value);
+    if (value !== mode) setAwaitingConfirmation(false);
+    (value === "signin" ? signinTab : signupTab).current?.focus();
+  }
+  function tabKey(event: React.KeyboardEvent) {
+    if (event.isDefaultPrevented() || event.nativeEvent.isComposing) return;
+    const target =
+      event.key === "Home"
+        ? "signin"
+        : event.key === "End"
+          ? "signup"
+          : event.key === "ArrowLeft" || event.key === "ArrowRight"
+            ? mode === "signin"
+              ? "signup"
+              : "signin"
+            : null;
+    if (target) {
+      event.preventDefault();
+      selectMode(target);
+    }
+  }
 
   const publicSiteUrl = (
     (import.meta.env.VITE_SITE_URL as string | undefined) ||
@@ -265,23 +290,32 @@ function AuthPage() {
             aria-label={language === "zh-CN" ? "账号操作" : "Account action"}
           >
             <button
+              ref={signinTab}
+              id="auth-signin-tab"
+              aria-controls="auth-panel"
+              tabIndex={mode === "signin" ? 0 : -1}
+              disabled={loading || resetBusy || resendLoading}
+              onKeyDown={tabKey}
               type="button"
               role="tab"
               aria-selected={mode === "signin"}
               className={mode === "signin" ? "active" : ""}
-              onClick={() => {
-                setMode("signin");
-                setAwaitingConfirmation(false);
-              }}
+              onClick={() => selectMode("signin")}
             >
               {copy.signin}
             </button>
             <button
+              ref={signupTab}
+              id="auth-signup-tab"
+              aria-controls="auth-panel"
+              tabIndex={mode === "signup" ? 0 : -1}
+              disabled={loading || resetBusy || resendLoading}
+              onKeyDown={tabKey}
               type="button"
               role="tab"
               aria-selected={mode === "signup"}
               className={mode === "signup" ? "active" : ""}
-              onClick={() => setMode("signup")}
+              onClick={() => selectMode("signup")}
             >
               {copy.signup}
             </button>
@@ -292,7 +326,13 @@ function AuthPage() {
             <p>{mode === "signin" ? copy.signinIntro : copy.signupIntro}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="do-auth-form">
+          <form
+            id="auth-panel"
+            role="tabpanel"
+            aria-labelledby={`auth-${mode}-tab`}
+            onSubmit={handleSubmit}
+            className="do-auth-form"
+          >
             <label htmlFor="email">{copy.email}</label>
             <input
               id="email"

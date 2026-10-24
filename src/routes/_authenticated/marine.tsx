@@ -5,6 +5,8 @@ import { Camera, Fish, MapPin, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useProfile } from "@/hooks/useProfile";
+import { useModalFocus } from "@/hooks/useModalFocus";
+import { useLiveCopy } from "@/i18n/liveCopy";
 import {
   addSuggestion,
   deleteEncounter,
@@ -25,6 +27,7 @@ const today = () => {
 };
 
 function MarineWall() {
+  const t = useLiveCopy("我的海洋生物展览墙 · SupDiver");
   const { profile } = useProfile();
   const client = useQueryClient();
   const [help, setHelp] = useState(false);
@@ -70,17 +73,17 @@ function MarineWall() {
     setPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
-  useEffect(() => {
-    if (!editor && !selected) return;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !lock.current && !busy) {
-        setEditor(false);
-        setSelected(null);
-      }
-    };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, [editor, selected, busy]);
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalFocus(
+    dialogRef,
+    editor || !!selected,
+    () => {
+      setEditor(false);
+      setSelected(null);
+    },
+    () => !lock.current && !busy,
+    editor ? "editor" : selected?.id,
+  );
   const refresh = () =>
     alive.current ? client.invalidateQueries({ queryKey: ["marine"] }) : Promise.resolve();
   const isCurrentOwner = (owner: string) => alive.current && currentOwner.current === owner;
@@ -110,7 +113,7 @@ function MarineWall() {
     event.preventDefault();
     if (lock.current || !profile) return;
     if ((!name.trim() && !needsHelp) || !location.trim() || !date) {
-      toast.error("请填写生物名称、相遇时间和地点；不认识时可勾选寻求帮助");
+      toast.error(t("请填写生物名称、相遇时间和地点；不认识时可勾选寻求帮助"));
       return;
     }
     lock.current = true;
@@ -129,12 +132,12 @@ function MarineWall() {
       if (!alive.current) return;
       setEditor(false);
       setFile(null);
-      toast.success("海洋相遇已保存");
+      toast.success(t("海洋相遇已保存"));
     } catch (error) {
       if (alive.current)
         toast.error(
-          (error instanceof Error ? error.message + "；" : "") +
-            "保存未确认，内容与照片已保留，请重试",
+          (error instanceof Error ? t(error.message) + "; " : "") +
+            t("保存未确认，内容与照片已保留，请重试"),
         );
     } finally {
       lock.current = false;
@@ -145,51 +148,51 @@ function MarineWall() {
     <AppShell>
       <div className="do-marine-wall">
         <Link to="/dives" className="do-marine-back">
-          ← 返回海洋护照
+          {t("← 返回海洋护照")}
         </Link>
         <header className="do-marine-heading">
           <div>
             <span>OCEAN ENCOUNTERS</span>
-            <h1>海洋生物展览墙</h1>
-            <p>收藏每一次与海洋生命相遇的瞬间。</p>
+            <h1>{t("海洋生物展览墙")}</h1>
+            <p>{t("收藏每一次与海洋生命相遇的瞬间。")}</p>
           </div>
           <button disabled={busy} onClick={() => openEditor()}>
             <Plus size={17} />
-            记录一次相遇
+            {t("记录一次相遇")}
           </button>
         </header>
         <div className="do-marine-tabs">
           <button disabled={busy} aria-pressed={!help} onClick={() => setHelp(false)}>
-            我的展览墙
+            {t("我的展览墙")}
           </button>
           <button disabled={busy} aria-pressed={help} onClick={() => setHelp(true)}>
-            帮助识别
+            {t("帮助识别")}
           </button>
         </div>
         <p className="do-marine-hint">
           {help
-            ? "看看其他潜水员遇见了谁，分享你的识别建议。"
-            : "个人记录仅自己可见；开启识别求助的记录会向已登录的潜水员展示。"}
+            ? t("看看其他潜水员遇见了谁，分享你的识别建议。")
+            : t("个人记录仅自己可见；开启识别求助的记录会向已登录的潜水员展示。")}
         </p>
         {query.isPending ? (
-          <p role="status">正在载入海洋相遇…</p>
+          <p role="status">{t("正在载入海洋相遇…")}</p>
         ) : query.isError ? (
           <div className="do-marine-empty">
-            <p>暂时无法载入展览墙</p>
-            <button onClick={() => query.refetch()}>重新加载</button>
+            <p>{t("暂时无法载入展览墙")}</p>
+            <button onClick={() => query.refetch()}>{t("重新加载")}</button>
           </div>
         ) : !query.data?.length ? (
           <div className="do-marine-empty">
             <Fish size={44} />
-            <h2>{help ? "暂时没有待识别的相遇" : "你的海洋相遇，值得被收藏"}</h2>
+            <h2>{help ? t("暂时没有待识别的相遇") : t("你的海洋相遇，值得被收藏")}</h2>
             <p>
               {help
-                ? "遇到不认识的生物时，可以上传照片并寻求帮助。"
-                : "上传第一张照片，记录生物名称、相遇时间和地点。"}
+                ? t("遇到不认识的生物时，可以上传照片并寻求帮助。")
+                : t("上传第一张照片，记录生物名称、相遇时间和地点。")}
             </p>
             <button onClick={() => openEditor()}>
               <Camera size={17} />
-              上传照片
+              {t("上传照片")}
             </button>
           </div>
         ) : (
@@ -209,7 +212,7 @@ function MarineWall() {
               >
                 <div>
                   <img src={item.imageUrl} alt={item.species_name} loading="lazy" />
-                  {item.needs_help && <span>寻求识别帮助</span>}
+                  {item.needs_help && <span>{t("寻求识别帮助")}</span>}
                 </div>
                 <h2>{item.species_name}</h2>
                 <p>
@@ -227,6 +230,8 @@ function MarineWall() {
         {editor && (
           <div className="do-marine-overlay">
             <section
+              ref={dialogRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby="marine-editor-title"
@@ -235,23 +240,25 @@ function MarineWall() {
               <button
                 className="do-marine-close"
                 disabled={busy}
-                aria-label="关闭"
+                aria-label={t("关闭")}
                 onClick={() => setEditor(false)}
               >
                 <X />
               </button>
-              <h2 id="marine-editor-title">{editing ? "编辑海洋相遇" : "记录一次海洋相遇"}</h2>
+              <h2 id="marine-editor-title">
+                {editing ? t("编辑海洋相遇") : t("记录一次海洋相遇")}
+              </h2>
               <form onSubmit={save}>
                 <fieldset disabled={busy} className="do-marine-save-fields">
                   {(preview || editing?.imageUrl) && (
                     <img
                       className="do-marine-preview"
                       src={preview ?? editing?.imageUrl}
-                      alt="相遇照片预览"
+                      alt={t("相遇照片预览")}
                     />
                   )}
                   <div className="do-marine-photo-upload">
-                    <span>相遇照片</span>
+                    <span>{t("相遇照片")}</span>
                     <input
                       ref={photoInput}
                       type="file"
@@ -265,30 +272,32 @@ function MarineWall() {
                     />
                     <button type="button" onClick={() => photoInput.current?.click()}>
                       <Camera size={18} />
-                      {file || editing ? "更换照片" : "上传照片"}
+                      {file || editing ? t("更换照片") : t("上传照片")}
                     </button>
                     <small>
                       {file
                         ? file.name
                         : editing
-                          ? "已保存相遇照片，可点击按钮更换"
-                          : "尚未上传照片"}
+                          ? t("已保存相遇照片，可点击按钮更换")
+                          : t("尚未上传照片")}
                     </small>
-                    <small>请选择自己拍摄或获授权的照片，原图不超过 20MB。</small>
+                    <small>{t("请选择自己拍摄或获授权的照片，原图不超过 20MB。")}</small>
                   </div>
                   <label>
-                    生物名称
+                    {t("生物名称")}
                     <input
                       autoFocus
                       value={name}
                       maxLength={120}
-                      placeholder={needsHelp ? "不确定可留空，将保存为待识别" : "例如：绿海龟"}
+                      placeholder={
+                        needsHelp ? t("不确定可留空，将保存为待识别") : t("例如：绿海龟")
+                      }
                       required={!needsHelp}
                       onChange={(event) => setName(event.target.value)}
                     />
                   </label>
                   <label>
-                    相遇时间
+                    {t("相遇时间")}
                     <input
                       type="date"
                       required
@@ -298,12 +307,12 @@ function MarineWall() {
                     />
                   </label>
                   <label>
-                    相遇地点
+                    {t("相遇地点")}
                     <input
                       required
                       value={location}
                       maxLength={200}
-                      placeholder="例如：Indonesia · Komodo · Batu Bolong"
+                      placeholder={t("例如：Indonesia · Komodo · Batu Bolong")}
                       onChange={(event) => setLocation(event.target.value)}
                     />
                   </label>
@@ -313,15 +322,17 @@ function MarineWall() {
                       checked={needsHelp}
                       onChange={(event) => setNeedsHelp(event.target.checked)}
                     />
-                    寻求其他潜水员帮助识别
+                    {t("寻求其他潜水员帮助识别")}
                   </label>
                   <p className="do-marine-hint">
                     {needsHelp
-                      ? "此照片、生物名称、相遇时间、地点和你的显示名称将向已登录用户展示。请避免公开敏感物种的精确位置；你可以随时编辑并关闭求助。"
-                      : "此条相遇只会显示在你自己的展览墙。"}
+                      ? t(
+                          "此照片、生物名称、相遇时间、地点和你的显示名称将向已登录用户展示。请避免公开敏感物种的精确位置；你可以随时编辑并关闭求助。",
+                        )
+                      : t("此条相遇只会显示在你自己的展览墙。")}
                   </p>
                   <button type="submit" disabled={busy || !profile}>
-                    {busy ? "正在保存…" : "保存相遇"}
+                    {busy ? t("正在保存…") : t("保存相遇")}
                   </button>
                 </fieldset>
               </form>
@@ -331,6 +342,8 @@ function MarineWall() {
         {selected && (
           <div className="do-marine-overlay">
             <section
+              ref={dialogRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby="marine-detail-title"
@@ -339,7 +352,7 @@ function MarineWall() {
               <button
                 className="do-marine-close"
                 disabled={busy}
-                aria-label="关闭"
+                aria-label={t("关闭")}
                 onClick={() => {
                   if (!lock.current) setSelected(null);
                 }}
@@ -356,19 +369,20 @@ function MarineWall() {
                 {selected.location} · {selected.encountered_on}
               </p>
               <p className="do-marine-hint">
-                记录者：{selected.author_name}
-                {selected.needs_help ? " · 正在寻求识别帮助" : ""}
+                {t("记录者：")}
+                {selected.author_name}
+                {selected.needs_help ? t(" · 正在寻求识别帮助") : ""}
               </p>
               {selected.user_id === profile?.id && (
                 <div className="do-marine-owner-actions">
                   <button disabled={busy} onClick={() => openEditor(selected)}>
-                    编辑名称与记录 / 关闭求助
+                    {t("编辑名称与记录 / 关闭求助")}
                   </button>
                   <button
                     disabled={busy}
                     onClick={async () => {
                       if (lock.current) return;
-                      if (!confirm("删除这次海洋相遇和相关留言？")) return;
+                      if (!confirm(t("删除这次海洋相遇和相关留言？"))) return;
                       const owner = beginAction();
                       if (!owner) return;
                       try {
@@ -377,20 +391,22 @@ function MarineWall() {
                         setSelected(null);
                         await refresh();
                       } catch {
-                        if (isCurrentOwner(owner)) toast.error("删除失败，请重试");
+                        if (isCurrentOwner(owner)) toast.error(t("删除失败，请重试"));
                       } finally {
                         finishAction();
                       }
                     }}
                   >
-                    删除记录
+                    {t("删除记录")}
                   </button>
                 </div>
               )}
               {selected.user_id === profile?.id && (
                 <div className="do-marine-share">
                   <p className="do-marine-hint">
-                    可将这张照片、生物名称、相遇时间和地点转发至深蓝论坛「生物百科」，请潜水员一起交流识别。论坛帖子独立保留，关闭展览墙求助或删除相遇不会删除已转发的帖子。
+                    {t(
+                      "可将这张照片、生物名称、相遇时间和地点转发至深蓝论坛「生物百科」，请潜水员一起交流识别。论坛帖子独立保留，关闭展览墙求助或删除相遇不会删除已转发的帖子。",
+                    )}
                   </p>
                   <button
                     disabled={busy}
@@ -398,7 +414,9 @@ function MarineWall() {
                       if (lock.current) return;
                       if (
                         !confirm(
-                          "将此照片、生物名称、相遇时间和地点发布至深蓝论坛「生物百科」？论坛成员将能查看和评论。",
+                          t(
+                            "将此照片、生物名称、相遇时间和地点发布至深蓝论坛「生物百科」？论坛成员将能查看和评论。",
+                          ),
                         )
                       )
                         return;
@@ -409,30 +427,32 @@ function MarineWall() {
                         if (!isCurrentOwner(owner)) return;
                         setSharedPost({ encounterId: selected.id, postId });
                         await client.invalidateQueries({ queryKey: ["forum-posts"] });
-                        if (isCurrentOwner(owner)) toast.success("已转发至深蓝论坛 · 生物百科");
+                        if (isCurrentOwner(owner)) toast.success(t("已转发至深蓝论坛 · 生物百科"));
                       } catch (error) {
                         if (isCurrentOwner(owner))
-                          toast.error(error instanceof Error ? error.message : "转发失败，请重试");
+                          toast.error(
+                            error instanceof Error ? t(error.message) : t("转发失败，请重试"),
+                          );
                       } finally {
                         finishAction();
                       }
                     }}
                   >
-                    {busy ? "处理中…" : "转发至深蓝论坛"}
+                    {busy ? t("处理中…") : t("转发至深蓝论坛")}
                   </button>
                   {sharedPost?.encounterId === selected.id && (
                     <a href={`/forum#post-${sharedPost.postId}`} className="do-marine-back">
-                      查看论坛帖子 →
+                      {t("查看论坛帖子 →")}
                     </a>
                   )}
                 </div>
               )}
-              <h3>识别建议</h3>
-              <p className="do-marine-hint">建议仅供参考，请结合可信资料核实生物种类。</p>
+              <h3>{t("识别建议")}</h3>
+              <p className="do-marine-hint">{t("建议仅供参考，请结合可信资料核实生物种类。")}</p>
               {suggestions.isPending ? (
-                <p>正在载入建议…</p>
+                <p>{t("正在载入建议…")}</p>
               ) : suggestions.isError ? (
-                <button onClick={() => suggestions.refetch()}>建议加载失败，点击重试</button>
+                <button onClick={() => suggestions.refetch()}>{t("建议加载失败，点击重试")}</button>
               ) : suggestions.data?.length ? (
                 suggestions.data.map((item) => (
                   <article className="do-marine-suggestion" key={item.id}>
@@ -441,7 +461,7 @@ function MarineWall() {
                   </article>
                 ))
               ) : (
-                <p className="do-marine-hint">还没有识别建议。</p>
+                <p className="do-marine-hint">{t("还没有识别建议。")}</p>
               )}
               {selected.needs_help && (
                 <form
@@ -467,23 +487,23 @@ function MarineWall() {
                         replyDrafts.current[key] = { body: "", requestId: crypto.randomUUID() };
                         setReply("");
                       }
-                      toast.success("识别建议已发送");
+                      toast.success(t("识别建议已发送"));
                     } catch {
                       if (isCurrentOwner(owner))
-                        toast.error("发送未确认，建议已保留，请重试或重新载入核对");
+                        toast.error(t("发送未确认，建议已保留，请重试或重新载入核对"));
                     } finally {
                       finishAction();
                     }
                   }}
                 >
                   <label>
-                    提供识别建议
+                    {t("提供识别建议")}
                     <textarea
                       required
                       disabled={busy}
                       value={reply}
                       maxLength={1000}
-                      placeholder="你认为是什么生物？可以补充识别特征与依据。"
+                      placeholder={t("你认为是什么生物？可以补充识别特征与依据。")}
                       onChange={(event) => {
                         if (lock.current || !profile) return;
                         const key = `${profile.id}:${selected.id}`;
@@ -497,7 +517,7 @@ function MarineWall() {
                     />
                   </label>
                   <button disabled={busy || !reply.trim()} type="submit">
-                    {busy ? "发送中…" : "发送建议"}
+                    {busy ? t("发送中…") : t("发送建议")}
                   </button>
                 </form>
               )}

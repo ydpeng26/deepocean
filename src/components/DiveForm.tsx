@@ -29,10 +29,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImagePlus, Upload, X } from "lucide-react";
+import { useLiveCopy } from "@/i18n/liveCopy";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
 export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
+  const t = useLiveCopy();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -111,7 +113,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     const resolvedCountry =
       country.trim() || knownRegionCountries[region.trim().toLowerCase()] || "";
     if (!resolvedCountry || !siteName.trim() || !diveDate) {
-      toast.error("请填写潜水国家、潜点名称和日期");
+      toast.error(t("请填写潜水国家、潜点名称和日期"));
       return;
     }
     savingRef.current = true;
@@ -119,13 +121,13 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     onBusyChange?.(true);
     try {
       const numeric = {
-        surface_temp: parseDiveNumber(surfaceTemp, "水上温度", "temperature"),
-        water_temp: parseDiveNumber(waterTemp, "水下温度", "temperature"),
-        max_depth: parseDiveNumber(maxDepth, "最大深度", "depth"),
-        duration_min: parseDiveNumber(duration, "潜水时长", "duration"),
+        surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
+        water_temp: parseDiveNumber(waterTemp, t("水下温度"), "temperature"),
+        max_depth: parseDiveNumber(maxDepth, t("最大深度"), "depth"),
+        duration_min: parseDiveNumber(duration, t("潜水时长"), "duration"),
       };
       if (existingPaths.length + newFiles.length > 6)
-        throw new Error("照片和视频合计最多 6 个，请先移除部分附件");
+        throw new Error(t("照片和视频合计最多 6 个，请先移除部分附件"));
       const userId = await (owner.current ?? requireDiveOwner(dive?.user_id));
       await requireDiveOwner(userId);
 
@@ -162,7 +164,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           current?.map((item) => (item.id === savedDive.id ? savedDive : item)),
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
-        toast.success("记录已更新");
+        toast.success(t("记录已更新"));
         onSaved?.();
         navigate({ to: "/dives/$id", params: { id: dive.id } });
       } else {
@@ -171,11 +173,11 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           current ? [savedDive, ...current.filter((item) => item.id !== savedDive.id)] : current,
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
-        toast.success("记录已保存");
+        toast.success(t("记录已保存"));
         navigate({ to: "/dives/$id", params: { id: savedDive.id } });
       }
     } catch (err) {
-      if (alive.current) toast.error(err instanceof Error ? err.message : "保存失败，请重试");
+      if (alive.current) toast.error(err instanceof Error ? t(err.message) : t("保存失败，请重试"));
     } finally {
       savingRef.current = false;
       if (alive.current) {
@@ -192,11 +194,11 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       <fieldset disabled={saving} className="min-w-0 space-y-10" aria-busy={saving}>
         <section className="space-y-6">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            地点与时间
+            {t("地点与时间")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="country">潜水国家</Label>
+              <Label htmlFor="country">{t("潜水国家")}</Label>
               <Input
                 id="country"
                 list="dive-country-options"
@@ -204,7 +206,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 onChange={(e) => setCountry(e.target.value)}
                 className={field}
                 maxLength={80}
-                placeholder="例如：Indonesia / 印度尼西亚"
+                placeholder={t("例如：Indonesia / 印度尼西亚")}
               />
               <datalist id="dive-country-options">
                 <option value="Indonesia" />
@@ -218,29 +220,29 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               </datalist>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">地区 / 岛屿</Label>
+              <Label htmlFor="region">{t("地区 / 岛屿")}</Label>
               <Input
                 id="region"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 className={field}
                 maxLength={100}
-                placeholder="例如：Komodo / 科莫多"
+                placeholder={t("例如：Komodo / 科莫多")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="site">潜点名称</Label>
+              <Label htmlFor="site">{t("潜点名称")}</Label>
               <Input
                 id="site"
                 value={siteName}
                 onChange={(e) => setSiteName(e.target.value)}
                 className={field}
                 maxLength={120}
-                placeholder="例如：Apo Reef"
+                placeholder={t("例如：Apo Reef")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">潜水日期</Label>
+              <Label htmlFor="date">{t("潜水日期")}</Label>
               <Input
                 id="date"
                 type="date"
@@ -250,15 +252,15 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label>当天天气</Label>
+              <Label>{t("当天天气")}</Label>
               <Select value={weather} onValueChange={setWeather}>
                 <SelectTrigger className={field}>
-                  <SelectValue placeholder="选择天气" />
+                  <SelectValue placeholder={t("选择天气")} />
                 </SelectTrigger>
                 <SelectContent>
                   {WEATHER_OPTIONS.map((w) => (
                     <SelectItem key={w} value={w}>
-                      {w}
+                      {t(w)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -269,11 +271,11 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
 
         <section className="space-y-6 border-t border-border pt-10">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            水温与数据
+            {t("水温与数据")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="surface">水上温度 °C</Label>
+              <Label htmlFor="surface">{t("水上温度 °C")}</Label>
               <Input
                 id="surface"
                 inputMode="decimal"
@@ -283,7 +285,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="water">水下温度 °C</Label>
+              <Label htmlFor="water">{t("水下温度 °C")}</Label>
               <Input
                 id="water"
                 inputMode="decimal"
@@ -293,7 +295,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="depth">最大深度 m</Label>
+              <Label htmlFor="depth">{t("最大深度 m")}</Label>
               <Input
                 id="depth"
                 inputMode="decimal"
@@ -303,7 +305,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="duration">时长 分钟</Label>
+              <Label htmlFor="duration">{t("时长 分钟")}</Label>
               <Input
                 id="duration"
                 inputMode="numeric"
@@ -317,11 +319,11 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
 
         <section className="space-y-6 border-t border-border pt-10">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            类型与潜伴
+            {t("类型与潜伴")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label>潜水类型</Label>
+              <Label>{t("潜水类型")}</Label>
               <Select value={diveType} onValueChange={(v) => setDiveType(v as DiveType)}>
                 <SelectTrigger className={field}>
                   <SelectValue />
@@ -329,29 +331,29 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 <SelectContent>
                   {(Object.keys(DIVE_TYPE_LABELS) as DiveType[]).map((k) => (
                     <SelectItem key={k} value={k}>
-                      {DIVE_TYPE_LABELS[k]}
+                      {t(DIVE_TYPE_LABELS[k])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>潜伴身份</Label>
+              <Label>{t("潜伴身份")}</Label>
               <Select value={buddyRole} onValueChange={(v) => setBuddyRole(v as BuddyRole)}>
                 <SelectTrigger className={field}>
-                  <SelectValue placeholder="教练 / 同伴" />
+                  <SelectValue placeholder={t("教练 / 同伴")} />
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(BUDDY_ROLE_LABELS) as BuddyRole[]).map((k) => (
                     <SelectItem key={k} value={k}>
-                      {BUDDY_ROLE_LABELS[k]}
+                      {t(BUDDY_ROLE_LABELS[k])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="buddy">潜伴姓名</Label>
+              <Label htmlFor="buddy">{t("潜伴姓名")}</Label>
               <Input
                 id="buddy"
                 value={buddyName}
@@ -365,7 +367,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
 
         <section className="space-y-6 border-t border-border pt-10">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            照片与备注
+            {t("照片与备注")}
           </h2>
 
           {existingPaths.length > 0 && (
@@ -380,12 +382,12 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                     pending={existingMedia.isFetching}
                     error={existingMedia.isError}
                     reload={() => existingMedia.refetch({ throwOnError: true })}
-                    label={`附件 ${i + 1}`}
+                    label={`${t("附件")} ${i + 1}`}
                     className="h-24 w-24"
                   />
                   <button
                     type="button"
-                    aria-label="移除照片"
+                    aria-label={t("移除照片")}
                     onClick={() => {
                       setExistingPaths(existingPaths.filter((_, idx) => idx !== i));
                       setExistingThumbnailPaths(
@@ -402,7 +404,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           )}
 
           <div className="space-y-3">
-            <Label htmlFor="photos">照片 / 视频</Label>
+            <Label htmlFor="photos">{t("照片 / 视频")}</Label>
             <input
               ref={mediaInput}
               id="photos"
@@ -417,13 +419,13 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                     if (!file.type.startsWith("video/")) assertSupportedWebImage(file);
                 } catch (error) {
                   toast.error(
-                    error instanceof Error ? error.message : "请选择 JPG、PNG 或 WebP 图片",
+                    error instanceof Error ? t(error.message) : t("请选择 JPG、PNG 或 WebP 图片"),
                   );
                   e.target.value = "";
                   return;
                 }
                 if (existingPaths.length + selected.length > 6) {
-                  toast.error("照片和视频合计最多 6 个，请先移除部分附件");
+                  toast.error(t("照片和视频合计最多 6 个，请先移除部分附件"));
                   e.target.value = "";
                   return;
                 }
@@ -440,9 +442,11 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                   <ImagePlus className="h-5 w-5" />
                 </span>
                 <span>
-                  <strong className="block text-sm text-foreground">上传照片 / 视频</strong>
+                  <strong className="block text-sm text-foreground">{t("上传照片 / 视频")}</strong>
                   <small className="mt-1 block text-muted-foreground">
-                    图片支持 JPG、PNG、WebP，HEIC/HEIF 请先转换。最多 6 个文件；单个视频不超过 100MB
+                    {t(
+                      "图片支持 JPG、PNG、WebP，HEIC/HEIF 请先转换。最多 6 个文件；单个视频不超过 100MB",
+                    )}
                   </small>
                 </span>
               </span>
@@ -450,7 +454,9 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
             </button>
             {newFiles.length > 0 && (
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p>已选择 {newFiles.length} 个文件</p>
+                <p>
+                  {t("已选择")} {newFiles.length} {t("个文件")}
+                </p>
                 {newFiles.map((file) => (
                   <p key={`${file.name}-${file.size}`} className="truncate">
                     • {file.name}
@@ -461,7 +467,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">个人备注</Label>
+            <Label htmlFor="notes">{t("个人备注")}</Label>
             <Textarea
               id="notes"
               value={notes}
@@ -469,14 +475,14 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               rows={5}
               maxLength={2000}
               className={field}
-              placeholder="看到了什么？感受如何？"
+              placeholder={t("看到了什么？感受如何？")}
             />
           </div>
         </section>
 
         <div className="flex gap-3 border-t border-border pt-8">
           <Button type="submit" disabled={saving} className="rounded-none px-8">
-            {saving ? "保存中…" : "保存记录"}
+            {saving ? t("保存中…") : t("保存记录")}
           </Button>
           <Button
             type="button"
@@ -484,7 +490,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
             className="rounded-none"
             onClick={() => navigate({ to: "/dives" })}
           >
-            取消
+            {t("取消")}
           </Button>
         </div>
       </fieldset>

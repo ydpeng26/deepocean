@@ -159,7 +159,7 @@ function formHarness(initialItems = []) {
     if (name === 'sonner') return { toast: { error: m => errors.push(m), success() {} } };
     if (name === '@/lib/offline-dives') return { ...a, listOfflineDives: async () => clone(initialItems),
       saveOfflineDive: (fields, id, options) => new Promise((resolve, reject) => pending.push({ fields: clone(fields), id, options, resolve, reject })) };
-    return new Proxy({}, { get: (_, k) => k });
+    if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
   }, { document: { getElementById: () => null }, window: { confirm: () => true } }).Route;
   const h = { pending, errors, render() { cursor = 0; return nodes(route.component()); },
     input(index, value) { h.render().filter(n => n.type === 'input')[index].props.onChange({ target: { value } }); },
@@ -214,7 +214,7 @@ function onlineFormHarness() {
     if (name === '@tanstack/react-query') return { useQuery: () => ({ data: [] }), useQueryClient: () => ({ setQueryData() {}, invalidateQueries: async () => {} }) };
     if (name === 'sonner') return { toast: { error() {}, success() {} } };
     if (name === '@/lib/dives') return { ...dives, saveDive: async (...args) => { calls.push(args); throw Error('simulated conflict'); } };
-    return new Proxy({}, { get: (_, k) => k });
+    if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
   }).DiveForm;
   const render = () => { cursor = 0; return nodes(Component({ dive: currentDive })); };
   return { calls, render, effects, refresh() { currentDive = { ...currentDive, updated_at: 'background-new-version', notes: 'background value' }; } };

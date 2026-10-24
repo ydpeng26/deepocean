@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DiveForm } from "@/components/DiveForm";
 import { useState } from "react";
+import { useLiveCopy } from "@/i18n/liveCopy";
 
 export const Route = createFileRoute("/_authenticated/dives/new")({
   head: () => ({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dives/new")({
 });
 
 function NewDive() {
+  const t = useLiveCopy("新增潜水记录 · 深蓝");
   const [saving, setSaving] = useState(false);
   return (
     <AppShell>
@@ -37,9 +39,11 @@ function NewDive() {
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
       >
         <ArrowLeft className="h-3 w-3" />
-        返回日志
+        {t("返回日志")}
       </Link>
-      <h1 className="mb-10 mt-4 text-3xl font-normal tracking-tight text-primary">新增潜水记录</h1>
+      <h1 className="mb-10 mt-4 text-3xl font-normal tracking-tight text-primary">
+        {t("新增潜水记录")}
+      </h1>
       <DiveForm onBusyChange={setSaving} />
     </AppShell>
   );
