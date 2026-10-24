@@ -87,7 +87,7 @@ try {
   await seed(p,marker+'-ONE');await seed(p,marker+'-TWO');await workspace(p,A);
   await select(p,marker+'-ONE');await select(p,marker+'-TWO');const held=await holdInsert(p);await sync(p);await held.entered.promise;
   await switchSession(p,await session(B));await p.getByText(B.email,{exact:true}).waitFor();held.release.resolve();
-  await p.waitForFunction(()=>!document.querySelector('.do-sync-button')?.disabled);
+  await p.getByRole('button',{name:'同步到我的账号',exact:true}).waitFor();
   check((await rows(A)).length===1 && (await rows(B)).length===0,'batch_did_not_stop_at_owner_change');
   check((await drafts(p)).length===2,'unconfirmed_drafts_removed_after_switch');
   check(await p.locator('[aria-pressed="true"]').count()===0,'old_selection_survived_account_change');
