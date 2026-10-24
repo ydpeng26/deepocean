@@ -9,7 +9,7 @@ const fixed = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8'
 const legacy = execFileSync('git', ['show', '2afc408bea57dd426a1e2c1f5ea44611bb2290cc:public/sw.js'], { encoding: 'utf8' });
 const observer = ts.transpileModule(await readFile(new URL('../src/lib/offline-updates.ts', import.meta.url), 'utf8'), { compilerOptions: { target: 9, module: 99 } }).outputText;
 let phase = 'legacy', browser, context, server, failed = false, stage = 'guard';
-const check = (ok, reason) => { if (!ok) throw Error(reason); };
+const check = (ok, reason) => { if (!ok) { const error = Error(reason); error.auditReason = reason; throw error; } };
 const pass = message => console.log('PASS: ' + message);
 async function poll(fn, predicate) { for (let i = 0; i < 120; i++) { const value = await fn(); if (predicate(value)) return value; await new Promise(r => setTimeout(r, 250)); } throw Error('Lifecycle did not settle'); }
 try {
@@ -66,17 +66,25 @@ try {
   await a.waitForFunction(() => window.fixtureVersion === 'fixed1' && !!navigator.serviceWorker.controller);
   await a.locator('#draft').fill('unsaved tab A'); await b.locator('#draft').fill('unsaved tab B');
   stage = 'fixed to fixed two real tabs'; phase = 'fixed2';
+  stage = 'request fixed2 update';
   await a.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
+  stage = 'fixed2 waiting';
   await a.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting);
+  stage = 'fixed2 update notice';
   await a.locator('#notice').getByText('Update ready. Save before closing all tabs.', { exact: true }).waitFor();
+  stage = 'fixed2 input retention';
   check(await a.locator('#draft').inputValue() === 'unsaved tab A' && await b.locator('#draft').inputValue() === 'unsaved tab B', 'Update erased input');
+  stage = 'fixed1 old chunk offline';
   await context.setOffline(true);
   check(await a.evaluate(async () => (await fetch('/assets/fixed1.js')).ok), 'Old fixed chunk unavailable');
+  stage = 'close only first tab';
   await a.close();
   check(await b.evaluate(async () => !!(await navigator.serviceWorker.getRegistration()).waiting), 'One remaining tab did not retain waiting worker');
   check(await b.locator('#draft').inputValue() === 'unsaved tab B', 'Remaining tab changed');
+  stage = 'close last tab and activate fixed2';
   await b.close(); const active = await activeVersion('fixed2');
   check(!active.keys.includes('supdiver-offline-fixed1'), 'Old cache not retired when windowless');
+  stage = 'reopen fixed2 offline';
   const fresh = await context.newPage();
   await fresh.goto(site + '/offline'); await fresh.waitForFunction(() => window.fixtureVersion === 'fixed2');
   check(await fresh.evaluate(async () => (await fetch('/assets/fixed2.js')).ok), 'New offline chunk unavailable');
@@ -93,7 +101,7 @@ try {
   check(await fresh.locator('#draft').inputValue() === 'input survives failed install', 'Failed install changed input');
   check(await fresh.evaluate(async () => !(await navigator.serviceWorker.getRegistration()).waiting && (await caches.keys()).includes('supdiver-offline-fixed2')), 'Failed install replaced working cache');
   pass('real_partial_install_failure_keeps_active_worker_cache_and_unsaved_input');
-} catch (error) { failed = true; console.log('INCOMPLETE: stage=' + stage + ' error=' + error.constructor.name + '; details suppressed'); }
+} catch (error) { failed = true; console.log('INCOMPLETE: stage=' + stage + ' error=' + error.constructor.name + '; check=' + (error.auditReason || 'browser_operation') + '; details suppressed'); }
 finally {
   if (context) await context.close(); if (browser) await browser.close(); if (server) await new Promise(resolve => server.close(resolve));
   console.log('AUDIT: controlled_loopback_actual_worker_lifecycle_complete=' + !failed + '; synthetic_shell_not_full_app_cross_release_no_backend_data');
