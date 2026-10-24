@@ -1,6 +1,12 @@
 # PC session lifecycle — diagnosis 2026-10-25
 
-## Recovery acceptance complete — formal release awaits approval
+## User-authorized formal release complete — 2026-10-25
+
+After recovery run 20 acceptance, the user explicitly approved formal release. Main was fast-forwarded, without rewriting history, from expected `d6ed793d8d4c10cfdb4aa4db3211e42741951b9a` to `6f2e1fa43e56f414d1742ad49be31b3a55a224be`. The release guard verified expected main/isolated heads, successful recovery run 40143702308 with runner SHA ded0197, identical src/public trees to the user-promoted accepted 7324ce2, and byte-identical workflows to the previous formal baseline. The focused lifecycle regression passed again. User-owned screenlog.0 was preserved.
+
+GitHub reports formal Vercel deepocean success at [deployment 4vUEaTbeg7FnZFBqYq4ciMrkA2rA](https://vercel.com/ydpeng26s-projects/deepocean/4vUEaTbeg7FnZFBqYq4ciMrkA2rA). Main SHA was separately read back as 6f2e1fa. Read-only HTTPS checks on www.supdiver.com returned 200 for /auth, /profile, /offline-sync and /reset-password. The public offline manifest and all 63 listed JS assets were read in memory; deployed assets positively contain the live member-session gate, pageshow recheck and previous shared auth-return repair. No authenticated formal account operation, database/schema change, password change, mail, media download or user-data mutation occurred. Public route responses are deployment smoke checks, not authenticated formal lifecycle acceptance. Native Safari BFCache/first-paint and other previously excluded coverage remain pending. This release note is a local follow-up record, not part of deployed commit 6f2e1fa.
+
+## Recovery acceptance complete — historical pre-release checkpoint
 
 User-assisted Vercel screenshots confirmed the earlier linked source `7324ce2` was still Preview / Stale, then showed its explicit promotion targeted only `supdiver-recovery-test.vercel.app`, followed by Ready / Production / fixed domain / source `7324ce2` (unique deployment domain `supdiver-recovery-test-l5wuxwhh7-ydpeng26s-projects.vercel.app`). No application fix was needed in response to runs 18/19; the fixed-domain deployment discrepancy was corrected. Source `ded0197` has identical src/public trees to the promoted `7324ce2`.
 
