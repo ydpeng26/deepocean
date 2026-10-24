@@ -66,3 +66,13 @@ Final run https://github.com/ydpeng26/deepocean/actions/runs/40077766613 , job `
 The real lifecycle shell exercises the actual update observer, while the React notice's bilingual/dismissal behavior remains local component-tested. Already-open legacy pages cannot retroactively gain the new notice; users must save before closing all site tabs/app windows. Closing a window does not automatically save unsaved text. Browser eviction/quota and physical-device/browser coverage remain as previously limited.
 
 Production main remains `2afc408bea57dd426a1e2c1f5ea44611bb2290cc`. The registered dive-log workflow is restored byte-identically to that baseline; a dedicated manual-only `recovery-offline-update.yml` retains the repeatable tests. No production release has been authorized for this repair. No migration, credential change or existing cloud/user data mutation occurred. Separate production approval is required.
+
+## Authorized production release — 2026-10-24
+
+The user explicitly approved release. Main was re-read at `2afc408`, ancestry checked, worker/application source verified identical to recovery-tested `99cdb76`, and the registered dive workflow verified restored. Main was fast-forwarded with an expected-head lease to `9ac9a990c0595f77dcabfbd5cedfc96f4c4defea`, without rewriting history.
+
+Native Vercel verified https://vercel.com/ydpeng26s-projects/deepocean/AjEr3AfMM2ujL3QGGgbdRAKjn7Wt Ready / Production / Current, main source `9ac9a99`, with `www.supdiver.com` assigned. Read-only public HTTP verification on `www.supdiver.com` returned 200 for `/sw.js`, `/offline-assets.json`, `/offline` and `/auth`; the manifest has 64 JS/CSS assets. The served worker has a replaced build marker, no `self.skipWaiting()` call, includes uncontrolled-window checks and retained-version asset fallback. The bare domain returns 308 to its canonical host, which the initial Python client did not automatically follow; direct canonical-host checks succeeded.
+
+Native Chrome opened `https://supdiver.com/offline` and rendered the Chinese offline heading, fields, local-only warning and save control. No input entered, local draft saved, login performed or production mutation submitted. Full lifecycle and actual-form write acceptance remain the isolated/recovery run above, not production fixture writes.
+
+Already-open legacy pages do not acquire new UI retroactively. Users should save/copy current input, close all SupDiver tabs/app windows and reopen. Do not instruct users to clear browser data: unsynced IndexedDB drafts must remain intact. No database migration, credentials or existing user data were changed by this release. This release record is kept on the isolated branch to avoid an unnecessary extra production build.
