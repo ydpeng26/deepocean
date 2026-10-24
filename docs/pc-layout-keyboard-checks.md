@@ -54,3 +54,24 @@ The user authorized repairing the diagnosed issues. The isolated branch now adds
 All 11 local suites passed: keyboard/language, dive log, PC concurrency, marine/gear, marine help, forum interaction, media, profile, certificates, forum volume and forum social. Targeted application ESLint, production client/server build, offline asset generation and scoped diff whitespace checks passed. Full TypeScript checking still fails on the previously recorded `__root.tsx`, `forum-post-preview.tsx` and `profile-preview.tsx` errors, with no diagnostic in this repair's changed modules; global type-check success is not claimed.
 
 Recovery-only deployment permission has been requested for this repair. At this checkpoint no fixed recovery deployment or production deployment has been changed, no migration added, and no real recovery-browser acceptance of the repair has run. The registered dive audit workflow remains restored. Production release requires separate approval after recovery acceptance.
+
+## Authorized recovery deployment and acceptance (2026-10-24)
+
+The user explicitly approved updating only the fixed recovery site and using disposable test accounts with cleanup. No production release was authorized.
+
+The initial repair deployment (`7841f00`, recovery rebuild `DQtJyy8bZaDH1uyJUEd5dYqbDPDd`) completed 54 layout/language cases and comment keyboard checks, but strict acceptance stopped on marine opener-focus return: https://github.com/ydpeng26/deepocean/actions/runs/40051855755 , job `120746054538`, `complete=false findings=0 matrix_cases=54`. Zero findings here does not mean a pass: the strict check threw before the remaining checks. Exact disposable fixtures were cleaned and absence verified.
+
+The marine input's native autofocus ran before the hook captured the opener. The follow-up repair replaces native autofocus with a focus-target marker applied by the hook after opener capture, retaining initial name-input focus. A local regression explicitly verifies preferred initial focus and return to the trigger. Targeted lint, keyboard/language regression, marine-help and forum-interaction regression, production build and offline generation passed again.
+
+Final application/runner source: `fba4b2f6b74e07d9ea148559484a840565c071a7`. Recovery deployment https://vercel.com/ydpeng26s-projects/supdiver-recovery-test/21gu7rDj2z3EN19pvBG61hesScWP was visibly verified Ready / Production / Current with fixed domain `supdiver-recovery-test.vercel.app` and source `fba4b2f` (recovery project only).
+
+Strict real desktop Chromium acceptance https://github.com/ydpeng26/deepocean/actions/runs/40053163650 , job `120750106533`, passed with `complete=true findings=0 matrix_cases=54`:
+
+- All nine routes, two languages and three widths (1440/1280/1024) completed. No root overflow or header control outside the viewport without a scroll container was reported. The three repaired English headings/actions were positively checked, not merely checked for missing Chinese.
+- Actual comments and marine editor: focus enters, 20 forward and 20 reverse Tab presses remain contained, Escape closes, and the original opener regains focus.
+- Actual auth tabs: ArrowRight/ArrowLeft wrapping, Home/End selection, selected tab focus and roving tab indexes passed; Enter activation still works. No sign-up or mail was submitted.
+- Exact disposable account/profile/dive/forum fixtures were removed and absence checked. No photos, mail, screenshots, traces or exported data. Production request guard remained clear.
+
+Busy/IME/nesting/replacement handling and draft retention on language switch remain locally model-tested, not independently covered by these real-browser checks. This is not a blanket accessibility, all-English-content, full zoom or multi-browser acceptance.
+
+The registered dive-log workflow is restored byte-for-byte to production `d5b9b27` after the isolated acceptance dispatch. GitHub main remains `d5b9b2779ce985b57037a66af85c52670e838854`. No production deployment, schema, credentials or real user records were changed. The repair is ready for the user's separate production-release decision.
