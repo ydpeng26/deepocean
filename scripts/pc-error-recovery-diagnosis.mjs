@@ -1,0 +1,44 @@
+// Diagnosis only: actual error UI/report helper; synthetic errors, no network.
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+function load(file,require,globals={}){const module={exports:{}};vm.runInNewContext(ts.transpileModule(read(file),{compilerOptions:{module:1,jsx:4,target:9}}).outputText,{module,exports:module.exports,require,Error,Response,console:{error(){}},fetch(){throw Error('Network forbidden');},...globals});return module.exports;}
+const nodes=n=>Array.isArray(n)?n.flatMap(nodes):n&&typeof n==='object'?[n,...nodes(n.props?.children)]:[];
+const text=n=>Array.isArray(n)?n.map(text).join(' '):n&&typeof n==='object'?text(n.props?.children):typeof n==='string'?n:'';
+const jsx=(type,props)=>({type,props});
+const effects=[],pending=[];let invalidateCalls=0,resets=0,language='zh-CN';
+const reporting=[];
+const root=load('src/routes/__root.tsx',name=>{
+ if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};
+ if(name==='react')return{useEffect:fn=>effects.push(fn)};
+ if(name==='@tanstack/react-router')return{createRootRouteWithContext:()=>options=>options,Link:'Link',useRouter:()=>({invalidate(){invalidateCalls++;let resolve;const promise=new Promise(r=>{resolve=r;});pending.push(resolve);return promise;}})};
+ if(name==='../lib/lovable-error-reporting')return{reportLovableError:(...args)=>reporting.push(args)};
+ if(name==='@/i18n/LanguageProvider')return{useLanguage:()=>({language})};
+ return{};
+}).Route;
+const error=new Error('Synthetic boundary error');
+const notFoundZh=text(root.notFoundComponent());const errorZh=text(root.errorComponent({error,reset(){resets++;}}));
+language='en';assert.equal(text(root.notFoundComponent()),notFoundZh);assert.equal(text(root.errorComponent({error,reset(){resets++;}})),errorZh);
+assert(notFoundZh.includes('Page not found'));assert(errorZh.includes("This page didn't load"));
+const fallback=load('src/lib/error-page.ts',()=>({})).renderErrorPage();assert(fallback.includes('lang="en"'));assert(fallback.includes('Try again'));assert(!fallback.includes(error.message));
+console.log('FINDING: actual_root_404_and_error_UI_ignore_Chinese_language_and_static_500_fallback_is_English_only');
+const retry=nodes(root.errorComponent({error,reset(){resets++;}})).find(n=>n.type==='button');
+assert.equal(retry.props.onClick(),undefined);retry.props.onClick();assert.equal(invalidateCalls,2);assert.equal(resets,2);assert(!retry.props.disabled);pending.forEach(resolve=>resolve());
+console.log('FINDING: actual_error_retry_double_activation_starts_two_invalidations_resets_before_completion_has_no_pending_lock');
+let secondHook=0;
+const window={location:{pathname:'/reset-password'},__lovableEvents:{captureException(){throw Error('Synthetic telemetry failure');}},__lovableReportRuntimeError(){secondHook++;}};
+const report=load('src/lib/lovable-error-reporting.ts',()=>({}),{window}).reportLovableError;
+assert.throws(()=>report(error),/Synthetic telemetry failure/);assert.equal(secondHook,0);
+window.__lovableEvents=undefined;window.__lovableReportRuntimeError=()=>{throw Error('Synthetic runtime-hook failure');};assert.throws(()=>report(error),/Synthetic runtime-hook failure/);
+console.log('FINDING: actual_optional_reporting_hooks_can_throw_out_of_error_boundary_effect_first_failure_prevents_second_hook');
+const captures=[],runtime=[];window.__lovableEvents={captureException:(...args)=>captures.push(args)};window.__lovableReportRuntimeError=payload=>runtime.push(payload);
+const marker='SYNTHETIC-NOT-A-SECRET',synthetic=new Error('Failed synthetic URL https://example.invalid/file?token='+marker);report(synthetic,{boundary:'synthetic_boundary'});
+assert.equal(captures[0][0],synthetic);assert(runtime[0].message.includes(marker));assert.equal(captures[0][1].route,'/reset-password');assert.equal(runtime[0].filename,'/reset-password');
+console.log('COVERAGE: report_hooks_receive_raw_synthetic_error_message_stack_no_redaction_but_route_uses_pathname_not_search_real_production_hook_presence_or_leak_not_established');
+const noHooks=load('src/lib/lovable-error-reporting.ts',()=>({}),{window:{location:{pathname:'/'}}}).reportLovableError;assert.doesNotThrow(()=>noHooks(error));
+const ssr=load('src/lib/lovable-error-reporting.ts',()=>({})).reportLovableError;assert.doesNotThrow(()=>ssr(error));
+assert(fallback.includes('onclick="location.reload()"'));assert(fallback.includes('href="/"'));
+console.log('PASS: missing_reporting_hooks_and_SSR_noop_static_fallback_omits_error_detail_and_has_reload_home_actions');
+console.log('AUDIT: local_diagnosis_complete=true; three_findings; no_network_account_production_fault_or_application_change; real_error_browser_acceptance_pending');
