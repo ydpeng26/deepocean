@@ -1,10 +1,11 @@
-// Diagnosis only; recovery application unchanged. Synthetic account/text, no media/mail/artifacts.
+// Recovery-only diagnosis/acceptance. Synthetic account/text, no media/mail/artifacts.
 import { randomBytes, randomUUID } from 'node:crypto';
 const { chromium } = await import(process.env.RECOVERY_PLAYWRIGHT_MODULE || 'playwright');
 const api = 'https://esovqvampbrhuhamkfcs.supabase.co', site = 'https://supdiver-recovery-test.vercel.app';
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
 let browser, user, stage = 'guard', incomplete = false, productionTraffic = false, cleaned = false;
 const findings = [], matrix = [];
+const expectFixed = process.env.PC_LAYOUT_EXPECT_FIXED === 'true';
 const check = (ok, message) => { if (!ok) throw Error(message); };
 const pass = name => console.log('PASS: ' + name);
 const finding = (name, facts = {}) => { findings.push({ name, ...facts }); console.log('FINDING: ' + JSON.stringify({ name, ...facts })); };
@@ -76,6 +77,11 @@ try {
         if (metrics.outsideHeaderControls) finding('header_controls_outside_viewport_without_scroll_container', { path, language, width, count: metrics.outsideHeaderControls, details: metrics.outsideDetails });
         if (language === 'en' && width === 1440 && (metrics.chineseDiveLabel || metrics.chineseGearHeading || metrics.chineseMarineAction))
           finding('english_mode_retains_primary_chinese_form_or_action', { path });
+        if (expectFixed && language === 'en') {
+          if (path === '/dives/new') check(await page.locator('label[for="country"]').innerText() === 'Country', 'English dive label missing');
+          if (path === '/gear') check(await page.getByRole('heading', { name: 'My dive gear', exact: true }).count() === 1, 'English gear heading missing');
+          if (path === '/marine') check(await page.getByRole('button', { name: 'Record an encounter', exact: true }).count() === 1, 'English marine action missing');
+        }
       }
     }
   }
@@ -84,13 +90,15 @@ try {
   await page.evaluate(() => localStorage.setItem('deepocean-language', 'zh-CN'));
   async function keyboardDialog(name, opener) {
     stage = 'keyboard dialog ' + name;
-    await opener.click(); const dialog = page.getByRole('dialog'); await dialog.waitFor();
+    await opener.focus(); await opener.click(); const dialog = page.getByRole('dialog'); await dialog.waitFor();
     const focusEntered = await dialog.evaluate(el => el.contains(document.activeElement));
     await dialog.locator('button,textarea,input,select,a[href]').first().focus();
     let escaped = false;
     for (let i = 0; i < 20; i++) { await page.keyboard.press('Tab'); if (!(await dialog.evaluate(el => el.contains(document.activeElement)))) { escaped = true; break; } }
+    if (expectFixed) for (let i = 0; i < 20; i++) { await page.keyboard.press('Shift+Tab'); if (!(await dialog.evaluate(el => el.contains(document.activeElement)))) { escaped = true; break; } }
     await page.keyboard.press('Escape');
     const escapeClosed = await dialog.count() === 0;
+    if (expectFixed && escapeClosed) check(await opener.evaluate(el => el === document.activeElement), 'Modal opener focus not restored');
     if (!focusEntered || escaped || !escapeClosed) finding('dialog_keyboard_management_missing', { dialog: name, focusEntered, tabEscaped: escaped, escapeClosed });
     else pass('dialog_keyboard_management_' + name);
     if (!escapeClosed) await dialog.getByRole('button', { name: name === 'comments' ? '取消' : '关闭', exact: true }).click();
@@ -105,6 +113,14 @@ try {
   await signin.focus(); await page.keyboard.press('ArrowRight');
   const arrowMoved = await signup.getAttribute('aria-selected') === 'true';
   if (!arrowMoved) finding('auth_tab_arrow_key_does_not_switch_tabs');
+  if (expectFixed) {
+    check(await signup.evaluate(el => el === document.activeElement) && await signup.getAttribute('tabindex') === '0' && await signin.getAttribute('tabindex') === '-1', 'Auth roving focus failed');
+    await page.keyboard.press('Home'); check(await signin.getAttribute('aria-selected') === 'true', 'Auth Home failed');
+    await page.keyboard.press('End'); check(await signup.getAttribute('aria-selected') === 'true', 'Auth End failed');
+    await page.keyboard.press('ArrowLeft'); check(await signin.getAttribute('aria-selected') === 'true', 'Auth ArrowLeft failed');
+    await page.keyboard.press('ArrowLeft'); check(await signup.getAttribute('aria-selected') === 'true', 'Auth arrow wrap failed');
+    pass('auth_tabs_real_keyboard_roving_focus_Home_End_bidirectional_wrap');
+  }
   await signup.focus(); await page.keyboard.press('Enter');
   check(await signup.getAttribute('aria-selected') === 'true', 'Keyboard Enter cannot activate signup');
   pass('auth_tabs_keyboard_enter_activation_works_no_signup_or_email_submitted');
@@ -124,6 +140,6 @@ try {
     } catch { incomplete = true; console.log('INCOMPLETE: cleanup disposable account ' + user.id); }
   }
   console.log('AUDIT: complete=' + (!incomplete && cleaned && !productionTraffic) + ' findings=' + findings.length + ' matrix_cases=' + matrix.length);
-  console.log('AUDIT: diagnosis_only_application_unchanged_no_screenshots_traces_or_exports');
-  if (incomplete || productionTraffic || !cleaned) process.exitCode = 1;
+  console.log('AUDIT: mode=' + (expectFixed ? 'repair_acceptance' : 'diagnosis') + '; recovery_only_no_screenshots_traces_or_exports');
+  if (incomplete || productionTraffic || !cleaned || (expectFixed && findings.length)) process.exitCode = 1;
 }
