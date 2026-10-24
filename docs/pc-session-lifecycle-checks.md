@@ -1,5 +1,15 @@
 # PC session lifecycle — diagnosis 2026-10-25
 
+## Recovery acceptance complete — formal release awaits approval
+
+User-assisted Vercel screenshots confirmed the earlier linked source `7324ce2` was still Preview / Stale, then showed its explicit promotion targeted only `supdiver-recovery-test.vercel.app`, followed by Ready / Production / fixed domain / source `7324ce2` (unique deployment domain `supdiver-recovery-test-l5wuxwhh7-ydpeng26s-projects.vercel.app`). No application fix was needed in response to runs 18/19; the fixed-domain deployment discrepancy was corrected. Source `ded0197` has identical src/public trees to the promoted `7324ce2`.
+
+[Run 20](https://github.com/ydpeng26/deepocean/actions/runs/40143702308), runner source `ded0197c0c56045e92ce5478776e862a2e8d6c53`, job `121020533208`, succeeded with eight PASS groups and `AUDIT: complete=true`. Logs confirm the fixed-site repair bundle preflight, actual sign-in gate completion, same-owner session/focus preserving unsaved editing, A→B and A→B→A replacing route/profile state, SDK signout without button navigation hiding the member subtree and redirecting to auth, protected reload locked, injected session-read failure hiding member content and retry restoring current B, synthetic persisted-pageshow handler restoring verified B, focus detecting silent device session loss, and exact synthetic saved local-draft retention. Independent profile reads confirmed unsaved editor markers were never persisted. Two exact disposable auth accounts and profiles were deleted and absence verified; the isolated browser was closed. No mail, password changes, photos, exports or existing-user edits.
+
+This is Chromium cloud acceptance, not actual native Safari BFCache/first-paint validation. Synthetic pageshow does not close that remaining coverage gap. The run also emitted deprecated punycode and Node20 Actions-runtime warnings (checkout pinned v4 SHA and setup-node v4 forced onto Node24); these did not prevent the successful checks. Warning maintenance is separate from this application fix; no Actions upgrade is included here.
+
+The registered temporary workflow override is restored byte-for-byte to formal `d6ed793` baseline in the follow-up commit. Formal main is separately verified before handoff and remains unchanged pending a distinct user release approval. Earlier sections below describe historical diagnosis/preparation/failures, not the current acceptance state.
+
 ## Scope
 
 After the user-authorized auth-boundary formal release `d6ed793`, the user requested continued inspection. This round is diagnosis only. `scripts/pc-session-lifecycle-diagnosis.mjs` runs actual current root component, authenticated layout and beforeLoad guard with synthetic sessions, plus the installed TanStack router and memory history. No network, real account, password, database, deployment or application edits are involved. User-owned `screenlog.0` remains untouched. Mobile and deferred passport/preview work remain excluded.
