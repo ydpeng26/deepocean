@@ -1,9 +1,9 @@
 // Executes the actual service worker in an isolated cache/network model.
 // Cross-release model evidence, not a real deployed two-release browser test.
-import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-const source = fs.readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+const source = execFileSync('git', ['show', '2afc408bea57dd426a1e2c1f5ea44611bb2290cc:public/sw.js'], { encoding: 'utf8' });
 const origin = 'https://offline-fixture.invalid', stores = new Map();
 const key = request => new URL(typeof request === 'string' ? request : request.url, origin).href;
 let offline = false, assets = ['/assets/new.js'], failure = false;

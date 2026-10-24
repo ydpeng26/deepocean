@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dive-audit:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/dive-log-audit'
+    if: github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -20,15 +20,18 @@ jobs:
           node-version: '22'
       - name: Install isolated cloud browser
         run: |
-          npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1
+          npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1 typescript@5.8.3
           if command -v google-chrome >/dev/null; then
             echo 'RECOVERY_BROWSER_CHANNEL=chrome' >> "$GITHUB_ENV"
           else
             node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
-      - name: Diagnose dive log boundaries using disposable recovery fixtures only
+      - name: Read pinned historical worker for isolated migration fixture
+        run: git fetch --depth=1 origin 2afc408bea57dd426a1e2c1f5ea44611bb2290cc
+      - name: Verify isolated update lifecycle and recovery offline forms
         env:
-          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
-          DIVE_EXPECT_FIXED: 'true'
-        run: node scripts/recovery-dive-log-audit.mjs
+          RECOVERY_TYPESCRIPT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/typescript/lib/typescript.js
+        run: |
+          node scripts/cloud-offline-update-lifecycle.mjs
+          node scripts/recovery-offline-cache.mjs

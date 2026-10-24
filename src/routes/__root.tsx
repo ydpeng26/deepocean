@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineUpdateNotice } from "@/components/OfflineUpdateNotice";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,17 +152,9 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [queryClient]);
 
-  useEffect(() => {
-    if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js", { updateViaCache: "none" })
-        .then((registration) => registration.update())
-        .catch(() => undefined);
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
+      <OfflineUpdateNotice />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />

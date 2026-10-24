@@ -33,3 +33,19 @@ Proposed repair boundary requires user approval: coordinate new-worker activatio
 ## Next unaccepted coverage
 
 Real cross-release service-worker lifecycle, batch-sync account switch and simultaneous multi-tab sync, Safari/Edge, full authenticated 200% zoom, human OAuth, physical devices and fresh complete restore/config reconstruction remain separate work. Do not mark the entire PC checklist finished.
+
+## Authorized implementation — local verification only
+
+The user requested repair. Changes are confined to worker lifecycle/cache handling, root registration observation and an English/Chinese update notice. No draft IndexedDB code/schema, sync destinations, credentials or backend data are changed.
+
+- Installation still caches the entire offline shell atomically, but no longer calls `skipWaiting()`. An update waits for existing controlled windows to close rather than forcing replacement while a user edits.
+- Activation checks all same-origin windows including uncontrolled ones. Older app caches are retired only when that list is empty. With live windows, old caches are retained; they may use additional storage until a later windowless activation. Only app-prefixed caches are eligible, never IndexedDB or unrelated caches.
+- Hash-addressed `/assets/` requests can fall back to retained app-version caches. Mutable HTML/navigation is not taken indiscriminately from old caches; cross-origin/non-GET bypass remains intact.
+- `watchOfflineUpdates` observes existing waiting workers and successful new installs, ignores initial installation/background-check failures, and removes listeners on unmount. It never sends an activation message or reloads the document.
+- `OfflineUpdateNotice` tells users to save first, close all site tabs/PWA windows and reopen. “Later” only dismisses the notice. No automatic save/refresh, force-update button, draft purge or claim that unsaved input is durable. Already-loaded legacy bundles do not retroactively acquire this notice; the first rollout must account for that transition separately.
+
+`scripts/offline-cache-regression.mjs` passed actual worker cache/network models, failed/waiting install preservation, no forced activation, live-window old-asset fallback, unrelated-cache exclusion, windowless retirement, actual update-observer errors/cleanup/notification deduplication and actual notice English/Chinese/dismissal behavior. Historical diagnosis is pinned to production baseline `2afc408` so it still reproduces the original counterexample instead of failing against repaired source.
+
+Existing concurrency, keyboard/language and dive-log regressions passed. Targeted application lint, production build, offline asset generation and scoped whitespace checks passed. Whole-project TypeScript still reports the known root error-component type and preview-page errors; no global type-clean claim. The added observer/notice have no reported type errors.
+
+This is local model evidence, not real two-release browser acceptance or a guarantee about a legacy worker already running before rollout. Recovery-only deployment approval is requested next; no fixed recovery or production site has been updated for this repair. A controlled two-version browser test and current-app offline checks remain required before production approval.
