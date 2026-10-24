@@ -75,3 +75,11 @@ Strict real desktop Chromium acceptance https://github.com/ydpeng26/deepocean/ac
 Busy/IME/nesting/replacement handling and draft retention on language switch remain locally model-tested, not independently covered by these real-browser checks. This is not a blanket accessibility, all-English-content, full zoom or multi-browser acceptance.
 
 The registered dive-log workflow is restored byte-for-byte to production `d5b9b27` after the isolated acceptance dispatch. GitHub main remains `d5b9b2779ce985b57037a66af85c52670e838854`. No production deployment, schema, credentials or real user records were changed. The repair is ready for the user's separate production-release decision.
+
+## Authorized production release (2026-10-24)
+
+The user subsequently explicitly requested production release. Before release, main was re-read as `d5b9b2779ce985b57037a66af85c52670e838854`; ancestry, final restored workflow and application source identity with accepted recovery source `fba4b2f` were checked. Main was fast-forwarded without rewriting history, using an expected-head lease, to `2afc408bea57dd426a1e2c1f5ea44611bb2290cc`.
+
+Vercel production deployment https://vercel.com/ydpeng26s-projects/deepocean/5gLqQvCYWKue6wXPHqdKetZYnVtv was visibly verified Ready / Production / Current, source main `2afc408`, with the `www.supdiver.com` custom domain pointing to https://supdiver.com/. GitHub's Vercel status also reports deployment completed. No manual promotion of a recovery-project deployment was used for production.
+
+Native Chrome post-release smoke checks on https://supdiver.com/auth verified Chinese login renders, ArrowRight switches selection and focus to Sign up, Home returns selection and focus to Sign in, and English labels render on language switch. Language was restored to Chinese. No credentials entered, registration submitted, password email sent or production data mutated. Authenticated modal/editor acceptance remains the recovery acceptance above with identical application source, not a new logged-in production test. No database migration or credential change was part of the release.
