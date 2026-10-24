@@ -74,7 +74,7 @@ function query() {
   }
   return chain;
 }
-const supabase = { auth: { getUser: async () => ({ data: { user: { id: owner } } }),
+const supabase = { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getUser: async () => ({ data: { user: { id: owner } } }),
   getSession: async () => ({ data: { session: { user: { id: owner } } } }) }, from: query };
 const offline = () => load('src/lib/offline-dives.ts', () => ({ supabase }), { indexedDB, navigator: { onLine: true } });
 const a = offline(), b = offline();

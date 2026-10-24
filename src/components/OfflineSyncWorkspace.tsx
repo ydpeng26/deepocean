@@ -21,7 +21,12 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { listOfflineDives, syncOfflineDives, type OfflineDive } from "@/lib/offline-dives";
+import {
+  listOfflineDives,
+  syncOfflineDives,
+  OfflineSyncBusy,
+  type OfflineDive,
+} from "@/lib/offline-dives";
 
 export function OfflineSyncWorkspace() {
   const { language, toggleLanguage } = useLanguage();
@@ -40,20 +45,29 @@ export function OfflineSyncWorkspace() {
   const [message, setMessage] = useState("");
   const [failures, setFailures] = useState<string[]>([]);
   const working = useRef(false);
-  const reload = useCallback(async () => {
+  const alive = useRef(true);
+  const currentOwner = useRef<string | null>(null);
+  const generation = useRef(0);
+  const currentZh = useRef(zh);
+  currentZh.current = zh;
+  const reload = useCallback(async (isCurrent: () => boolean = () => true) => {
+    const epoch = generation.current;
+    const valid = () => alive.current && epoch === generation.current && isCurrent();
     try {
       const items = await listOfflineDives();
+      if (!valid()) return;
       setDrafts(items);
       setSelected((ids) => ids.filter((id) => items.some((item) => item.id === id)));
       setStorageError(false);
     } catch {
-      setStorageError(true);
+      if (valid()) setStorageError(true);
     } finally {
-      setLoading(false);
+      if (valid()) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    alive.current = true;
     void reload();
     const network = () => setOnline(navigator.onLine);
     const refresh = () => {
@@ -63,10 +77,30 @@ export function OfflineSyncWorkspace() {
     window.addEventListener("offline", network);
     window.addEventListener("focus", refresh);
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!alive.current) return;
+      const nextOwner = session?.user.id ?? null;
+      if (nextOwner !== currentOwner.current) {
+        currentOwner.current = nextOwner;
+        generation.current += 1;
+        setSelected([]);
+        setProgress(0);
+        setFailures([]);
+        setMessage(
+          working.current
+            ? currentZh.current
+              ? "账号已变化，旧同步任务正在停止。部分记录可能已上传，请重新核对云端与本机草稿。"
+              : "Account changed; stopping the previous sync. Some entries may already be uploaded. Review cloud records and local drafts."
+            : "",
+        );
+        setLoading(true);
+        void reload();
+      }
       setAccount(session?.user ?? null);
       setCheckingAccount(false);
     });
     return () => {
+      alive.current = false;
+      generation.current += 1;
       data.subscription.unsubscribe();
       window.removeEventListener("online", network);
       window.removeEventListener("offline", network);
@@ -85,6 +119,9 @@ export function OfflineSyncWorkspace() {
   async function sync() {
     if (working.current || !online || !account || !selected.length || storageError) return;
     const expectedUserId = account.id;
+    const epoch = generation.current;
+    const isCurrent = () =>
+      alive.current && generation.current === epoch && currentOwner.current === expectedUserId;
     if (
       !window.confirm(
         zh
@@ -93,18 +130,28 @@ export function OfflineSyncWorkspace() {
       )
     )
       return;
+    if (!isCurrent()) return;
     working.current = true;
     setBusy(true);
     setProgress(0);
     setMessage("");
     setFailures([]);
     try {
-      const result = await syncOfflineDives((done) => setProgress(done), {
-        selectedIds: selected,
-        expectedUserId,
-      });
-      await reload();
+      const result = await syncOfflineDives(
+        (done) => {
+          if (isCurrent()) setProgress(done);
+        },
+        {
+          selectedIds: selected,
+          expectedUserId,
+          isCurrent,
+        },
+      );
+      if (!isCurrent()) return;
+      await reload(isCurrent);
+      if (!isCurrent()) return;
       await queryClient.invalidateQueries({ queryKey: ["dives"] });
+      if (!isCurrent()) return;
       setFailures(result.failures);
       setMessage(
         result.failures.length
@@ -115,16 +162,24 @@ export function OfflineSyncWorkspace() {
             ? `同步完成：${result.synced} 条记录已保存到账号。`
             : `Sync complete: ${result.synced} entries saved to your account.`,
       );
-    } catch {
+    } catch (error) {
+      if (!isCurrent()) return;
       setMessage(
-        zh
-          ? "同步未完成，请检查网络与登录账号后重试；未确认完成的草稿仍保留在本机。"
-          : "Sync did not complete. Check your network and account, then retry. Unconfirmed drafts remain locally.",
+        error instanceof OfflineSyncBusy
+          ? zh
+            ? "另一个页面正在同步。请等待完成后，刷新列表并重新核对草稿。"
+            : "Another tab is syncing. Wait for it to finish, then refresh and review your drafts."
+          : zh
+            ? "同步未完成，请检查网络与登录账号后重试；未确认完成的草稿仍保留在本机。"
+            : "Sync did not complete. Check your network and account, then retry. Unconfirmed drafts remain locally.",
       );
-      await reload();
+      await reload(isCurrent);
     } finally {
       working.current = false;
-      setBusy(false);
+      if (alive.current) {
+        setBusy(false);
+        if (!isCurrent()) void reload();
+      }
     }
   }
 

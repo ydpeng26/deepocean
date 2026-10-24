@@ -197,16 +197,36 @@ function optionalNumber(value: string): number | null {
   return value.trim() === "" ? null : Number(value);
 }
 
-type SyncOptions = { selectedIds?: string[]; expectedUserId?: string };
+type SyncOptions = {
+  selectedIds?: string[];
+  expectedUserId?: string;
+  isCurrent?: () => boolean;
+};
 let syncInProgress = false;
+export class OfflineSyncBusy extends Error {
+  constructor() {
+    super("另一个页面正在同步，请等待完成后重新核对草稿");
+    this.name = "OfflineSyncBusy";
+  }
+}
 
 export async function syncOfflineDives(
   onProgress?: (done: number, total: number) => void,
   options: SyncOptions = {},
 ) {
-  if (syncInProgress) throw new Error("已有同步任务正在进行，请等待完成");
+  if (syncInProgress) throw new OfflineSyncBusy();
   syncInProgress = true;
   try {
+    if (typeof navigator !== "undefined" && navigator.locks) {
+      return await navigator.locks.request(
+        "supdiver-offline-sync",
+        { mode: "exclusive", ifAvailable: true },
+        (lock) => {
+          if (!lock) throw new OfflineSyncBusy();
+          return performSync(onProgress, options);
+        },
+      );
+    }
     return await performSync(onProgress, options);
   } finally {
     syncInProgress = false;
@@ -226,113 +246,154 @@ async function performSync(
   if (options.expectedUserId && options.expectedUserId !== userId) {
     throw new Error("登录账号已变化，请重新确认同步账号");
   }
-  const selected = options.selectedIds ? new Set(options.selectedIds) : null;
-  const drafts = (await listOfflineDives()).filter((draft) => !selected || selected.has(draft.id));
-  let synced = 0;
-  const failures: string[] = [];
-
-  for (const draft of drafts) {
-    const payload = {
-      id: draft.id,
-      user_id: userId,
-      country: draft.country,
-      region: draft.region || null,
-      site_name: draft.site_name,
-      dive_date: draft.dive_date,
-      weather: draft.weather || null,
-      surface_temp: optionalNumber(draft.surface_temp),
-      water_temp: optionalNumber(draft.water_temp),
-      max_depth: optionalNumber(draft.max_depth),
-      duration_min: optionalNumber(draft.duration_min),
-      dive_type: draft.dive_type,
-      buddy_role: draft.buddy_role || null,
-      buddy_name: draft.buddy_name || null,
-      photo_urls: [],
-      photo_thumbnail_urls: [],
-      notes: draft.notes || null,
-    };
-    const { error } = await supabase.from("dives").insert(payload);
-    if (error) {
-      // A previous request may have reached the server even if its response was lost.
-      // Only consider a duplicate synced after verifying that it belongs to this account.
-      if (error.code !== "23505") {
-        failures.push(`${draft.site_name}: ${error.message}`);
-        onProgress?.(synced, drafts.length);
-        continue;
-      }
-      const { data: existing, error: lookupError } = await supabase
-        .from("dives")
-        .select(
-          "id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
-        )
-        .eq("id", draft.id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (lookupError || !existing) {
-        failures.push(`${draft.site_name}: 无法确认该记录是否已经同步`);
-        onProgress?.(synced, drafts.length);
-        continue;
-      }
-      const comparableFields = [
-        "country",
-        "region",
-        "site_name",
-        "dive_date",
-        "weather",
-        "surface_temp",
-        "water_temp",
-        "max_depth",
-        "duration_min",
-        "dive_type",
-        "buddy_role",
-        "buddy_name",
-        "notes",
-      ] as const;
-      if (
-        comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))
-      ) {
-        failures.push(`${draft.site_name}: 云端已有不同内容的记录，请先核对；本机草稿仍保留`);
-        onProgress?.(synced, drafts.length);
-        continue;
-      }
+  let accountChanged = false;
+  const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user.id !== userId) accountChanged = true;
+  });
+  function assertCurrent() {
+    if (accountChanged || options.isCurrent?.() === false) {
+      throw new Error("同步账号或页面已变化，任务已停止；请重新核对云端记录与本机草稿");
     }
-    try {
-      if (!(await deleteSyncedDraft(draft))) {
-        failures.push(`${draft.site_name}: 同步期间本机内容已修改，请核对云端记录；新草稿仍保留`);
-        continue;
-      }
-      synced += 1;
-    } catch {
-      // Keep the draft if local cleanup fails. Its stable id makes retry safe.
-      failures.push(`${draft.site_name}: 已上传，但本机状态未更新，请重试`);
-    }
-    onProgress?.(synced, drafts.length);
   }
-  return { synced, total: drafts.length, failures };
+  async function checkAccount() {
+    assertCurrent();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || data.user?.id !== userId) accountChanged = true;
+    assertCurrent();
+  }
+  try {
+    const selected = options.selectedIds ? new Set(options.selectedIds) : null;
+    const drafts = (await listOfflineDives()).filter(
+      (draft) => !selected || selected.has(draft.id),
+    );
+    let synced = 0;
+    const failures: string[] = [];
+
+    for (const draft of drafts) {
+      await checkAccount();
+      const payload = {
+        id: draft.id,
+        user_id: userId,
+        country: draft.country,
+        region: draft.region || null,
+        site_name: draft.site_name,
+        dive_date: draft.dive_date,
+        weather: draft.weather || null,
+        surface_temp: optionalNumber(draft.surface_temp),
+        water_temp: optionalNumber(draft.water_temp),
+        max_depth: optionalNumber(draft.max_depth),
+        duration_min: optionalNumber(draft.duration_min),
+        dive_type: draft.dive_type,
+        buddy_role: draft.buddy_role || null,
+        buddy_name: draft.buddy_name || null,
+        photo_urls: [],
+        photo_thumbnail_urls: [],
+        notes: draft.notes || null,
+      };
+      const { error } = await supabase.from("dives").insert(payload);
+      await checkAccount();
+      if (error) {
+        // A previous request may have reached the server even if its response was lost.
+        // Only consider a duplicate synced after verifying that it belongs to this account.
+        if (error.code !== "23505") {
+          failures.push(`${draft.site_name}: ${error.message}`);
+          onProgress?.(synced, drafts.length);
+          continue;
+        }
+        const { data: existing, error: lookupError } = await supabase
+          .from("dives")
+          .select(
+            "id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
+          )
+          .eq("id", draft.id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        await checkAccount();
+        if (lookupError || !existing) {
+          failures.push(`${draft.site_name}: 无法确认该记录是否已经同步`);
+          onProgress?.(synced, drafts.length);
+          continue;
+        }
+        const comparableFields = [
+          "country",
+          "region",
+          "site_name",
+          "dive_date",
+          "weather",
+          "surface_temp",
+          "water_temp",
+          "max_depth",
+          "duration_min",
+          "dive_type",
+          "buddy_role",
+          "buddy_name",
+          "notes",
+        ] as const;
+        if (
+          comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))
+        ) {
+          failures.push(`${draft.site_name}: 云端已有不同内容的记录，请先核对；本机草稿仍保留`);
+          onProgress?.(synced, drafts.length);
+          continue;
+        }
+      }
+      try {
+        await checkAccount();
+        const cleanup = await deleteSyncedDraft(draft, assertCurrent);
+        assertCurrent();
+        if (cleanup === "changed") {
+          failures.push(`${draft.site_name}: 同步期间本机内容已修改，请核对云端记录；新草稿仍保留`);
+          continue;
+        }
+        synced += 1;
+      } catch {
+        assertCurrent();
+        // Keep the draft if local cleanup fails. Its stable id makes retry safe.
+        failures.push(`${draft.site_name}: 已上传，但本机状态未更新，请重试`);
+      }
+      onProgress?.(synced, drafts.length);
+    }
+    return { synced, total: drafts.length, failures };
+  } finally {
+    authListener.subscription.unsubscribe();
+  }
 }
 
 // Another tab may edit a draft while the upload is in flight. Only remove the
 // exact version that was sent; an updated local entry must never be discarded.
-async function deleteSyncedDraft(draft: OfflineDive): Promise<boolean> {
+async function deleteSyncedDraft(
+  draft: OfflineDive,
+  assertCurrent: () => void,
+): Promise<"removed" | "absent" | "changed"> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
-    let removed = false;
+    let result: "removed" | "absent" | "changed" = "changed";
+    let failure: unknown;
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const read = store.get(draft.id);
     read.onsuccess = () => {
-      if (JSON.stringify(read.result) === JSON.stringify(draft)) {
-        store.delete(draft.id);
-        removed = true;
+      try {
+        assertCurrent();
+        // Only reached after confirming this exact payload in the intended cloud
+        // account. Another tab may already have completed the same local cleanup.
+        if (read.result === undefined) result = "absent";
+        if (JSON.stringify(read.result) === JSON.stringify(draft)) {
+          store.delete(draft.id);
+          result = "removed";
+        }
+      } catch (error) {
+        failure = error;
+        tx.abort();
       }
     };
     tx.oncomplete = () => {
       db.close();
-      resolve(removed);
+      resolve(result);
     };
     tx.onabort = tx.onerror = () => {
       db.close();
-      reject(tx.error ?? new Error("本机状态未更新"));
+      reject(failure ?? tx.error ?? new Error("本机状态未更新"));
     };
   });
 }
