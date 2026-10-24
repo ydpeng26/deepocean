@@ -286,7 +286,7 @@ function MarineWall() {
                   <label>
                     {t("生物名称")}
                     <input
-                      autoFocus
+                      data-modal-initial-focus
                       value={name}
                       maxLength={120}
                       placeholder={

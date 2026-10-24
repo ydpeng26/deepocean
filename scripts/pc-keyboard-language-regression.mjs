@@ -96,6 +96,7 @@ class Element {
   contains(el) { return el === this || this.children.some(child => child.contains(el)); }
   querySelectorAll() { return this.children; }
   matches() { return this.disabled || this.hidden; }
+  hasAttribute(name) { return name === 'data-modal-initial-focus' && !!this.initialFocus; }
   closest() { return null; }
   getClientRects() { return this.hidden ? [] : [{}]; }
   focus() { doc.activeElement = this; this.focuses++; for (const f of [...(listeners.get('focusin') ?? [])]) f({ target: this }); }
@@ -137,6 +138,9 @@ outer.scope = 'new-view'; outer.ref.current = new Element('replacement', [new El
 assert.equal(doc.activeElement, outer.ref.current.children[0]); outer.cleanup();
 assert.equal(listeners.get('focusin').length, 0);
 console.log('PASS: nested_modal_only_top_handles_keys_replaced_marine_view_refocuses_and_cleanup_has_no_listeners');
+opener.focus(); const preferred = modal(); preferred.last.initialFocus = true; preferred.render();
+assert.equal(doc.activeElement, preferred.last); preferred.cleanup(); assert.equal(doc.activeElement, opener);
+console.log('PASS: marine_initial_name_focus_is_applied_after_opener_capture_and_returns_to_trigger');
 function nodes(tree, out = []) { if (Array.isArray(tree)) tree.forEach(v => nodes(v, out));
   else if (tree && typeof tree === 'object') { if (tree.type) out.push(tree); nodes(tree.props?.children, out); } return out; }
 function authHarness() {

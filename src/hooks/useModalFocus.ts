@@ -27,7 +27,14 @@ export function useModalFocus(
           el.getClientRects().length > 0 &&
           getComputedStyle(el).visibility !== "hidden",
       );
-    const focusFirst = () => (candidates()[0] ?? dialog).focus();
+    const focusFirst = () => {
+      const items = candidates();
+      (
+        items.find((el) => el.hasAttribute("data-modal-initial-focus")) ??
+        items[0] ??
+        dialog
+      ).focus();
+    };
     const top = () => stack[stack.length - 1] === dialog;
     stack.push(dialog);
     focusFirst();
