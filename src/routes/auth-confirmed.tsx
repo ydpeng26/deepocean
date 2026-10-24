@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, LoaderCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { safeAuthReturn } from "@/lib/auth-return";
 
 type ConfirmationStatus = "checking" | "success" | "error";
 
@@ -39,10 +40,9 @@ export const Route = createFileRoute("/auth-confirmed")({
       { name: "description", content: "完成 SupDiver 账号的邮箱验证。" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { next?: string } =>
-    typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
-      ? { next: search.next }
-      : {},
+  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+    next: safeAuthReturn(search.next),
+  }),
   component: AuthConfirmedPage,
 });
 
@@ -113,7 +113,8 @@ function AuthConfirmedPage() {
   }, []);
 
   const enterApp = () => {
-    if (next) window.location.href = next;
+    const destination = safeAuthReturn(next);
+    if (destination) window.location.href = destination;
     else navigate({ to: "/dives" });
   };
 
@@ -123,24 +124,53 @@ function AuthConfirmedPage() {
       <div className="do-auth-overlay" aria-hidden="true" />
       <header className="do-auth-header">
         <Link to="/" className="do-brand" aria-label="SupDiver home">
-          <span className="do-brand-mark"><img src="/images/supdiver-wave-mark.svg" alt="" /></span>
+          <span className="do-brand-mark">
+            <img src="/images/supdiver-wave-mark.svg" alt="" />
+          </span>
           <b>SupDiver</b>
         </Link>
-        <Link to="/" className="do-auth-back"><ArrowLeft />{copy.back}</Link>
+        <Link to="/" className="do-auth-back">
+          <ArrowLeft />
+          {copy.back}
+        </Link>
       </header>
 
       <main className="do-auth-main do-auth-result-main">
         <section className="do-auth-panel do-auth-result" aria-live="polite">
           <div className={`do-auth-result-icon ${status}`} aria-hidden="true">
-            {status === "checking" ? <LoaderCircle /> : status === "success" ? <CheckCircle2 /> : <AlertCircle />}
+            {status === "checking" ? (
+              <LoaderCircle />
+            ) : status === "success" ? (
+              <CheckCircle2 />
+            ) : (
+              <AlertCircle />
+            )}
           </div>
           <p className="do-auth-kicker">SUPDIVER</p>
-          <h1>{status === "checking" ? copy.checkingTitle : status === "success" ? copy.successTitle : copy.errorTitle}</h1>
-          <p>{status === "checking" ? copy.checkingBody : status === "success" ? copy.successBody : copy.errorBody}</p>
+          <h1>
+            {status === "checking"
+              ? copy.checkingTitle
+              : status === "success"
+                ? copy.successTitle
+                : copy.errorTitle}
+          </h1>
+          <p>
+            {status === "checking"
+              ? copy.checkingBody
+              : status === "success"
+                ? copy.successBody
+                : copy.errorBody}
+          </p>
           {status === "success" ? (
-            <button type="button" className="do-auth-submit" onClick={enterApp}>{copy.enter}<ArrowRight /></button>
+            <button type="button" className="do-auth-submit" onClick={enterApp}>
+              {copy.enter}
+              <ArrowRight />
+            </button>
           ) : status === "error" ? (
-            <Link to="/auth" className="do-auth-submit do-auth-result-link">{copy.login}<ArrowRight /></Link>
+            <Link to="/auth" className="do-auth-submit do-auth-result-link">
+              {copy.login}
+              <ArrowRight />
+            </Link>
           ) : null}
         </section>
       </main>

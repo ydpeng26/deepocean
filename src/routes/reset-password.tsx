@@ -3,6 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isRecoveryTestProject, passwordRecoveryEnabled } from "@/lib/password-recovery";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import type { Session } from "@supabase/supabase-js";
+import { updateBoundRecoveryPassword, type RecoveryBinding } from "@/lib/bound-password-reset";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -20,51 +22,105 @@ function ResetPassword() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const started = useRef(false);
+  const verification = useRef<Promise<Session | null> | null>(null);
+  const binding = useRef<RecoveryBinding | null>(null);
+  const mounted = useRef(false);
+  const cancelled = useRef(false);
+  const expectedLogout = useRef(false);
   const submitting = useRef(false);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    if (!passwordRecoveryEnabled) {
+    let active = true;
+    mounted.current = true;
+    const observedOwners: (string | null)[] = [];
+    const invalidate = () => {
+      cancelled.current = true;
+      binding.current = null;
+      if (!active) return;
       setState("invalid");
-      return;
-    }
-    // Never unlock a password form merely because another account is signed in.
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token_hash");
-    const code = params.get("code");
-    const implicit = new URLSearchParams(window.location.hash.slice(1));
-    const accessToken = implicit.get("access_token");
-    const refreshToken = implicit.get("refresh_token");
-    const isRecovery = implicit.get("type") === "recovery";
-    window.history.replaceState(null, "", window.location.pathname);
-    const verify = async () => {
-      try {
-        if (token) {
-          const result = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
-          setState(result.error || !result.data.session ? "invalid" : "ready");
-        } else if (code) {
-          const result = await supabase.auth.exchangeCodeForSession(code);
-          setState(result.error || !result.data.session ? "invalid" : "ready");
-        } else if (isRecovery && accessToken && refreshToken) {
-          const result = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          setState(result.error || !result.data.session ? "invalid" : "ready");
-        } else setState("invalid");
-      } catch {
-        setState("invalid");
-      }
+      setPassword("");
+      setConfirm("");
+      setError("");
     };
-    void verify();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      // No async auth calls in this callback: only latch account changes.
+      if (binding.current) {
+        if (expectedLogout.current && !session) return;
+        if (session?.user.id !== binding.current.userId) invalidate();
+      } else observedOwners.push(session?.user.id ?? null);
+    });
+    if (!verification.current) {
+      // Never unlock a password form merely because another account is signed in.
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token_hash");
+      const code = params.get("code");
+      const implicit = new URLSearchParams(window.location.hash.slice(1));
+      const accessToken = implicit.get("access_token");
+      const refreshToken = implicit.get("refresh_token");
+      const isRecovery = implicit.get("type") === "recovery";
+      window.history.replaceState(null, "", window.location.pathname);
+      verification.current = (async () => {
+        try {
+          if (!passwordRecoveryEnabled) return null;
+          if (token) {
+            const result = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
+            return result.error ? null : result.data.session;
+          } else if (code) {
+            const result = await supabase.auth.exchangeCodeForSession(code);
+            return result.error ? null : result.data.session;
+          } else if (isRecovery && accessToken && refreshToken) {
+            const result = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            return result.error ? null : result.data.session;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      })();
+    }
+    void verification.current.then(async (session) => {
+      if (!active) return;
+      if (!session?.user.id || !session.access_token || cancelled.current) return invalidate();
+      const firstMatch = observedOwners.indexOf(session.user.id);
+      if (firstMatch >= 0 && observedOwners.slice(firstMatch).some((id) => id !== session.user.id))
+        return invalidate();
+      const verified = { userId: session.user.id, accessToken: session.access_token };
+      binding.current = verified;
+      try {
+        const current = await supabase.auth.getSession();
+        const server = await supabase.auth.getUser(verified.accessToken);
+        if (!active) return;
+        if (
+          cancelled.current ||
+          binding.current !== verified ||
+          current.error ||
+          server.error ||
+          current.data.session?.user.id !== verified.userId ||
+          server.data.user?.id !== verified.userId
+        )
+          return invalidate();
+        setState("ready");
+      } catch {
+        if (active) invalidate();
+      }
+    });
+    return () => {
+      active = false;
+      mounted.current = false;
+      binding.current = null;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (state !== "ready" || submitting.current) return;
-    if (password.length < 8 || password !== confirm) {
+    const verified = binding.current;
+    const isCurrent = () => mounted.current && !cancelled.current && binding.current === verified;
+    if (state !== "ready" || submitting.current || !verified || !isCurrent()) return;
+    if (password.length < 8 || password.length > 72 || password !== confirm) {
       setError(
         zh
           ? "密码至少 8 位，两次输入必须一致。"
@@ -76,13 +132,43 @@ function ResetPassword() {
     setBusy(true);
     setError("");
     try {
-      const result = await supabase.auth.updateUser({ password });
-      if (result.error) throw result.error;
+      const current = await supabase.auth.getSession();
+      const server = await supabase.auth.getUser(verified.accessToken);
+      if (!isCurrent()) return;
+      if (
+        current.error ||
+        server.error ||
+        current.data.session?.user.id !== verified.userId ||
+        server.data.user?.id !== verified.userId
+      ) {
+        cancelled.current = true;
+        binding.current = null;
+        setPassword("");
+        setConfirm("");
+        setState("invalid");
+        return;
+      }
+      await updateBoundRecoveryPassword(verified, password, isCurrent);
+      if (!isCurrent()) return;
+      const afterUpdate = await supabase.auth.getSession();
+      if (!isCurrent()) return;
+      if (afterUpdate.error || afterUpdate.data.session?.user.id !== verified.userId) {
+        cancelled.current = true;
+        binding.current = null;
+        setPassword("");
+        setConfirm("");
+        setState("invalid");
+        return;
+      }
       setPassword("");
       setConfirm("");
+      expectedLogout.current = true;
       await supabase.auth.signOut({ scope: "local" });
+      if (!isCurrent()) return;
+      binding.current = null;
       setState("done");
     } catch {
+      if (!isCurrent()) return;
       setError(
         zh
           ? "更新失败，链接可能已过期或密码不符合要求，请重新申请。"
@@ -90,7 +176,8 @@ function ResetPassword() {
       );
     } finally {
       submitting.current = false;
-      setBusy(false);
+      expectedLogout.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
 
@@ -108,8 +195,8 @@ function ResetPassword() {
           {state === "invalid" && (
             <p role="alert">
               {zh
-                ? "链接无效或已过期，请重新申请找回密码邮件。"
-                : "Invalid or expired link. Request a new password reset email."}
+                ? "链接无效、已过期或账号已变化，请重新申请找回密码邮件。"
+                : "Invalid or expired link, or the account changed. Request a new password reset email."}
             </p>
           )}
           {state === "done" && (
@@ -138,6 +225,7 @@ function ResetPassword() {
                 required
                 minLength={8}
                 maxLength={72}
+                disabled={busy}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -149,6 +237,7 @@ function ResetPassword() {
                 required
                 minLength={8}
                 maxLength={72}
+                disabled={busy}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />

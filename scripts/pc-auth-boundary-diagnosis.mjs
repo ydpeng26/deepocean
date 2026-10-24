@@ -1,10 +1,10 @@
 // Diagnosis of actual source in local models. Network and real credentials forbidden.
-import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 function load(file, require, globals = {}) {
-  const source = fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8')
+  const source = execFileSync('git', ['show', 'fc19a0e9216160b366a21e892d8633b0eb083b8e:' + file], { cwd: new URL('..', import.meta.url), encoding: 'utf8' })
     .replaceAll('import.meta.env', '({PROD:false})');
   const module = { exports: {} };
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module:1,jsx:4,target:9 } }).outputText,

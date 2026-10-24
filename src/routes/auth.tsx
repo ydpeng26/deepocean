@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useLiveCopy } from "@/i18n/liveCopy";
 import { passwordRecoveryEnabled } from "@/lib/password-recovery";
+import { safeAuthReturn } from "@/lib/auth-return";
 
 const authCopy = {
   "zh-CN": {
@@ -72,10 +73,9 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { next?: string } =>
-    typeof search.next === "string" && search.next.startsWith("/") && !search.next.startsWith("//")
-      ? { next: search.next }
-      : {},
+  validateSearch: (search: Record<string, unknown>): { next?: string } => ({
+    next: safeAuthReturn(search.next),
+  }),
   component: AuthPage,
 });
 
@@ -125,17 +125,19 @@ function AuthPage() {
   ).replace(/\/$/, "");
 
   function getPostLoginUrl() {
-    return `${publicSiteUrl}${next ?? "/dives"}`;
+    return `${publicSiteUrl}${safeAuthReturn(next) ?? "/dives"}`;
   }
 
   function getEmailConfirmationUrl() {
     const confirmationUrl = new URL("/auth-confirmed", publicSiteUrl);
-    if (next) confirmationUrl.searchParams.set("next", next);
+    const destination = safeAuthReturn(next);
+    if (destination) confirmationUrl.searchParams.set("next", destination);
     return confirmationUrl.toString();
   }
 
   function goNext() {
-    if (next) window.location.href = next;
+    const destination = safeAuthReturn(next);
+    if (destination) window.location.href = destination;
     else navigate({ to: "/dives" });
   }
 
