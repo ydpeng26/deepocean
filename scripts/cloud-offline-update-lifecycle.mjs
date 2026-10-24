@@ -53,8 +53,8 @@ try {
   async function activeVersion(version) {
     return poll(async () => {
       for (const worker of context.serviceWorkers()) {
-        try { const state = await worker.evaluate(async () => ({ version: self.__fixtureVersion, waiting: !!self.registration.waiting, installing: !!self.registration.installing, keys: await caches.keys() }));
-          if (state.version === version && !state.waiting && !state.installing) return state;
+        try { const state = await worker.evaluate(async () => ({ version: self.__fixtureVersion, activeState: self.registration.active?.state, waiting: !!self.registration.waiting, installing: !!self.registration.installing, keys: await caches.keys() }));
+          if (state.version === version && state.activeState === 'activated' && !state.waiting && !state.installing) return state;
         } catch { /* Retired worker, not the new worker. */ }
       }
       return null;
