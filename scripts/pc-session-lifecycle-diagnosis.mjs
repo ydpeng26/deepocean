@@ -1,11 +1,12 @@
-// Diagnosis only: actual root/layout functions with deterministic session/router models.
+// Historical diagnosis: actual d6ed793 root/layout with deterministic session/router models.
 // No network, accounts, credentials, application changes or deployment.
-import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import {createRouter,createRootRoute,createRoute,createMemoryHistory,redirect} from '@tanstack/react-router';
-const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+// Preserve the diagnosed formal baseline even after the repair is implemented.
+const read=file=>execFileSync('git',['show','d6ed793:'+file],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
 function load(file,require){const module={exports:{}};vm.runInNewContext(ts.transpileModule(read(file),{compilerOptions:{module:1,jsx:4,target:9}}).outputText,{module,exports:module.exports,require,console,fetch(){throw Error('Network forbidden');}});return module.exports;}
 const jsx=(type,props,key)=>({type,props,key});
 for(const change of [null,'B']){
