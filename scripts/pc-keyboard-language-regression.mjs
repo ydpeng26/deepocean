@@ -150,6 +150,7 @@ function authHarness() {
     useRef(value) { const i = cursor++; return cells[i] ??= { current: value }; }, useEffect() {} };
   const jsx = (type, props) => ({ type, props });
   const { Route } = load('src/routes/auth.tsx', name => {
+    if (name === '@/i18n/liveCopy') return { useLiveCopy() {} };
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name === '@tanstack/react-router') return { createFileRoute: () => options => ({ ...options, useSearch: () => ({}) }), useNavigate: () => () => {}, Link: 'Link' };

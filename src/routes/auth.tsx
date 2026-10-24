@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useLiveCopy } from "@/i18n/liveCopy";
 import { passwordRecoveryEnabled } from "@/lib/password-recovery";
 
 const authCopy = {
@@ -79,6 +80,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  useLiveCopy("登录 · SupDiver");
   const navigate = useNavigate();
   const { next } = Route.useSearch();
   const { language, toggleLanguage } = useLanguage();

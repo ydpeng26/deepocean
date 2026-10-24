@@ -3,6 +3,9 @@ import { useLanguage, type Language } from "@/i18n/LanguageProvider";
 
 // Presentation only: persisted category/weather values and user text never change.
 export const liveEnglish: Record<string, string> = {
+  "登录 · SupDiver": "Sign in · SupDiver",
+  "无信号记录 · SupDiver": "Offline log · SupDiver",
+  "离线草稿与同步 · SupDiver": "Offline drafts & sync · SupDiver",
   请先登录: "Please sign in first",
   "账号已变化，请重新载入": "Your account changed. Please reload.",
   请填写品牌或型号: "Enter a brand or model",

@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CloudOff, Languages, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useLiveCopy } from "@/i18n/liveCopy";
 import {
   deleteOfflineDive,
   emptyOfflineDive,
@@ -139,6 +140,7 @@ export const Route = createFileRoute("/offline")({
 });
 
 function OfflinePage() {
+  useLiveCopy("无信号记录 · SupDiver");
   const { draft: initialDraftId } = Route.useSearch();
   const { language, toggleLanguage } = useLanguage();
   const t = copy[language];

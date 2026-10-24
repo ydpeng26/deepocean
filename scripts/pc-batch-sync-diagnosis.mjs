@@ -115,6 +115,7 @@ function workspace() {
     useState(value) { const i = cursor++; if (!(i in cells)) cells[i] = typeof value === 'function' ? value() : value; return [cells[i], value => { if(unmounted)lateWrites.push(i); cells[i] = typeof value === 'function' ? value(cells[i]) : value; }]; },
     useEffect(fn) { const i = cursor++; if (!(i in cells)) { cells[i] = true; effects.push(fn); } } };
   const Component = load('src/components/OfflineSyncWorkspace.tsx', name => {
+    if (name === '@/i18n/liveCopy') return { useLiveCopy() {} };
     if (name === 'react') return react; if (name === 'react/jsx-runtime') return { jsx,jsxs:jsx };
     if (name === '@tanstack/react-query') return { useQueryClient: () => ({ invalidateQueries: async () => invalidations.push('invalidated') }) };
     if (name === '@/i18n/LanguageProvider') return { useLanguage: () => ({ language: 'zh-CN',toggleLanguage() {} }) };

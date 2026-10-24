@@ -20,6 +20,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useLiveCopy } from "@/i18n/liveCopy";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listOfflineDives,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/offline-dives";
 
 export function OfflineSyncWorkspace() {
+  useLiveCopy("离线草稿与同步 · SupDiver");
   const { language, toggleLanguage } = useLanguage();
   const zh = language === "zh-CN";
   const queryClient = useQueryClient();
