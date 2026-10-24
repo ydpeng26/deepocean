@@ -46,3 +46,20 @@ The user requested repair. Changes are limited to the existing offline sync API/
 All 13 local regression suites passed (new batch sync plus concurrency, offline cache, keyboard/language, dive log, forum interaction/social/volume, media, marine/gear/help, profile and certificates). Targeted lint, production build, offline resource generation and scoped whitespace checks passed. Whole-project TypeScript continues to report the known root error-component and preview-route errors; no global type-clean claim is made and no new diagnostic was reported in the changed sync modules.
 
 Recovery-only deployment permission has been requested. At this checkpoint the repair has not been deployed to a fixed site and has not received live two-account/two-tab acceptance. Production remains on `9ac9a99`; the registered dive-log workflow has not been changed. Actual browser Web Locks, no-lock fallback, account changes and per-account cloud/local readback need disposable recovery validation and exact cleanup before separate production approval.
+
+## Authorized recovery deployment and real acceptance
+
+The user subsequently explicitly approved only the recovery deployment and disposable two-account/synthetic-draft acceptance. Application repair `b2937a0` was deployed with runner-only successor source `8c6540eed8eae92ffb287905c8488d017bf0d47b` to the fixed recovery domain. Vercel recovery deployment `GfNTaAhH6HpW8NBo8YsNtvyKotFz` showed Ready, Production and `supdiver-recovery-test.vercel.app`; this is the recovery project's environment, not the formal project.
+
+Real cloud Chromium acceptance passed in [run 40102572757](https://github.com/ydpeng26/deepocean/actions/runs/40102572757), job `120897560975`, on that exact source. Safe logs confirmed:
+
+- After A's first actual database insert committed but before its response was delivered, switching the deployed client to B stopped the remaining batch, retained both unconfirmed local drafts, cleared selection and did not show A's success under B. A had one row, B had none.
+- B could not confirm A's duplicate or remove the local draft. Explicit switching back to A and reconfirming uploaded only the remaining record; two A rows, zero B rows and an empty local store resulted.
+- Two independently authenticated same-origin tabs exercised actual Web Locks: the busy tab sent no insert, showed specific review guidance, and refresh saw one cloud row and no remaining local draft.
+- With Web Locks deliberately unavailable in both isolated tabs, matching duplicate readback and already-absent local cleanup both reported success, with exactly one cloud row and no false edited-draft error.
+- An actual editor change in the other tab during an in-flight write retained the newer local notes, kept the previously confirmed cloud snapshot unchanged and reported a genuine conflict.
+- Exact two disposable users and their generated rows were deleted and their absence verified; browser-local fixture contexts were disposed. No media or mail was used. Production/foreign-project request guards stayed clear. Final log: `AUDIT: complete=true`.
+
+The runner's initial post-switch wait was corrected before its first dispatch: selection clearing legitimately leaves the sync button disabled, so acceptance waits for the settled idle label, not an enabled button. The historical diagnostic is unchanged. The temporary isolated-branch override of the registered dive-log workflow was restored byte-for-byte to production's original workflow after acceptance; a dedicated manual recovery batch workflow retains the reusable runner. This does not register or run anything on main without a later release.
+
+Formal production remains `9ac9a99`; no production release is authorized by this recovery approval. These tests establish the stated Chromium/account/tab boundaries, not Safari/Edge, physical-device or all-PC acceptance. Separate production approval remains required.
