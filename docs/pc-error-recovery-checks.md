@@ -1,5 +1,13 @@
 # PC error recovery — diagnosis 2026-10-25
 
+## Recovery browser acceptance complete — formal release awaits approval
+
+The user confirmed the recovery deployment/workflow actions after supplying a promotion dialog targeting only supdiver-recovery-test.vercel.app and source aadfbf0. [Run 21](https://github.com/ydpeng26/deepocean/actions/runs/40145446559), source `aadfbf0b13a858282f8a0365c49f124d9b1499e6`, job `121025670759`, succeeded with eight PASS groups and `AUDIT: complete=true`. Safe logs independently confirm the fixed-domain assets include this repair before checks, so the promotion dialog alone is not used as completion evidence.
+
+Actual Chromium checks passed: deployed 404 Chinese/English switching and tab title; root fallback remains usable with a throwing capture hook while the independent runtime hook receives redacted synthetic URL material; synchronous double retry starts one pending/disabled operation; rejected retry presents guidance; a restored route recovers through real retry without clearing synthetic local/session text; optional async reporting rejections do not escape the UI. The actual-source standalone HTML fulfilled only into an isolated page supports saved language, a single reload and blocked storage. That final check is browser acceptance of the checked-out fallback HTML, not fault injection into the deployed server. Server status/normalization behavior remains locally modeled coverage only.
+
+No accounts, mail, photos, password changes, backend fixtures/writes, real server faults or exports were involved. Isolated contexts were closed. Native Safari/Edge error UI and actual deployed server outages are not accepted by this run. The temporary registered audit workflow is restored byte-for-byte to formal 6f2e1fa baseline in the follow-up commit; no application source is changed by the restoration/evidence record. Formal main is separately checked and remains unchanged pending distinct release approval. Earlier diagnosis/preparation statements below are historical.
+
 ## Scope
 
 After formal session lifecycle release `6f2e1fa`, the user requested continued PC inspection, not implementation. `scripts/pc-error-recovery-diagnosis.mjs` transpiles/executes actual root error/not-found components, static fallback and browser reporting helper against synthetic errors, hooks and router promises. No network, real account, intentional production failure, email, secret, deployment or application change. The unrelated screenlog.0 is preserved. Mobile and deferred passport/preview features remain excluded.
