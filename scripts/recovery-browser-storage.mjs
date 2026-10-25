@@ -2,12 +2,14 @@
 import {randomBytes} from 'node:crypto';
 const {chromium}=await import(process.env.RECOVERY_PLAYWRIGHT_MODULE||'playwright');
 const api='https://esovqvampbrhuhamkfcs.supabase.co',site='https://supdiver-recovery-test.vercel.app',admin=process.env.RECOVERY_SERVICE_ROLE_KEY;
-let browser,user,stage='guard',failed=false,unsafe=false,blockedAuthRequests=0;const contexts=[];
+let browser,user,activePage,stage='guard',failed=false,unsafe=false,blockedAuthRequests=0;const contexts=[];
+const pageErrorCounts={};
 const check=(value,code)=>{if(!value){const e=Error(code);e.auditCode=code;throw e;}};const pass=m=>console.log('PASS: '+m);
 async function request(path,{method='GET',body}={}){check(path.startsWith('/')&&!path.startsWith('//'),'relative_recovery_path');const r=await fetch(api+path,{method,signal:AbortSignal.timeout(45000),headers:{apikey:admin,Authorization:'Bearer '+admin,'Content-Type':'application/json',Prefer:'return=representation'},body:body===undefined?undefined:JSON.stringify(body)});let data;try{data=await r.json();}catch{data=null;}return{ok:r.ok,status:r.status,data};}
 async function req(path,options){const r=await request(path,options);check(r.ok,'recovery_http_'+r.status);return r.data;}
 async function newContext(fault={}){
  const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'zh-CN',serviceWorkers:'block'});contexts.push(context);
+ context.on('page',page=>{activePage=page;page.on('pageerror',error=>{const name=['SecurityError','QuotaExceededError','TypeError','ReferenceError','Error'].includes(error.name)?error.name:'Other';pageErrorCounts[name]=(pageErrorCounts[name]||0)+1;});});
  await context.route('**/*',async route=>{const r=route.request(),u=new URL(r.url());if((u.hostname.endsWith('.supabase.co')&&u.origin!==api)||['supdiver.com','www.supdiver.com'].includes(u.hostname)){unsafe=true;return route.abort();}
   if(u.origin===api&&!['GET','HEAD','OPTIONS'].includes(r.method())){const blocked=await r.frame().evaluate(()=>Object.values(window.__storageFaultMode||{}).some(Boolean));if(blocked){blockedAuthRequests++;return route.abort();}const allowed=['/auth/v1/token','/auth/v1/logout'].includes(u.pathname)||(u.pathname==='/rest/v1/profiles'&&r.method()==='POST'&&r.postDataJSON()?.id===user?.id);if(!allowed){unsafe=true;return route.abort();}}
   return route.continue();});
@@ -33,5 +35,20 @@ try{
  const context=await newContext(),page=await context.newPage();stage='synthetic saved offline draft';await page.goto(site+'/offline',{waitUntil:'networkidle'});await page.getByLabel('潜水国家',{exact:true}).fill('Indonesia');await page.getByLabel('潜点名称',{exact:true}).fill('Storage recovery local-only draft');await page.getByRole('button',{name:'保存到此设备',exact:true}).click();await page.waitForFunction(()=>document.body.textContent.includes('Storage recovery local-only draft'));const original=await drafts(page);check(original.length===1,'exact_one_fixture_local_draft');
  stage='normal login and private page';await login(page);check(await page.evaluate(()=>!!sessionStorage.getItem('sb-esovqvampbrhuhamkfcs-auth-token')&&!localStorage.getItem('sb-esovqvampbrhuhamkfcs-auth-token')),'auth_not_tab_scoped');pass('actual_normal_signin_uses_tab_session_storage_not_persistent_localStorage');
  stage='dynamic storage loss hides private view';await page.evaluate(()=>{window.__storageFaultMode={sessionRead:true};window.dispatchEvent(new Event('focus'));});await page.getByRole('alert').filter({hasText:'浏览器会话存储不可用'}).waitFor();await page.waitForFunction(()=>!document.querySelector('.do-member-header'));check(await page.locator('.do-profile-fields').count()===0,'private_editor_visible_under_storage_denial');await page.evaluate(()=>{window.__storageFaultMode={};});await page.getByRole('button',{name:'重新检查存储',exact:true}).click();await page.waitForURL('**/auth',{timeout:45000});await login(page);check(JSON.stringify(await drafts(page))===JSON.stringify(original),'saved_fixture_draft_changed');const cloudRows=await req('/rest/v1/dives?user_id=eq.'+user.id+'&select=id');check(cloudRows.length===0,'draft_auto_synced');check(!unsafe&&blockedAuthRequests===0,'traffic_guard');pass('dynamic_session_read_denial_hides_member_view_recovery_requires_login_saved_local_draft_retained_without_auto_sync');
-}catch(error){failed=true;console.log('INCOMPLETE: stage='+stage+'; error='+error.constructor.name+'; check='+(error.auditCode||'browser_operation')+'; details suppressed');}
+}catch(error){failed=true;
+ // Only fixed UI flags and error classes: never log input, page text, URLs or tokens.
+ if(activePage&&!activePage.isClosed())try{
+  const flags=await activePage.evaluate(()=>({
+   language:['en','zh-CN'].includes(document.documentElement.lang)?document.documentElement.lang:'other',
+   browserChinese:navigator.language.toLowerCase().startsWith('zh'),
+   chineseHeading:[...document.querySelectorAll('h1,h2')].some(el=>el.textContent==='欢迎回来'),
+   englishHeading:[...document.querySelectorAll('h1,h2')].some(el=>el.textContent==='Welcome back'),
+   switchEnglish:!!document.querySelector('[aria-label="Switch to English"]'),
+   switchChinese:!!document.querySelector('[aria-label="切换到中文"]'),
+   authPanel:!!document.querySelector('.do-auth-panel'),
+   authDisabled:document.querySelector('.do-auth-panel fieldset')?.disabled??null,
+   storageNotice:document.body.textContent.includes('浏览器会话存储不可用'),
+  }));console.log('DIAGNOSTIC: fixed_ui_flags='+JSON.stringify(flags)+'; page_error_classes='+JSON.stringify(pageErrorCounts));
+ }catch{console.log('DIAGNOSTIC: fixed_ui_flags_unavailable');}
+ console.log('INCOMPLETE: stage='+stage+'; error='+error.constructor.name+'; check='+(error.auditCode||'browser_operation')+'; details suppressed');}
 finally{try{await browser?.close();}catch{failed=true;console.log('INCOMPLETE: isolated_browser_cleanup');}let clean=!user;if(user)try{await req('/auth/v1/admin/users/'+user.id,{method:'DELETE'});const absent=await request('/auth/v1/admin/users/'+user.id),profiles=await req('/rest/v1/profiles?id=eq.'+user.id+'&select=id'),dives=await req('/rest/v1/dives?user_id=eq.'+user.id+'&select=id');check(absent.status===404&&profiles.length===0&&dives.length===0,'cleanup_absence');clean=true;pass('exact_disposable_user_profile_and_dive_absence_verified_isolated_browser_storage_dropped');}catch{failed=true;console.log('INCOMPLETE: exact_disposable_fixture_cleanup '+user.id);}if(!user)pass('no_account_fixture_created');console.log('AUDIT: complete='+(!failed&&clean&&!unsafe&&!blockedAuthRequests)+'; recovery_only; simulated_storage_faults_not_native_browser_settings; no_existing_data_edits_mail_photos_password_changes_or_real_quota_exhaustion');if(failed||!clean||unsafe||blockedAuthRequests)process.exitCode=1;}
