@@ -214,18 +214,28 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
+    if (submittingRef.current || loading || resetBusy || resendLoading) return;
     if (!authStorageAvailable(true)) return;
+    submittingRef.current = true;
     setLoading(true);
+    let redirected = false;
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: getPostLoginUrl(),
       });
       if (result.error) throw result.error;
-      if (result.redirected) return;
+      if (result.redirected) {
+        redirected = true;
+        return;
+      }
       goNext();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.googleError, { id: "auth-status" });
-      setLoading(false);
+    } catch {
+      toast.error(copy.googleError, { id: "auth-status" });
+    } finally {
+      if (!redirected) {
+        submittingRef.current = false;
+        setLoading(false);
+      }
     }
   }
 

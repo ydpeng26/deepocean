@@ -1,5 +1,5 @@
 // Diagnosis only: actual adapter and auth UI with synthetic SDK results; no OAuth/network.
-import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
@@ -26,9 +26,11 @@ console.log(
 
 function load(file, require, globals = {}) {
   const module = { exports: {} };
-  const source = fs
-    .readFileSync(new URL("../" + file, import.meta.url), "utf8")
-    .replaceAll("import.meta.env", "({PROD:false})");
+  // Preserve historical diagnosis rather than silently testing the repaired app.
+  const source = execFileSync("git", ["show", `cf123a6:${file}`], {
+    cwd: new URL("..", import.meta.url),
+    encoding: "utf8",
+  }).replaceAll("import.meta.env", "({PROD:false})");
   vm.runInNewContext(
     ts.transpileModule(source, { compilerOptions: { module: 1, jsx: 4, target: 9 } }).outputText,
     { module, exports: module.exports, require, URL, console: { error() {} }, ...globals },

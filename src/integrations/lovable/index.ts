@@ -2,6 +2,7 @@
 
 import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
 import { supabase } from "../supabase/client";
+import { completeOAuthSession } from "@/lib/oauth-session";
 const lovableAuth = createLovableAuth();
 
 type SignInOptions = {
@@ -11,7 +12,10 @@ type SignInOptions = {
 
 export const lovable = {
   auth: {
-    signInWithOAuth: async (provider: "google" | "apple" | "microsoft" | "lovable", opts?: SignInOptions) => {
+    signInWithOAuth: async (
+      provider: "google" | "apple" | "microsoft" | "lovable",
+      opts?: SignInOptions,
+    ) => {
       const result = await lovableAuth.signInWithOAuth(provider, {
         redirect_uri: opts?.redirect_uri,
         extraParams: {
@@ -19,20 +23,7 @@ export const lovable = {
         },
       });
 
-      if (result.redirected) {
-        return result;
-      }
-
-      if (result.error) {
-        return result;
-      }
-
-      try {
-        await supabase.auth.setSession(result.tokens);
-      } catch (e) {
-        return { error: e instanceof Error ? e : new Error(String(e)) };
-      }
-      return result;
+      return completeOAuthSession(result, (tokens) => supabase.auth.setSession(tokens));
     },
   },
 };
