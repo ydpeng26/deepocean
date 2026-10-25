@@ -1,6 +1,12 @@
 # PC error recovery — diagnosis 2026-10-25
 
-## Recovery browser acceptance complete — formal release awaits approval
+## User-authorized formal release complete — 2026-10-25
+
+After recovery run 21 acceptance, the user explicitly requested formal release. Main was fast-forwarded without history rewriting from expected `6f2e1fa43e56f414d1742ad49be31b3a55a224be` to `d496bfe311fd651b0d803370af0c250cac8b3e10`. Release guards verified expected main/isolated heads, successful run 40145446559 with aadfbf0 source, identical src/public trees to the accepted aadfbf0, and byte-identical workflows to the previous formal baseline. The focused error-recovery regression passed again. User-owned screenlog.0 was preserved.
+
+GitHub reports formal Vercel deepocean success at [deployment HxLScq8jLWJ5VN4iGiANu2feDSNx](https://vercel.com/ydpeng26s-projects/deepocean/HxLScq8jLWJ5VN4iGiANu2feDSNx). Main SHA was independently read back as d496bfe. Read-only public checks on www.supdiver.com returned 200 for /auth, /offline-sync and /reset-password; an ordinary synthetic missing path returned 404 with the repaired Chinese fallback. All 63 manifest JS assets were read in memory and positively contain the new retry guidance, previous session gate and shared auth-return policy. No real server fault, authenticated production operation, account, email, password/user-data mutation or database/schema change was involved. These are public deployment smoke checks, not a repeat of isolated fault-injection flows on production. This follow-up note is local-only and not part of deployed d496bfe.
+
+## Recovery browser acceptance complete — historical pre-release checkpoint
 
 The user confirmed the recovery deployment/workflow actions after supplying a promotion dialog targeting only supdiver-recovery-test.vercel.app and source aadfbf0. [Run 21](https://github.com/ydpeng26/deepocean/actions/runs/40145446559), source `aadfbf0b13a858282f8a0365c49f124d9b1499e6`, job `121025670759`, succeeded with eight PASS groups and `AUDIT: complete=true`. Safe logs independently confirm the fixed-domain assets include this repair before checks, so the promotion dialog alone is not used as completion evidence.
 
