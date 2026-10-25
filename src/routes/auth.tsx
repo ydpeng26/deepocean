@@ -91,15 +91,32 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
+  type AuthAction = "password" | "google" | "resend" | "reset";
+  const [action, setAction] = useState<AuthAction | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const [resetBusy, setResetBusy] = useState(false);
-  const submittingRef = useRef(false);
+  const operation = useRef<{ kind: AuthAction } | null>(null);
+  const busy = action !== null;
+  const loading = action === "password" || action === "google";
+  const resendLoading = action === "resend";
+  const resetBusy = action === "reset";
+  // The synchronous ticket prevents same-tick/stale-handler overlap before
+  // React renders disabled controls. Only its owner can release the action.
+  function beginAction(kind: AuthAction) {
+    if (operation.current || !authStorageAvailable(true)) return null;
+    const ticket = { kind };
+    operation.current = ticket;
+    setAction(kind);
+    return ticket;
+  }
+  function finishAction(ticket: { kind: AuthAction }) {
+    if (operation.current !== ticket) return;
+    operation.current = null;
+    setAction(null);
+  }
   const signinTab = useRef<HTMLButtonElement>(null);
   const signupTab = useRef<HTMLButtonElement>(null);
   function selectMode(value: "signin" | "signup") {
-    if (submittingRef.current || loading || resetBusy || resendLoading) return;
+    if (operation.current) return;
     setMode(value);
     if (value !== mode) setAwaitingConfirmation(false);
     (value === "signin" ? signinTab : signupTab).current?.focus();
@@ -157,16 +174,14 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!authStorageAvailable(true)) return;
-    if (submittingRef.current) return;
-    toast.dismiss();
-    if (!email.trim() || password.length < 6) {
-      toast.error(copy.emailError, { id: "auth-status" });
-      return;
-    }
-    submittingRef.current = true;
-    setLoading(true);
+    const ticket = beginAction("password");
+    if (!ticket) return;
     try {
+      toast.dismiss();
+      if (!email.trim() || password.length < 6) {
+        toast.error(copy.emailError, { id: "auth-status" });
+        return;
+      }
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -188,17 +203,16 @@ function AuthPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
     } finally {
-      submittingRef.current = false;
-      setLoading(false);
+      finishAction(ticket);
     }
   }
 
   async function handleResendConfirmation() {
-    if (!authStorageAvailable(true)) return;
-    if (!email.trim() || resendLoading) return;
-    toast.dismiss();
-    setResendLoading(true);
+    const ticket = beginAction("resend");
+    if (!ticket) return;
     try {
+      if (!email.trim()) return;
+      toast.dismiss();
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim(),
@@ -209,15 +223,13 @@ function AuthPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
     } finally {
-      setResendLoading(false);
+      finishAction(ticket);
     }
   }
 
   async function handleGoogle() {
-    if (submittingRef.current || loading || resetBusy || resendLoading) return;
-    if (!authStorageAvailable(true)) return;
-    submittingRef.current = true;
-    setLoading(true);
+    const ticket = beginAction("google");
+    if (!ticket) return;
     let redirected = false;
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -233,21 +245,20 @@ function AuthPage() {
       toast.error(copy.googleError, { id: "auth-status" });
     } finally {
       if (!redirected) {
-        submittingRef.current = false;
-        setLoading(false);
+        finishAction(ticket);
       }
     }
   }
 
   async function requestReset() {
-    if (!authStorageAvailable(true)) return;
-    if (resetBusy || !passwordRecoveryEnabled) return;
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.error(language === "zh-CN" ? "请先填写有效邮箱。" : "Enter a valid email first.");
-      return;
-    }
-    setResetBusy(true);
+    if (!passwordRecoveryEnabled) return;
+    const ticket = beginAction("reset");
+    if (!ticket) return;
     try {
+      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        toast.error(language === "zh-CN" ? "请先填写有效邮箱。" : "Enter a valid email first.");
+        return;
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -264,7 +275,7 @@ function AuthPage() {
           : "Unable to send right now. Try again later.",
       );
     } finally {
-      setResetBusy(false);
+      finishAction(ticket);
     }
   }
 
@@ -316,7 +327,7 @@ function AuthPage() {
                 id="auth-signin-tab"
                 aria-controls="auth-panel"
                 tabIndex={mode === "signin" ? 0 : -1}
-                disabled={loading || resetBusy || resendLoading}
+                disabled={busy}
                 onKeyDown={tabKey}
                 type="button"
                 role="tab"
@@ -331,7 +342,7 @@ function AuthPage() {
                 id="auth-signup-tab"
                 aria-controls="auth-panel"
                 tabIndex={mode === "signup" ? 0 : -1}
-                disabled={loading || resetBusy || resendLoading}
+                disabled={busy}
                 onKeyDown={tabKey}
                 type="button"
                 role="tab"
@@ -353,6 +364,7 @@ function AuthPage() {
               role="tabpanel"
               aria-labelledby={`auth-${mode}-tab`}
               onSubmit={handleSubmit}
+              aria-busy={busy}
               className="do-auth-form"
             >
               <label htmlFor="email">{copy.email}</label>
@@ -360,6 +372,7 @@ function AuthPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                disabled={busy}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={copy.emailPlaceholder}
@@ -370,6 +383,7 @@ function AuthPage() {
               <input
                 id="password"
                 type="password"
+                disabled={busy}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -380,7 +394,7 @@ function AuthPage() {
                 minLength={6}
                 required
               />
-              <button type="submit" disabled={loading} className="do-auth-submit">
+              <button type="submit" disabled={busy} className="do-auth-submit">
                 {loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}
                 <ArrowRight />
               </button>
@@ -390,7 +404,7 @@ function AuthPage() {
                 type="button"
                 className="do-auth-forgot"
                 onClick={requestReset}
-                disabled={resetBusy}
+                disabled={busy}
               >
                 {language === "zh-CN"
                   ? resetBusy
@@ -405,7 +419,7 @@ function AuthPage() {
             {mode === "signup" && awaitingConfirmation ? (
               <div className="do-auth-confirmation" role="status">
                 <span>{copy.verifyEmail}</span>
-                <button type="button" onClick={handleResendConfirmation} disabled={resendLoading}>
+                <button type="button" onClick={handleResendConfirmation} disabled={busy}>
                   {resendLoading ? copy.resending : copy.resendConfirmation}
                 </button>
               </div>
@@ -416,12 +430,7 @@ function AuthPage() {
               {copy.or}
               <span />
             </div>
-            <button
-              type="button"
-              className="do-auth-google"
-              onClick={handleGoogle}
-              disabled={loading}
-            >
+            <button type="button" className="do-auth-google" onClick={handleGoogle} disabled={busy}>
               <span className="do-google-mark" aria-hidden="true">
                 G
               </span>
