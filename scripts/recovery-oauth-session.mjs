@@ -20,6 +20,7 @@ const jwt =
     .join(".") + ".c3ludGhldGlj";
 let browser,
   activeAuth,
+  activeStats,
   stage = "guard",
   failed = false,
   unsafe = false,
@@ -36,18 +37,33 @@ const pass = (message) => console.log("PASS: " + message);
 async function harness(language, initialMode, topLevel = false) {
   let mode = initialMode,
     attempts = 0;
+  const stats = { brokerReplies: 0, userReads: 0, preflights: 0, pageErrors: 0 };
+  activeStats = stats;
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
     locale: language === "en" ? "en-US" : "zh-CN",
     serviceWorkers: "block",
   });
+  context.on("page", (page) =>
+    page.on("pageerror", () => {
+      stats.pageErrors++;
+    }),
+  );
   await context.addInitScript(
-    ({ language, tokenKey }) => {
+    ({ language, tokenKey, site, broker }) => {
       localStorage.setItem("deepocean-language", language);
       localStorage.setItem("oauth-fixture-text", "synthetic local text");
       sessionStorage.setItem("oauth-fixture-text", "synthetic session text");
       window.__oauthDenySave = false;
       window.__oauthBlockPopup = false;
+      window.__oauthProbe = { opens: 0, validMessages: 0 };
+      window.addEventListener("message", (event) => {
+        if (
+          event.origin === new URL(broker).origin &&
+          event.data?.type === "authorization_response"
+        )
+          window.__oauthProbe.validMessages++;
+      });
       const originalSet = Storage.prototype.setItem;
       Storage.prototype.setItem = function (key, value) {
         if (window.__oauthDenySave && this === window.sessionStorage && key === tokenKey)
@@ -55,25 +71,40 @@ async function harness(language, initialMode, topLevel = false) {
         return originalSet.call(this, key, value);
       };
       const originalOpen = window.open.bind(window);
-      window.open = (...args) => (window.__oauthBlockPopup ? null : originalOpen(...args));
+      window.open = (url, ...args) => {
+        window.__oauthProbe.opens++;
+        if (window.__oauthBlockPopup) return null;
+        // Substitute only the synthetic popup destination, preserving the SDK's
+        // generated state/provider/return parameters. Never visit a real broker.
+        const initiate = new URL(String(url), site);
+        if (initiate.origin !== site || initiate.pathname !== "/~oauth/initiate")
+          throw Error("Unexpected synthetic popup destination");
+        const target = new URL(broker);
+        target.search = initiate.search;
+        return originalOpen(target.href, ...args);
+      };
     },
-    { language, tokenKey },
+    { language, tokenKey, site, broker },
   );
   await context.route("**/*", async (route) => {
     const request = route.request(),
       url = new URL(request.url());
     if (url.origin === api) {
-      if (request.method() === "OPTIONS" && url.pathname === "/auth/v1/user")
+      if (request.method() === "OPTIONS" && url.pathname === "/auth/v1/user") {
+        stats.preflights++;
         return route.fulfill({
           status: 204,
           headers: {
             "access-control-allow-origin": site,
             "access-control-allow-methods": "GET",
             "access-control-allow-headers":
+              request.headers()["access-control-request-headers"] ||
               "apikey,authorization,content-type,x-client-info,x-supabase-api-version",
           },
         });
+      }
       if (request.method() === "GET" && url.pathname === "/auth/v1/user") {
+        stats.userReads++;
         mockedUserReads++;
         check(request.headers().authorization === "Bearer " + jwt, "synthetic_bearer_only");
         return route.fulfill({
@@ -122,11 +153,18 @@ async function harness(language, initialMode, topLevel = false) {
           contentType: "text/html",
           body: "<!doctype html><h1>Synthetic redirect intercepted</h1>",
         });
-      const target = new URL(broker);
-      target.searchParams.set("state", state);
-      return route.fulfill({ status: 302, headers: { location: target.href }, body: "" });
+      unsafe = true;
+      return route.abort();
     }
     if (url.origin === new URL(broker).origin && url.pathname === new URL(broker).pathname) {
+      attempts++;
+      stats.brokerReplies++;
+      check(url.searchParams.get("provider") === "google", "popup_google_provider_preserved");
+      check(
+        url.searchParams.get("redirect_uri") === site + "/__oauth-complete",
+        "popup_recovery_return_origin",
+      );
+      check(!!url.searchParams.get("state"), "popup_state_present");
       if (mode === "cancel")
         return route.fulfill({
           contentType: "text/html",
@@ -243,7 +281,9 @@ try {
         await h.auth.evaluate(() => {
           window.__oauthDenySave = true;
         });
+      stage = language + " " + failure + " failure request";
       await h.button().click();
+      stage = language + " " + failure + " failure message";
       await h.auth
         .getByText(
           language === "en" ? "Google sign-in failed. Please try again" : "Google 登录失败，请重试",
@@ -251,6 +291,7 @@ try {
         )
         .waitFor();
       check(new URL(h.auth.url()).pathname === "/auth", "failure_did_not_navigate");
+      pass("actual_failure_message_" + language + "_" + failure + "_no_navigation");
       if (failure === "save-denied") {
         await h.auth
           .getByRole("alert")
@@ -269,6 +310,7 @@ try {
           })
           .click();
       }
+      stage = language + " " + failure + " control recovery";
       await h.auth.waitForFunction(
         () =>
           !document.querySelector(".do-auth-google")?.disabled &&
@@ -279,13 +321,16 @@ try {
         window.__oauthBlockPopup = false;
       });
       const previous = h.attempts;
+      stage = language + " " + failure + " retry request";
       await h.auth.evaluate(() => {
         const button = document.querySelector(".do-auth-google");
         button.click();
         button.click();
       });
+      stage = language + " " + failure + " retry completion";
       await h.auth.waitForURL("**/__oauth-complete", { timeout: 45000 });
       check(h.attempts === previous + 1, "duplicate_provider_request");
+      stage = language + " " + failure + " saved state";
       check(
         await h.auth.evaluate(
           ({ fixtureId, tokenKey }) => {
@@ -333,8 +378,11 @@ try {
       englishError: document.body.textContent.includes("Google sign-in failed. Please try again"),
       syntheticCompletion:
         document.querySelector("h1")?.textContent === "Synthetic OAuth completion",
+      popupOpens: window.__oauthProbe?.opens ?? 0,
+      validMessages: window.__oauthProbe?.validMessages ?? 0,
     }));
     console.log("DIAGNOSTIC: fixed_UI_flags=" + JSON.stringify(flags));
+    console.log("DIAGNOSTIC: synthetic_flow_counts=" + JSON.stringify(activeStats));
   } catch {
     console.log("DIAGNOSTIC: fixed_UI_flags_unavailable");
   }
