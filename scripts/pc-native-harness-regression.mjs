@@ -46,8 +46,14 @@ const ast = ts.createSourceFile(
   true,
   ts.ScriptKind.JS,
 );
-let callback;
+let callback, initCallback;
 function visit(node) {
+  if (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression) &&
+    node.expression.name.text === "addInitScript"
+  )
+    initCallback = node.arguments[0].getText(ast);
   if (
     ts.isCallExpression(node) &&
     ts.isPropertyAccessExpression(node.expression) &&
@@ -60,6 +66,70 @@ visit(ast);
 assert(callback);
 const site = "https://supdiver-recovery-test.vercel.app",
   api = "https://esovqvampbrhuhamkfcs.supabase.co";
+assert(initCallback);
+for (const origin of ["null", "https://accounts.google.com", api]) {
+  let storageTouches = 0;
+  const scope = { window: { location: { origin } } };
+  Object.defineProperty(scope, "localStorage", {
+    get() {
+      storageTouches++;
+      throw new DOMException("Synthetic opaque origin", "SecurityError");
+    },
+  });
+  Object.defineProperty(scope, "sessionStorage", {
+    get() {
+      storageTouches++;
+      throw new DOMException("Synthetic opaque origin", "SecurityError");
+    },
+  });
+  const init = vm.runInNewContext("(" + initCallback + ")", scope);
+  init({
+    site,
+    language: "en",
+    tokenKey: "synthetic-main-key",
+    prefix: "synthetic-prefix",
+    initialMode: "normal",
+  });
+  assert.equal(storageTouches, 0);
+}
+{
+  class Storage {
+    values = new Map();
+    getItem(key) {
+      return this.values.get(key) ?? null;
+    }
+    setItem(key, value) {
+      this.values.set(key, value);
+    }
+  }
+  const localStorage = new Storage(),
+    sessionStorage = new Storage();
+  const init = vm.runInNewContext("(" + initCallback + ")", {
+    window: { location: { origin: site } },
+    localStorage,
+    sessionStorage,
+    Storage,
+    DOMException,
+  });
+  init({
+    site,
+    language: "en",
+    tokenKey: "synthetic-main-key",
+    prefix: "synthetic-prefix",
+    initialMode: "save-denied",
+  });
+  assert.equal(localStorage.getItem("deepocean-language"), "en");
+  assert.equal(sessionStorage.getItem("native-fixture-text"), "synthetic session text");
+  assert.throws(
+    () => sessionStorage.setItem("synthetic-main-key", "synthetic"),
+    (e) => e.name === "QuotaExceededError",
+  );
+  sessionStorage.setItem("unrelated-draft", "retained");
+  assert.equal(sessionStorage.getItem("unrelated-draft"), "retained");
+}
+console.log(
+  "PASS: actual_native_fixture_initialization_skips_opaque_and_foreign_origins_without_storage_access_preserves_recovery_fault_injection",
+);
 const globals = {
   URL,
   JSON,

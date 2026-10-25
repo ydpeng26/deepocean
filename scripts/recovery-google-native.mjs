@@ -85,7 +85,10 @@ async function harness(language, initialMode) {
     }),
   );
   await context.addInitScript(
-    ({ language, tokenKey, prefix, initialMode }) => {
+    ({ language, tokenKey, prefix, initialMode, site }) => {
+      // Playwright also initializes about:blank/opaque-origin documents. Those
+      // do not expose storage; never touch them or a provider-origin document.
+      if (window.location.origin !== site) return;
       localStorage.setItem("deepocean-language", language);
       if (!sessionStorage.getItem("__native-fixture")) {
         sessionStorage.setItem("__native-fixture", "initialized");
@@ -105,7 +108,7 @@ async function harness(language, initialMode) {
         return original.call(this, key, value);
       };
     },
-    { language, tokenKey, prefix, initialMode },
+    { language, tokenKey, prefix, initialMode, site },
   );
   const cors = (request) => ({
     "access-control-allow-origin": site,
