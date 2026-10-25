@@ -1,0 +1,32 @@
+# Password reset pending-verification diagnosis — 2026-10-25
+
+## Scope and evidence
+
+After the user-approved email-confirmation formal release (dbbc9adc7c60a0d35803a898e4a8017a78432317), the user requested continued checking, not another repair or deployment. This check reads the current reset-password route and executes it with the installed Supabase SDK in a local deterministic React model, in-memory storage and fully mocked fetch. No browser, real identity, real link, email, password submission, backend write or formal fault injection is used. Existing user-owned screenlog.0 is not changed. No application source or registered workflow is modified.
+
+scripts/pc-password-reset-pending-diagnosis.mjs reproduces the following in both zh-CN and en:
+
+1. Start reset-password with a synthetic recovery hash and an old modeled session C. Hold the SDK verifyOtp response pending.
+2. Change the SDK's current session to modeled account B via setSession and verify the main storage contains B. The reset form is still locked.
+3. Return a successful recovery verification for modeled account A. The installed SDK persists A and emits its sign-in event before the route examines its result.
+4. Main storage now contains A, replacing B, and the actual reset route unlocks its password form. No password is submitted. Unrelated modeled draft text remains unchanged.
+
+The route records owners while verification is pending but searches from the first occurrence of the eventual verified owner A. In C → B → A, A appears only at the end, so the intervening account switch is ignored. The shared SDK also persists the verification result before any route eligibility check, so merely locking the form afterward would not preserve B's session. The existing auth-boundary regressions cover switches after binding and A → B → A while verifying, but their verifyOtp stub does not persist a newly returned recovery session; therefore those passes do not establish this pending-write boundary.
+
+This is a session-isolation/flow-binding finding. It does not establish an authentication bypass, takeover, or password modification of B: the existing bound password transport still uses the explicitly verified A token. No real password change or server-side recovery acceptance is claimed.
+
+## Proposed next step — not implemented
+
+Isolate recovery verification from the main session until the operation and owner are validated; latch owner changes from the start of verification and guard late SDK main-session writes. Preserve supported recovery formats, one-use processing, existing bound password mutation, unrelated drafts and bilingual error behavior. Add route plus installed-SDK regressions covering pending owner switches and late results before seeking separately authorized recovery-only acceptance. A new implementation and deployment need user approval. Genuine mailbox delivery and earlier Google configuration cleanup remain distinct follow-ups.
+
+## Authorized local repair
+
+The user requested repair. A dedicated tab-scoped recovery SDK client now holds hash, PKCE-code or implicit recovery-token verification results. The main client disables automatic URL consumption only when initialized on the two explicit confirmation/reset routes (including trailing slash); other routes retain their prior configuration. The reset page captures and validates input once, strips query/hash before creating the clients and shares one task across effect replay. Invalid, duplicated, mixed or error-shaped input fails closed. History, factory, request and storage failures render the existing bilingual invalid-link state without raw credential details. A ten-second verification deadline and genuine unmount cancel eligibility for late results.
+
+The recovery controller subscribes synchronously before its first owner lookup; early sign-in/out changes, changes away from the baseline and later returns to it cannot revive the request. It checks the returned identity with explicit server getUser, rechecks the baseline before transfer and guards the actual main-storage write while the SDK awaits its own final user read. Policy rejection does not falsely mark storage unavailable. Only a matching verified/current transfer can unlock the form. Existing explicitly token-bound password PUT and post-binding account checks are retained; the expected local logout after a successful password submission is distinguished from cancellation. No real password submission was made in this task.
+
+Temporary session/user/verifier keys are feature-specific and removed even after storage quota denial; a main verifier is removed only if it still equals the value copied for this request. Newer verifiers, main sessions and unrelated drafts are not broadly cleared. Pending SDK verification cannot overlap another same-document recovery attempt. The previously recorded diagnosis is pinned to formal dbbc9ad, not asserted against repaired code.
+
+scripts/pc-password-recovery-regression.mjs executes the actual route, browser wiring and guarded storage with the installed SDK and all fetches mocked. Both languages cover three valid formats and exact one-use processing; eventful/silent pending owner changes, return to old owner, owner change after verification; timeout, unmount and effect replay; account changes/cancellation during the SDK's final main-user read; verification/transport/mismatched-user/main-save/history failures; missing/duplicate input; newer-verifier preservation, pending-attempt exclusion, temporary cleanup and unrelated-draft preservation. Actual lazy-client construction verifies reset/confirmation URL-autodetection settings while preserving other routes. Existing auth-boundary tests now inject this controller and retain password transport, stale-submit, duplicate-submit/owner and expected-logout checks.
+
+All 27 local regression suites passed, including the new actual-SDK recovery suite and previous Google, email confirmation, auth-boundary, session/storage, offline/sync and business suites. Production build, offline asset generation and scoped lint passed. The modified modules have no TypeScript diagnostics; whole-project type checking still exits on the eight known forum/profile-preview literal-state errors, not newly introduced errors. No registered workflow was changed, no recovery deployment was performed and no formal update is authorized by this implementation request. Recovery-only deployed-page synthetic acceptance still needs separate permission; real mailbox delivery remains untested.

@@ -381,7 +381,7 @@ for (const path of [
   void clients.googleOAuth.auth;
   assert.equal(
     options[0].detectSessionInUrl,
-    path.startsWith("/auth-confirmed") ? false : undefined,
+    path.startsWith("/auth-confirmed") || path === "/reset-password" ? false : undefined,
   );
   assert.equal(options[0].autoRefreshToken, true);
   assert.equal(options[1].storageKey, "supdiver-email-confirmation-synthetic");
@@ -391,7 +391,7 @@ for (const path of [
   assert.equal(options[2].storageKey, "supdiver-google-oauth-synthetic");
 }
 console.log(
-  "PASS: actual_client_avoids_double_URL_exchange_only_on_confirmation_route_preserves_reset_and_Google_behavior_and_exact_verifier_cleanup",
+  "PASS: actual_client_avoids_double_URL_exchange_on_explicit_confirmation_and_reset_routes_preserves_Google_behavior_and_exact_verifier_cleanup",
 );
 
 for (const mode of ["cancelled", "changed-owner", "newer-refreshed-token"]) {

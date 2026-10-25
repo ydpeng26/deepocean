@@ -3,8 +3,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isRecoveryTestProject, passwordRecoveryEnabled } from "@/lib/password-recovery";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import type { Session } from "@supabase/supabase-js";
 import { updateBoundRecoveryPassword, type RecoveryBinding } from "@/lib/bound-password-reset";
+import { recoveryInput, type RecoveryInput } from "@/lib/password-recovery-flow";
+import { createBrowserRecovery } from "@/lib/password-recovery-session";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -22,7 +23,11 @@ function ResetPassword() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const verification = useRef<Promise<Session | null> | null>(null);
+  const verification = useRef<Promise<RecoveryBinding> | null>(null);
+  const flow = useRef<ReturnType<typeof createBrowserRecovery> | null>(null);
+  const input = useRef<RecoveryInput | null>(null);
+  if (!input.current && typeof window !== "undefined")
+    input.current = recoveryInput(window.location.search, window.location.hash);
   const binding = useRef<RecoveryBinding | null>(null);
   const mounted = useRef(false);
   const cancelled = useRef(false);
@@ -32,86 +37,74 @@ function ResetPassword() {
   useEffect(() => {
     let active = true;
     mounted.current = true;
-    const observedOwners: (string | null)[] = [];
     const invalidate = () => {
       cancelled.current = true;
       binding.current = null;
-      if (!active) return;
+      if (!mounted.current) return;
       setState("invalid");
       setPassword("");
       setConfirm("");
       setError("");
     };
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      // No async auth calls in this callback: only latch account changes.
-      if (binding.current) {
-        if (expectedLogout.current && !session) return;
-        if (session?.user.id !== binding.current.userId) invalidate();
-      } else observedOwners.push(session?.user.id ?? null);
-    });
     if (!verification.current) {
-      // Never unlock a password form merely because another account is signed in.
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token_hash");
-      const code = params.get("code");
-      const implicit = new URLSearchParams(window.location.hash.slice(1));
-      const accessToken = implicit.get("access_token");
-      const refreshToken = implicit.get("refresh_token");
-      const isRecovery = implicit.get("type") === "recovery";
-      window.history.replaceState(null, "", window.location.pathname);
-      verification.current = (async () => {
-        try {
-          if (!passwordRecoveryEnabled) return null;
-          if (token) {
-            const result = await supabase.auth.verifyOtp({ token_hash: token, type: "recovery" });
-            return result.error ? null : result.data.session;
-          } else if (code) {
-            const result = await supabase.auth.exchangeCodeForSession(code);
-            return result.error ? null : result.data.session;
-          } else if (isRecovery && accessToken && refreshToken) {
-            const result = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            return result.error ? null : result.data.session;
-          }
-          return null;
-        } catch {
-          return null;
-        }
-      })();
-    }
-    void verification.current.then(async (session) => {
-      if (!active) return;
-      if (!session?.user.id || !session.access_token || cancelled.current) return invalidate();
-      const firstMatch = observedOwners.indexOf(session.user.id);
-      if (firstMatch >= 0 && observedOwners.slice(firstMatch).some((id) => id !== session.user.id))
-        return invalidate();
-      const verified = { userId: session.user.id, accessToken: session.access_token };
-      binding.current = verified;
       try {
-        const current = await supabase.auth.getSession();
-        const server = await supabase.auth.getUser(verified.accessToken);
-        if (!active) return;
-        if (
-          cancelled.current ||
-          binding.current !== verified ||
-          current.error ||
-          server.error ||
-          current.data.session?.user.id !== verified.userId ||
-          server.data.user?.id !== verified.userId
-        )
-          return invalidate();
-        setState("ready");
+        window.history.replaceState(null, "", window.location.pathname);
+        if (!passwordRecoveryEnabled) throw new Error("Password recovery unavailable");
+        flow.current = createBrowserRecovery(
+          () => mounted.current && !cancelled.current,
+          invalidate,
+          () => expectedLogout.current,
+        );
+        verification.current = flow.current.run(input.current ?? { kind: "invalid" });
       } catch {
-        if (active) invalidate();
+        verification.current = Promise.reject(new Error("Password recovery unavailable"));
       }
-    });
+    }
+    const timer = window.setTimeout(() => {
+      if (active) {
+        invalidate();
+        flow.current?.cancel();
+      }
+    }, 10_000);
+    void verification.current
+      .then(async (verified) => {
+        if (!active) return;
+        if (cancelled.current) return invalidate();
+        binding.current = verified;
+        try {
+          const current = await supabase.auth.getSession();
+          const server = await supabase.auth.getUser(verified.accessToken);
+          if (!active) return;
+          if (
+            cancelled.current ||
+            binding.current !== verified ||
+            current.error ||
+            server.error ||
+            current.data.session?.user.id !== verified.userId ||
+            server.data.user?.id !== verified.userId
+          )
+            return invalidate();
+          setState("ready");
+        } catch {
+          if (active) invalidate();
+        }
+      })
+      .catch(() => {
+        if (active) invalidate();
+      })
+      .finally(() => window.clearTimeout(timer));
     return () => {
       active = false;
       mounted.current = false;
-      binding.current = null;
-      listener.subscription.unsubscribe();
+      window.clearTimeout(timer);
+      // React effect replay shares one verification; genuine unmount cancels it.
+      queueMicrotask(() => {
+        if (!mounted.current) {
+          cancelled.current = true;
+          binding.current = null;
+          flow.current?.cancel();
+        }
+      });
     };
   }, []);
 

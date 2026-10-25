@@ -4,6 +4,7 @@ import type { Database } from "./types";
 import { getTabAuthStorage } from "@/lib/tab-auth-storage";
 import { googleOAuthKeys } from "@/lib/google-oauth-keys";
 import { emailConfirmationKeys } from "@/lib/email-confirmation-keys";
+import { recoveryKeys } from "@/lib/password-recovery-keys";
 
 export function getSupabaseProjectUrl(): string {
   const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -38,7 +39,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-function createSupabaseClient(mode: "main" | "google" | "confirmation" = "main") {
+function createSupabaseClient(mode: "main" | "google" | "confirmation" | "recovery" = "main") {
   const temporary = mode !== "main";
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -78,14 +79,16 @@ function createSupabaseClient(mode: "main" | "google" | "confirmation" = "main")
       autoRefreshToken: !temporary,
       ...(!temporary &&
       typeof window !== "undefined" &&
-      window.location?.pathname.replace(/\/+$/, "") === "/auth-confirmed"
+      ["/auth-confirmed", "/reset-password"].includes(window.location?.pathname.replace(/\/+$/, ""))
         ? { detectSessionInUrl: false }
         : {}),
       ...(temporary
         ? {
             storageKey: (mode === "google"
               ? googleOAuthKeys(SUPABASE_URL)
-              : emailConfirmationKeys(SUPABASE_URL)
+              : mode === "recovery"
+                ? recoveryKeys(SUPABASE_URL)
+                : emailConfirmationKeys(SUPABASE_URL)
             ).session,
             flowType: "pkce" as const,
             detectSessionInUrl: false,
@@ -106,8 +109,8 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   },
 });
 
-// Separate, tab-scoped PKCE verifier/session: email/reset flows keep their
-// existing client behavior. The callback explicitly transfers a verified result.
+// Separate, tab-scoped PKCE verifier/session; each callback flow owns its URL
+// and explicitly transfers only a verified, current result.
 let _googleOAuth: ReturnType<typeof createSupabaseClient> | undefined;
 export const googleOAuth = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
@@ -123,5 +126,14 @@ export const emailConfirmation = new Proxy({} as ReturnType<typeof createSupabas
   get(_, prop, receiver) {
     if (!_emailConfirmation) _emailConfirmation = createSupabaseClient("confirmation");
     return Reflect.get(_emailConfirmation, prop, receiver);
+  },
+});
+
+// Recovery verification must not replace a main session before owner checks.
+let _passwordRecovery: ReturnType<typeof createSupabaseClient> | undefined;
+export const passwordRecovery = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(_, prop, receiver) {
+    if (!_passwordRecovery) _passwordRecovery = createSupabaseClient("recovery");
+    return Reflect.get(_passwordRecovery, prop, receiver);
   },
 });
