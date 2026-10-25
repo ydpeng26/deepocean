@@ -49,6 +49,10 @@ const check = (ok, code) => {
   }
 };
 const pass = (value) => console.log("PASS: " + value);
+const advance = (value) => {
+  stage = value;
+  console.log("STAGE: " + value);
+};
 const defer = () => {
   let resolve;
   const promise = new Promise((r) => {
@@ -56,19 +60,26 @@ const defer = () => {
   });
   return { promise, resolve };
 };
-async function bounded(promise) {
+async function bounded(promise, label = "synthetic_gate_timeout", milliseconds = 25000) {
   let timer;
   try {
     return await Promise.race([
       promise,
       new Promise((_r, reject) => {
-        timer = setTimeout(() => reject(Error("synthetic_gate_timeout")), 25000);
+        timer = setTimeout(() => {
+          const error = Error(label);
+          error.auditCode = label;
+          reject(error);
+        }, milliseconds);
       }),
     ]);
   } finally {
     clearTimeout(timer);
   }
 }
+const evaluate = (page, fn, argument) =>
+  bounded(page.evaluate(fn, argument), "browser_evaluation_timeout");
+const closeContext = (context) => bounded(context.close(), "context_cleanup_timeout", 10000);
 const total = (counts) =>
   ["signin", "signup", "resend", "reset", "google"].reduce((n, key) => n + counts[key], 0);
 async function harness(language, view) {
@@ -95,11 +106,14 @@ async function harness(language, view) {
     errors: [],
   };
   activeStats = counts;
-  const context = await browser.newContext({
-    viewport: { width: 1440, height: 1000 },
-    locale: language === "en" ? "en-US" : "zh-CN",
-    serviceWorkers: "block",
-  });
+  const context = await bounded(
+    browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+      locale: language === "en" ? "en-US" : "zh-CN",
+      serviceWorkers: "block",
+    }),
+    "context_open_timeout",
+  );
   context.on("page", (page) =>
     page.on("pageerror", (error) => {
       counts.pageErrors++;
@@ -116,6 +130,25 @@ async function harness(language, view) {
         sessionStorage.setItem("auth-action-fixture-text", "synthetic session text");
         localStorage.setItem("auth-action-fixture-text", "synthetic local text");
       }
+      // Pause PKCE hashing before location.assign queues a navigation. Inspecting
+      // an old document after holding its navigation can deadlock page.evaluate.
+      // Return the original digest unchanged after the controlled checkpoint.
+      window.__authActionGoogleHold = false;
+      window.__authActionGoogleReached = false;
+      const digest = crypto.subtle.digest.bind(crypto.subtle);
+      Object.defineProperty(crypto.subtle, "digest", {
+        configurable: true,
+        value: async (...args) => {
+          if (window.__authActionGoogleHold) {
+            window.__authActionGoogleHold = false;
+            window.__authActionGoogleReached = true;
+            await new Promise((resolve) => {
+              window.__authActionGoogleRelease = resolve;
+            });
+          }
+          return digest(...args);
+        },
+      });
     },
     { site, language },
   );
@@ -138,14 +171,14 @@ async function harness(language, view) {
         if (!response) {
           unsafe = true;
           counts.forbidden++;
-          return route.abort();
+          return await route.abort();
         }
         if (response.kind === selected) {
           reached.resolve();
           await gate.promise;
         }
-        if (response.abort) return route.abort();
-        return route.fulfill({
+        if (response.abort) return await route.abort();
+        return await route.fulfill({
           status: response.status,
           headers: {
             "access-control-allow-origin": site,
@@ -166,30 +199,36 @@ async function harness(language, view) {
         url.pathname === "/__auth-action-complete"
       ) {
         counts.completion++;
-        return route.fulfill({
+        return await route.fulfill({
           contentType: "text/html",
           body: "<!doctype html><h1>Synthetic auth action completion</h1>",
         });
       }
       if (url.origin === site && ["GET", "HEAD"].includes(request.method()))
-        return route.continue();
+        return await route.continue();
       if (
         ["fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname) &&
         request.method() === "GET"
       )
-        return route.continue();
+        return await route.continue();
       unsafe = true;
       counts.forbidden++;
-      return route.abort();
+      return await route.abort();
     } catch (error) {
       routeFailure = error.auditCode || "route_validation";
       unsafe = true;
-      await route.abort();
+      try {
+        await route.abort();
+      } catch {
+        /* Context may be closing after failure. */
+      }
     }
   });
-  const page = await context.newPage();
+  const page = await bounded(context.newPage(), "page_open_timeout");
   activePage = page;
   page.setDefaultTimeout(20000);
+  page.setDefaultNavigationTimeout(30000);
+  console.log("STAGE: " + stage + " opening_auth_page");
   const safe = () =>
     check(
       !routeFailure && !counts.forbidden && !counts.pageErrors,
@@ -211,6 +250,7 @@ async function harness(language, view) {
     );
     check(counts.signup === 1, "signup_bootstrap_synthetic_only");
   }
+  console.log("STAGE: " + stage + " auth_page_ready");
   return {
     page,
     context,
@@ -219,35 +259,54 @@ async function harness(language, view) {
     release,
     reached: () => bounded(reached.promise),
     arm(kind, value = "normal") {
-      selected = kind;
+      selected = kind === "google" ? undefined : kind;
       mode = value;
       gate = defer();
       reached = defer();
       releases.add(release);
     },
+    holdGoogle: () =>
+      evaluate(page, () => {
+        window.__authActionGoogleHold = true;
+        window.__authActionGoogleReached = false;
+      }),
+    googleReached: () =>
+      bounded(
+        page.waitForFunction(() => window.__authActionGoogleReached === true),
+        "google_PKCE_checkpoint_timeout",
+      ),
+    releaseGoogle: () =>
+      evaluate(page, () => {
+        window.__authActionGoogleRelease?.();
+      }),
     async activate(kind) {
       // DOM activation deliberately bypasses Playwright's navigation waiting;
       // a held Google navigation keeps the prior document available for checks.
-      await page.evaluate((kind) => {
-        if (kind === "signin" || kind === "signup")
-          document.querySelector("form.do-auth-form").requestSubmit();
-        else
-          document
-            .querySelector(
-              kind === "google"
-                ? ".do-auth-google"
-                : kind === "reset"
-                  ? ".do-auth-forgot"
-                  : ".do-auth-confirmation button",
-            )
-            .click();
-      }, kind);
+      await evaluate(
+        page,
+        (kind) => {
+          if (kind === "signin" || kind === "signup")
+            document.querySelector("form.do-auth-form").requestSubmit();
+          else
+            document
+              .querySelector(
+                kind === "google"
+                  ? ".do-auth-google"
+                  : kind === "reset"
+                    ? ".do-auth-forgot"
+                    : ".do-auth-confirmation button",
+              )
+              .click();
+        },
+        kind,
+      );
     },
   };
 }
 async function state(h, expectedOwner = null, googleClean = true) {
   check(
-    await h.page.evaluate(
+    await evaluate(
+      h.page,
       ({ mainKey, googleKey, id, expectedOwner, googleClean }) => {
         const current = JSON.parse(sessionStorage.getItem(mainKey) || "null");
         return (
@@ -272,27 +331,34 @@ async function state(h, expectedOwner = null, googleClean = true) {
   h.safe();
 }
 async function idle(h) {
-  await h.page.waitForFunction(() => {
-    const form = document.querySelector(".do-auth-form");
-    const all = [
-      ...document.querySelectorAll(
-        ".do-auth-tabs button,.do-auth-form input,.do-auth-submit,.do-auth-google,.do-auth-forgot,.do-auth-confirmation button",
-      ),
-    ];
-    return (
-      form?.getAttribute("aria-busy") === "false" &&
-      all.length >= 6 &&
-      all.every((n) => !n.disabled)
-    );
-  });
+  await bounded(
+    h.page.waitForFunction(() => {
+      const form = document.querySelector(".do-auth-form");
+      const all = [
+        ...document.querySelectorAll(
+          ".do-auth-tabs button,.do-auth-form input,.do-auth-submit,.do-auth-google,.do-auth-forgot,.do-auth-confirmation button",
+        ),
+      ];
+      return (
+        form?.getAttribute("aria-busy") === "false" &&
+        all.length >= 6 &&
+        all.every((n) => !n.disabled)
+      );
+    }),
+    "idle_UI_timeout",
+  );
   h.safe();
 }
 async function busy(h, view) {
-  await h.page.waitForFunction(
-    () => document.querySelector(".do-auth-form")?.getAttribute("aria-busy") === "true",
+  await bounded(
+    h.page.waitForFunction(
+      () => document.querySelector(".do-auth-form")?.getAttribute("aria-busy") === "true",
+    ),
+    "busy_UI_timeout",
   );
   check(
-    await h.page.evaluate(
+    await evaluate(
+      h.page,
       ({ email, password, view }) => {
         const all = [
           ...document.querySelectorAll(
@@ -312,7 +378,7 @@ async function busy(h, view) {
     "all_account_controls_disabled_values_and_mode_retained",
   );
   const before = total(h.counts);
-  await h.page.evaluate(() => {
+  await evaluate(h.page, () => {
     const form = document.querySelector("form.do-auth-form");
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -346,13 +412,13 @@ async function feedback(h, owner, language, success) {
         : "Synthetic rejected action";
   await h.page.getByText(message, { exact: true }).waitFor();
 }
-try {
+async function run() {
   check(
     process.env.GITHUB_ACTIONS === "true" &&
       process.env.GITHUB_REF === "refs/heads/codex/pc-layout-keyboard-audit",
     "isolated_cloud_branch_only",
   );
-  stage = "fixed recovery auth bundle preflight";
+  advance("fixed recovery auth bundle preflight");
   const response = await fetch(site + "/offline-assets.json", {
     cache: "no-store",
     signal: AbortSignal.timeout(30000),
@@ -381,7 +447,7 @@ try {
   for (const language of ["zh-CN", "en"]) {
     for (const view of ["signin", "signup"]) {
       for (const owner of [view, view === "signin" ? "reset" : "resend"]) {
-        stage = language + " " + view + " " + owner + " returned error";
+        advance(language + " " + view + " " + owner + " returned error");
         const h = await harness(language, view),
           before = total(h.counts);
         h.arm(owner, "error");
@@ -393,7 +459,7 @@ try {
         await feedback(h, owner, language, false);
         check(total(h.counts) === before + 1, "single_failed_action");
         await state(h);
-        stage = language + " " + owner + " fresh successful retry";
+        advance(language + " " + owner + " fresh successful retry");
         h.arm(owner);
         await h.activate(owner);
         await h.reached();
@@ -419,7 +485,7 @@ try {
             );
         }
         check(total(h.counts) === before + 2, "exactly_one_retry_request");
-        await h.context.close();
+        await closeContext(h.context);
         h.release();
         pass(
           "actual_" +
@@ -431,14 +497,20 @@ try {
             "_mutual_exclusion_failed_release_and_single_retry",
         );
       }
-      stage = language + " " + view + " Google pending redirect and synthetic cancellation";
+      advance(
+        language + " " + view + " Google pre-navigation PKCE checkpoint and synthetic cancellation",
+      );
       const h = await harness(language, view),
         before = total(h.counts);
       h.arm("google");
+      await h.holdGoogle();
       await h.activate("google");
-      await h.reached();
+      await h.googleReached();
       await busy(h, view);
-      h.release();
+      check(h.counts.google === 0, "Google_lock_checked_before_navigation_is_queued");
+      pass("actual_" + language + "_" + view + "_Google_pre_navigation_lock_checked");
+      await h.releaseGoogle();
+      advance(language + " " + view + " Google mock cancellation callback");
       await h.page
         .getByRole("heading", {
           name: language === "en" ? "Google sign-in did not complete" : "Google 登录未完成",
@@ -465,7 +537,7 @@ try {
       await state(h);
       await feedback(h, "reset", language, true);
       check(total(h.counts) === before + 2, "fresh_action_after_mock_cancellation");
-      await h.context.close();
+      await closeContext(h.context);
       h.release();
       pass(
         "actual_" +
@@ -475,7 +547,7 @@ try {
           "_Google_pending_lock_mock_cancel_cleanup_and_fresh_action",
       );
     }
-    stage = language + " synthetic reset transport failure";
+    advance(language + " synthetic reset transport failure");
     const h = await harness(language, "signin");
     h.arm("reset", "network");
     await h.activate("reset");
@@ -494,25 +566,47 @@ try {
     await state(h);
     await feedback(h, "reset", language, true);
     check(h.counts.reset === 2, "one_retry_after_transport_failure");
-    await h.context.close();
+    await closeContext(h.context);
     h.release();
     pass("actual_" + language + "_network_failure_unlock_and_fresh_retry");
   }
   check(!unsafe, "no_forbidden_requests");
+}
+try {
+  await bounded(run(), "overall_synthetic_audit_timeout", 240000);
 } catch (error) {
   failed = true;
+  // Release held requests before diagnostics, so diagnostics never wait on a
+  // navigation that this harness itself is preventing from completing.
+  for (const release of releases) release();
+  try {
+    if (activePage)
+      await bounded(
+        activePage.evaluate(() => {
+          window.__authActionGoogleRelease?.();
+        }),
+        "google_checkpoint_release_timeout",
+        2000,
+      );
+  } catch {
+    /* Bounded best effort. */
+  }
   try {
     console.log(
       "DIAGNOSTIC: fixed_UI_flags=" +
         JSON.stringify(
-          await activePage?.evaluate(() => ({
-            auth: location.pathname === "/auth",
-            callback: location.pathname === "/oauth-callback",
-            completion: location.pathname === "/__auth-action-complete",
-            busy: document.querySelector(".do-auth-form")?.getAttribute("aria-busy") === "true",
-            form: !!document.querySelector(".do-auth-form"),
-            disabled: document.querySelector(".do-auth-submit")?.disabled ?? false,
-          })),
+          await bounded(
+            activePage?.evaluate(() => ({
+              auth: location.pathname === "/auth",
+              callback: location.pathname === "/oauth-callback",
+              completion: location.pathname === "/__auth-action-complete",
+              busy: document.querySelector(".do-auth-form")?.getAttribute("aria-busy") === "true",
+              form: !!document.querySelector(".do-auth-form"),
+              disabled: document.querySelector(".do-auth-submit")?.disabled ?? false,
+            })),
+            "diagnostic_timeout",
+            5000,
+          ),
         ),
     );
   } catch {
@@ -530,10 +624,12 @@ try {
   );
 } finally {
   for (const release of releases) release();
+  let cleanupFailed = false;
   try {
-    await browser?.close();
+    await bounded(browser?.close(), "browser_cleanup_timeout", 10000);
   } catch {
     failed = true;
+    cleanupFailed = true;
     console.log("INCOMPLETE: isolated_browser_cleanup");
   }
   if (!failed)
@@ -546,4 +642,5 @@ try {
       "; recovery_only; all_auth_mail_and_Google_responses_mocked; no_real_accounts_mail_password_changes_backend_writes_existing_data_changes_or_artifacts",
   );
   if (failed || unsafe) process.exitCode = 1;
+  if (cleanupFailed) process.exit(1);
 }
