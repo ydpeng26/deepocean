@@ -5,6 +5,7 @@ import { getTabAuthStorage } from "@/lib/tab-auth-storage";
 import { googleOAuthKeys } from "@/lib/google-oauth-keys";
 import { emailConfirmationKeys } from "@/lib/email-confirmation-keys";
 import { recoveryKeys } from "@/lib/password-recovery-keys";
+import { createAccountRequestFetch } from "@/lib/account-request-fetch";
 
 export function getSupabaseProjectUrl(): string {
   const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -16,8 +17,14 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
-function createSupabaseFetch(supabaseKey: string): typeof fetch {
+function createSupabaseFetch(
+  supabaseKey: string,
+  projectUrl: string,
+  temporary: boolean,
+): typeof fetch {
+  let transport: typeof fetch | undefined;
   return (input, init) => {
+    transport ??= temporary ? fetch : createAccountRequestFetch(projectUrl, fetch);
     const headers = new Headers(
       typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
     );
@@ -35,7 +42,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
-    return fetch(input, { ...init, headers });
+    return transport(input, { ...init, headers });
   };
 }
 
@@ -71,7 +78,7 @@ function createSupabaseClient(mode: "main" | "google" | "confirmation" | "recove
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
-      fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
+      fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, temporary),
     },
     auth: {
       storage: authStorage,

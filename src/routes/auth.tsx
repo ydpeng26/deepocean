@@ -10,6 +10,7 @@ import { passwordRecoveryEnabled } from "@/lib/password-recovery";
 import { safeAuthReturn } from "@/lib/auth-return";
 import { authStorageAvailable } from "@/lib/tab-auth-storage";
 import { useAuthStorageStatus } from "@/hooks/useAuthStorageStatus";
+import { mountAccountRequestPage, accountRequestErrorMessage } from "@/lib/account-request-fetch";
 
 const authCopy = {
   "zh-CN": {
@@ -95,6 +96,16 @@ function AuthPage() {
   const [action, setAction] = useState<AuthAction | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const operation = useRef<{ kind: AuthAction } | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    const cancel = mountAccountRequestPage();
+    return () => {
+      mounted.current = false;
+      operation.current = null;
+      cancel();
+    };
+  }, []);
   const busy = action !== null;
   const loading = action === "password" || action === "google";
   const resendLoading = action === "resend";
@@ -102,14 +113,14 @@ function AuthPage() {
   // The synchronous ticket prevents same-tick/stale-handler overlap before
   // React renders disabled controls. Only its owner can release the action.
   function beginAction(kind: AuthAction) {
-    if (operation.current || !authStorageAvailable(true)) return null;
+    if (!mounted.current || operation.current || !authStorageAvailable(true)) return null;
     const ticket = { kind };
     operation.current = ticket;
     setAction(kind);
     return ticket;
   }
   function finishAction(ticket: { kind: AuthAction }) {
-    if (operation.current !== ticket) return;
+    if (!mounted.current || operation.current !== ticket) return;
     operation.current = null;
     setAction(null);
   }
@@ -188,6 +199,7 @@ function AuthPage() {
           password,
           options: { emailRedirectTo: getEmailConfirmationUrl() },
         });
+        if (!mounted.current || operation.current !== ticket) return;
         if (error) throw error;
         setAwaitingConfirmation(true);
       } else {
@@ -195,13 +207,16 @@ function AuthPage() {
           email: email.trim(),
           password,
         });
+        if (!mounted.current || operation.current !== ticket) return;
         if (error) throw error;
       }
       const { data } = await supabase.auth.getSession();
+      if (!mounted.current || operation.current !== ticket) return;
       if (data.session) goNext();
       else if (mode === "signin") toast.info(copy.verifyEmail);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.genericError);
+      if (!mounted.current || operation.current !== ticket) return;
+      toast.error(accountRequestErrorMessage(err, language, copy.genericError));
     } finally {
       finishAction(ticket);
     }
@@ -218,12 +233,14 @@ function AuthPage() {
         email: email.trim(),
         options: { emailRedirectTo: getEmailConfirmationUrl() },
       });
+      if (!mounted.current || operation.current !== ticket) return;
       if (error) throw error;
       // Let Sonner allocate a fresh ID: a dismissed toast can still be in its
       // removal animation when a fast retry finishes. Reusing it hides success.
       toast.success(copy.resendSent);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.genericError);
+      if (!mounted.current || operation.current !== ticket) return;
+      toast.error(accountRequestErrorMessage(err, language, copy.genericError));
     } finally {
       finishAction(ticket);
     }
@@ -237,6 +254,7 @@ function AuthPage() {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: getPostLoginUrl(),
       });
+      if (!mounted.current || operation.current !== ticket) return;
       if (result.error) throw result.error;
       if (result.redirected) {
         redirected = true;
@@ -244,6 +262,7 @@ function AuthPage() {
       }
       goNext();
     } catch {
+      if (!mounted.current || operation.current !== ticket) return;
       toast.error(copy.googleError);
     } finally {
       if (!redirected) {
@@ -264,17 +283,24 @@ function AuthPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
+      if (!mounted.current || operation.current !== ticket) return;
       if (error) throw error;
       toast.success(
         language === "zh-CN"
           ? "如果该邮箱已注册，你将收到找回密码邮件，请检查收件箱和垃圾邮件。"
           : "If this email is registered, a reset email will arrive. Check your inbox and spam.",
       );
-    } catch {
+    } catch (err) {
+      if (!mounted.current || operation.current !== ticket) return;
       toast.error(
-        language === "zh-CN"
-          ? "暂时无法发送，请稍后重试。"
-          : "Unable to send right now. Try again later.",
+        accountRequestErrorMessage(
+          err,
+          language,
+          language === "zh-CN"
+            ? "暂时无法发送，请稍后重试。"
+            : "Unable to send right now. Try again later.",
+          false,
+        ),
       );
     } finally {
       finishAction(ticket);

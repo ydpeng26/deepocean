@@ -4,6 +4,14 @@ import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
+const accountMessages = { exports: {} };
+vm.runInNewContext(
+  ts.transpileModule(
+    fs.readFileSync(new URL("../src/lib/account-request-fetch.ts", import.meta.url), "utf8"),
+    { compilerOptions: { module: 1, target: 9 } },
+  ).outputText,
+  { module: accountMessages, exports: accountMessages.exports, Error },
+);
 // Execute the installed renderer's real subscription callback. A dismissed
 // entry keeps delete=true when updated under the same ID, even with new text.
 const sonnerSource = fs.readFileSync(
@@ -80,6 +88,11 @@ function harness(language = "en", enabled = true) {
     pending,
     completion,
     result = "normal";
+  const effects = [],
+    cleanups = [];
+  let cancelled = 0;
+  let unmounted = false,
+    lateWrites = 0;
   const cells = [],
     calls = [],
     toasts = [],
@@ -91,6 +104,7 @@ function harness(language = "en", enabled = true) {
       return [
         cells[i],
         (v) => {
+          if (unmounted) lateWrites++;
           cells[i] = typeof v === "function" ? v(cells[i]) : v;
         },
       ];
@@ -99,7 +113,13 @@ function harness(language = "en", enabled = true) {
       const i = cursor++;
       return (cells[i] ??= { current: value });
     },
-    useEffect() {},
+    useEffect(fn, deps) {
+      const i = cursor++;
+      if (!(i in cells) || deps.some((value, index) => value !== cells[i][index])) {
+        cells[i] = deps;
+        effects.push(fn);
+      }
+    },
   };
   const jsx = (type, props) => ({ type, props });
   async function request(kind, input) {
@@ -107,11 +127,21 @@ function harness(language = "en", enabled = true) {
     if (pending) await pending.promise;
     if (result === "throw") throw Error("Synthetic failure");
     if (result === "returned") return { error: Error("Synthetic failure") };
+    if (result === "timeout")
+      return { error: Error(accountMessages.exports.ACCOUNT_REQUEST_TIMEOUT_MESSAGE) };
     return kind === "google"
       ? { error: null, redirected: result === "redirected" }
       : { error: null };
   }
   const modules = {
+    "@/lib/account-request-fetch": {
+      mountAccountRequestPage() {
+        return () => {
+          cancelled++;
+        };
+      },
+      accountRequestErrorMessage: accountMessages.exports.accountRequestErrorMessage,
+    },
     react,
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "lucide-react": {},
@@ -141,6 +171,7 @@ function harness(language = "en", enabled = true) {
     "@/integrations/supabase/client": {
       supabase: {
         auth: {
+          signOut: async () => ({ error: null }),
           signInWithPassword: (input) => request("signin", input),
           signUp: (input) => request("signup", input),
           resend: (input) => request("resend", input),
@@ -176,6 +207,7 @@ function harness(language = "en", enabled = true) {
       module,
       exports: module.exports,
       URL,
+      navigator: { onLine: true },
       require: (name) => {
         assert(name in modules, name);
         return modules[name];
@@ -185,7 +217,12 @@ function harness(language = "en", enabled = true) {
   );
   const render = () => {
     cursor = 0;
-    return nodes(module.exports.Route.component());
+    const tree = nodes(module.exports.Route.component());
+    for (const fn of effects.splice(0)) {
+      const cleanup = fn();
+      if (cleanup) cleanups.push(cleanup);
+    }
+    return tree;
   };
   const field = (id) => render().find((n) => n.props?.id === id);
   const tab = (mode) => field("auth-" + mode + "-tab");
@@ -193,6 +230,12 @@ function harness(language = "en", enabled = true) {
     calls,
     toasts,
     renderedToasts: renderer.entries,
+    unmount() {
+      unmounted = true;
+      for (const cleanup of cleanups) cleanup();
+    },
+    lateWrites: () => lateWrites,
+    cancelled: () => cancelled,
     navigations,
     render,
     field,
@@ -263,6 +306,43 @@ function harness(language = "en", enabled = true) {
   return h;
 }
 for (const language of ["zh-CN", "en"]) {
+  for (const view of ["signin", "signup"])
+    for (const owner of ["submit", "aux"])
+      for (const result of ["returned", "normal", "throw"]) {
+        const h = harness(language);
+        if (view === "signup") await h.signupReady();
+        const held = h.defer(result);
+        const cached = h.handlers();
+        const first = cached[owner]();
+        h.unmount();
+        assert.equal(h.cancelled(), 1, "page cleanup cancels account transports");
+        const toastCount = h.toasts.length;
+        held.resolve();
+        await first;
+        assert.equal(h.toasts.length, toastCount, "late failure must not toast after unmount");
+        assert.equal(h.navigations.length, 0);
+        assert.equal(h.lateWrites(), 0, "late response must not update unmounted component state");
+        for (const handler of Object.values(cached)) await handler();
+        assert.equal(h.calls.length, 1, "unmounted cached handlers cannot start another request");
+      }
+  for (const view of ["signin", "signup"])
+    for (const owner of ["submit", "aux"]) {
+      const h = harness(language);
+      if (view === "signup") await h.signupReady();
+      const held = h.defer("timeout");
+      const first = h.handlers()[owner]();
+      h.assertBusy(true);
+      held.resolve();
+      await first;
+      h.assertBusy(false);
+      const error = h.toasts.findLast((t) => t.kind === "error");
+      assert(error.message.includes(language === "en" ? "Request timed out" : "请求等待超时"));
+      assert.equal(h.calls.length, 1);
+      h.setResult("normal");
+      await h.handlers()[owner]();
+      assert.equal(h.calls.length, 2);
+      h.assertBusy(false);
+    }
   for (const view of ["signin", "signup"]) {
     for (const owner of ["submit", "google", "aux"]) {
       const h = harness(language);

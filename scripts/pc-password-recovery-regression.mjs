@@ -466,6 +466,7 @@ for (const path of [
         },
       },
       "@/lib/tab-auth-storage": { getTabAuthStorage: () => ({}) },
+      "@/lib/account-request-fetch": { createAccountRequestFetch: (_url, fetcher) => fetcher },
       "@/lib/google-oauth-keys": load("src/lib/google-oauth-keys.ts"),
       "@/lib/email-confirmation-keys": load("src/lib/email-confirmation-keys.ts"),
       "@/lib/password-recovery-keys": keysModule,
