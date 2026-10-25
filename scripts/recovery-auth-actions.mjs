@@ -87,11 +87,10 @@ async function harness(language, view) {
     mode = "normal",
     gate = defer(),
     reached = defer(),
+    completed = defer(),
+    releaseCurrent = () => {},
     routeFailure;
-  const release = () => {
-    gate.resolve();
-    releases.delete(release);
-  };
+  const release = () => releaseCurrent();
   const counts = {
     signin: 0,
     signup: 0,
@@ -124,6 +123,31 @@ async function harness(language, view) {
   await context.addInitScript(
     ({ site, language }) => {
       if (window.location.origin !== site) return;
+      window.__accountAbortCount = 0;
+      if (typeof window.fetch === "function") {
+        const nativeFetch = window.fetch.bind(window);
+        window.fetch = (input, init) => {
+          const url = new URL(
+            typeof input === "string" ? input : (input.url ?? String(input)),
+            site,
+          );
+          if (
+            url.origin === "https://esovqvampbrhuhamkfcs.supabase.co" &&
+            init?.method?.toUpperCase() === "POST" &&
+            (["/auth/v1/signup", "/auth/v1/resend", "/auth/v1/recover"].includes(url.pathname) ||
+              (url.pathname === "/auth/v1/token" &&
+                url.searchParams.get("grant_type") === "password"))
+          )
+            init.signal?.addEventListener(
+              "abort",
+              () => {
+                window.__accountAbortCount++;
+              },
+              { once: true },
+            );
+          return nativeFetch(input, init);
+        };
+      }
       localStorage.setItem("deepocean-language", language);
       if (!sessionStorage.getItem("__auth-action-fixture")) {
         sessionStorage.setItem("__auth-action-fixture", "initialized");
@@ -155,6 +179,8 @@ async function harness(language, view) {
   await context.route("**/*", async (route) => {
     const request = route.request(),
       url = new URL(request.url());
+    let expectedAbort = false,
+      heldCompleted;
     try {
       if (url.origin === api) {
         const response = authActionMock(
@@ -174,9 +200,12 @@ async function harness(language, view) {
           return await route.abort();
         }
         if (response.kind === selected) {
+          expectedAbort = ["timeout", "cancel"].includes(mode);
+          heldCompleted = completed;
           reached.resolve();
           await gate.promise;
         }
+        if (expectedAbort && request.failure?.()?.errorText === "net::ERR_ABORTED") return;
         if (response.abort) return await route.abort();
         return await route.fulfill({
           status: response.status,
@@ -215,6 +244,7 @@ async function harness(language, view) {
       counts.forbidden++;
       return await route.abort();
     } catch (error) {
+      if (expectedAbort && request.failure?.()?.errorText === "net::ERR_ABORTED") return;
       routeFailure = error.auditCode || "route_validation";
       unsafe = true;
       try {
@@ -222,6 +252,8 @@ async function harness(language, view) {
       } catch {
         /* Context may be closing after failure. */
       }
+    } finally {
+      heldCompleted?.resolve();
     }
   });
   const page = await bounded(context.newPage(), "page_open_timeout");
@@ -263,7 +295,19 @@ async function harness(language, view) {
       mode = value;
       gate = defer();
       reached = defer();
-      releases.add(release);
+      completed = defer();
+      const ownGate = gate,
+        ownCompleted = completed;
+      const ownRelease = () => {
+        ownGate.resolve();
+        releases.delete(ownRelease);
+      };
+      releaseCurrent = ownRelease;
+      releases.add(ownRelease);
+      return {
+        release: ownRelease,
+        settled: () => bounded(ownCompleted.promise, "held_synthetic_route_cleanup_timeout"),
+      };
     },
     holdGoogle: () =>
       evaluate(page, () => {
@@ -412,6 +456,110 @@ async function feedback(h, owner, language, success) {
         : "Synthetic rejected action";
   await h.page.getByText(message, { exact: true }).waitFor();
 }
+async function pendingAcceptance(language) {
+  for (const view of ["signin", "signup"])
+    for (const owner of [view, view === "signin" ? "reset" : "resend"]) {
+      advance(language + " " + owner + " real 25 second application deadline");
+      const h = await harness(language, view),
+        before = total(h.counts);
+      const late = h.arm(owner, "timeout");
+      await h.activate(owner);
+      await h.reached();
+      await busy(h, view);
+      const message =
+        language === "en"
+          ? "Request timed out. Check your connection and retry. Email may already have been sent; check your inbox first."
+          : "请求等待超时，请检查网络后重试。邮件可能已发送，请先检查邮箱。";
+      await h.page.getByText(message, { exact: true }).waitFor({ timeout: 35000 });
+      await idle(h);
+      check(
+        await evaluate(h.page, () => window.__accountAbortCount === 1),
+        "application_aborted_timed_out_account_transport",
+      );
+      check(total(h.counts) === before + 1, "timeout_does_not_automatically_retry");
+      await state(h);
+      // Keep the same document for late password responses: a fresh reset
+      // succeeds, then the old modeled password success is released. No old
+      // session or completion navigation may appear.
+      const retryOwner = owner === "signin" ? "reset" : owner;
+      h.arm(retryOwner);
+      await h.activate(retryOwner);
+      await h.reached();
+      await busy(h, view);
+      h.release();
+      await idle(h);
+      await feedback(h, retryOwner, language, true);
+      late.release();
+      await late.settled();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await state(h);
+      check(
+        total(h.counts) === before + 2 && h.counts.completion === 0,
+        "only_explicit_fresh_action_no_late_completion",
+      );
+      check(
+        await evaluate(h.page, () => location.pathname === "/auth"),
+        "late_result_cannot_navigate",
+      );
+      await closeContext(h.context);
+      pass(
+        "actual_" +
+          language +
+          "_" +
+          owner +
+          "_deadline_abort_unlock_explicit_fresh_action_and_late_result_rejection",
+      );
+    }
+  advance(language + " SPA unmount cancels held password request");
+  const h = await harness(language, "signin");
+  const late = h.arm("signin", "cancel");
+  await h.activate("signin");
+  await h.reached();
+  await busy(h, "signin");
+  await evaluate(h.page, () => {
+    window.__accountSameRealm = "synthetic-realm";
+  });
+  await h.page.locator(".do-auth-header .do-brand").click();
+  await h.page.locator(".do-landing .do-cta").waitFor();
+  check(
+    await evaluate(
+      h.page,
+      () => window.__accountSameRealm === "synthetic-realm" && window.__accountAbortCount === 1,
+    ),
+    "SPA_unmount_aborts_without_reloading_document",
+  );
+  await h.page.locator(".do-landing .do-cta").click();
+  await idle(h);
+  await h.page.locator("#email").fill(email);
+  await h.page.locator("#password").fill(password);
+  h.arm("reset");
+  await h.activate("reset");
+  await h.reached();
+  h.release();
+  await idle(h);
+  await feedback(h, "reset", language, true);
+  late.release();
+  await late.settled();
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  await state(h);
+  check(
+    h.counts.signin === 1 && h.counts.reset === 1 && h.counts.completion === 0,
+    "unmounted_result_does_not_save_navigate_or_restart",
+  );
+  check(
+    await evaluate(
+      h.page,
+      () => location.pathname === "/auth" && window.__accountSameRealm === "synthetic-realm",
+    ),
+    "unmounted_late_result_stays_on_fresh_auth_page",
+  );
+  await closeContext(h.context);
+  pass(
+    "actual_" +
+      language +
+      "_SPA_unmount_abort_fresh_page_action_and_late_password_result_rejection",
+  );
+}
 async function run() {
   check(
     process.env.GITHUB_ACTIONS === "true" &&
@@ -445,9 +593,23 @@ async function run() {
     "shared_auth_action_lock_and_fresh_feedback_ids_must_be_deployed_first",
   );
   pass("fixed_recovery_auth_action_lock_bundle_preflight");
+  const clientAsset = [...publicAssets].find((path) =>
+    /^\/assets\/client-[A-Za-z0-9_-]+\.js$/.test(path),
+  );
+  check(clientAsset, "public_client_asset_present");
+  const clientResponse = await fetch(site + clientAsset, { signal: AbortSignal.timeout(30000) });
+  check(clientResponse.ok && new URL(clientResponse.url).origin === site, "fixed_client_asset");
+  const clientText = await clientResponse.text();
+  check(
+    clientText.includes("Account request cancelled") &&
+      clientText.includes("Request timed out. Check your connection and retry."),
+    "account_deadline_repair_must_be_deployed_first",
+  );
+  pass("fixed_recovery_account_deadline_bundle_preflight");
   const { chromium } = await import(process.env.RECOVERY_PLAYWRIGHT_MODULE || "playwright");
   browser = await chromium.launch({ channel: process.env.RECOVERY_BROWSER_CHANNEL || undefined });
   for (const language of ["zh-CN", "en"]) {
+    await pendingAcceptance(language);
     for (const view of ["signin", "signup"]) {
       for (const owner of [view, view === "signin" ? "reset" : "resend"]) {
         advance(language + " " + view + " " + owner + " returned error");
@@ -576,7 +738,7 @@ async function run() {
   check(!unsafe, "no_forbidden_requests");
 }
 try {
-  await bounded(run(), "overall_synthetic_audit_timeout", 240000);
+  await bounded(run(), "overall_synthetic_audit_timeout", 360000);
 } catch (error) {
   failed = true;
   // Release held requests before diagnostics, so diagnostics never wait on a

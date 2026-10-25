@@ -12,8 +12,10 @@ const ast = ts.createSourceFile(
   true,
   ts.ScriptKind.JS,
 );
-let routeFn, initFn, literalFn, boundedFn, evaluateFn;
+let routeFn, initFn, literalFn, boundedFn, evaluateFn, armFn;
 function visit(node) {
+  if (ts.isMethodDeclaration(node) && node.name.getText(ast) === "arm")
+    armFn = "function " + node.getText(ast);
   if (ts.isFunctionDeclaration(node) && node.name?.text === "bounded")
     boundedFn = node.getText(ast);
   if (ts.isVariableDeclaration(node) && node.name.getText(ast) === "evaluate")
@@ -32,6 +34,7 @@ assert(initFn);
 assert(literalFn);
 assert(boundedFn);
 assert(evaluateFn);
+assert(armFn);
 const bounded = vm.runInNewContext("(" + boundedFn + ")", { setTimeout, clearTimeout });
 assert.equal(await bounded(Promise.resolve("ok"), "unused_deadline", 5), "ok");
 await assert.rejects(
@@ -41,6 +44,50 @@ await assert.rejects(
 const evaluate = vm.runInNewContext("(" + evaluateFn + ")", {
   bounded: (promise, label) => bounded(promise, label, 5),
 });
+{
+  const defer = () => {
+    let resolve;
+    const promise = new Promise((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  };
+  const scope = {
+    selected: undefined,
+    mode: "normal",
+    gate: null,
+    reached: null,
+    completed: null,
+    releaseCurrent: null,
+    releases: new Set(),
+    defer,
+    bounded,
+  };
+  const arm = vm.runInNewContext("(" + armFn + ")", scope);
+  const first = arm("signin", "timeout"),
+    firstGate = scope.gate,
+    firstCompleted = scope.completed;
+  let firstReleased = false,
+    secondReleased = false;
+  firstGate.promise.then(() => {
+    firstReleased = true;
+  });
+  const second = arm("reset"),
+    secondCompleted = scope.completed;
+  scope.gate.promise.then(() => {
+    secondReleased = true;
+  });
+  first.release();
+  await Promise.resolve();
+  assert.equal(firstReleased, true);
+  assert.equal(secondReleased, false, "releasing old response cannot release retry gate");
+  firstCompleted.resolve();
+  await first.settled();
+  second.release();
+  secondCompleted.resolve();
+  await second.settled();
+  assert.equal(scope.releases.size, 0);
+}
 await assert.rejects(
   evaluate({ evaluate: () => new Promise(() => {}) }, () => {}),
   (error) => error.auditCode === "browser_evaluation_timeout",
@@ -85,9 +132,10 @@ const globals = {
   routeFailure: null,
   reached: { resolve() {} },
   gate: { promise: Promise.resolve() },
+  completed: { resolve() {} },
 };
 const handler = vm.runInContext("(" + routeFn + ")", vm.createContext(globals));
-async function request(url, method = "GET", body, bearer) {
+async function request(url, method = "GET", body, bearer, failure) {
   let action, response;
   await handler({
     request: () => ({
@@ -95,8 +143,10 @@ async function request(url, method = "GET", body, bearer) {
       method: () => method,
       postDataJSON: () => body,
       headers: () => ({ authorization: bearer }),
+      failure: () => (failure ? { errorText: failure } : null),
     }),
     fulfill: async (value) => {
+      if (failure) throw Error("Synthetic protocol rejection");
       action = "fulfill";
       response = value;
     },
@@ -127,6 +177,27 @@ for (const [url, body, kind] of [
   assert.equal(counts[kind], 3);
 }
 globals.mode = "normal";
+for (const [mode, failure, unsafe] of [
+  ["timeout", "net::ERR_ABORTED", false],
+  ["cancel", "net::ERR_ABORTED", false],
+  ["timeout", "net::ERR_FAILED", true],
+  ["normal", "net::ERR_ABORTED", true],
+]) {
+  globals.mode = mode;
+  globals.selected = "signin";
+  globals.unsafe = false;
+  globals.routeFailure = null;
+  await request(api + "/auth/v1/token?grant_type=password", "POST", signup, undefined, failure);
+  assert.equal(
+    globals.unsafe,
+    unsafe,
+    "only explicitly expected native request abort can be handled as cancellation",
+  );
+}
+globals.mode = "normal";
+globals.selected = undefined;
+globals.unsafe = false;
+globals.routeFailure = null;
 const authorize =
   api +
   "/auth/v1/authorize?" +
@@ -189,6 +260,46 @@ for (const origin of ["null", api, "https://accounts.google.com"]) {
     });
   vm.runInNewContext("(" + initFn + ")", scope)({ site });
   assert.equal(touches, 0);
+}
+{
+  const reply = { synthetic: true },
+    calls = [];
+  const scope = {
+    URL,
+    window: {
+      location: { origin: site },
+      fetch: async (...args) => {
+        calls.push(args);
+        return reply;
+      },
+    },
+    localStorage: {
+      getItem() {
+        return "initialized";
+      },
+      setItem() {},
+    },
+    sessionStorage: {
+      getItem() {
+        return "initialized";
+      },
+      setItem() {},
+    },
+    crypto: { subtle: { async digest() {} } },
+  };
+  vm.runInNewContext("(" + initFn + ")", scope)({ site, language: "en" });
+  for (const [path, expected] of [
+    [api + "/auth/v1/token?grant_type=refresh_token", 0],
+    [site + "/assets/synthetic.json", 0],
+    [api + "/auth/v1/signup", 1],
+  ]) {
+    const controller = new AbortController();
+    const init = { method: "POST", signal: controller.signal };
+    assert.equal(await scope.window.fetch(path, init), reply);
+    assert.equal(calls.at(-1)[1], init, "observer must not alter transport signal or input");
+    controller.abort();
+    assert.equal(scope.window.__accountAbortCount, expected);
+  }
 }
 {
   class Storage {
