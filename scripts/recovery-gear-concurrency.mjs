@@ -1,6 +1,7 @@
 // Cloud-only, fixed recovery site. One disposable owner, synthetic text, no media.
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -391,33 +392,7 @@ try {
     void browser?.close().catch(() => {});
   }, 360000);
   advance("fixed_site_preflight");
-  const response = await fetch(site + "/offline-assets.json", {
-    signal: AbortSignal.any([mainAbort.signal, AbortSignal.timeout(20000)]),
-    cache: "no-store",
-  });
-  check(response.ok(), "public_manifest");
-  const manifest = await response.json();
-  check(Array.isArray(manifest), "public_asset_array");
-  const scripts = await Promise.all(
-    manifest
-      .filter((p) => /^\/assets\/[^/]+\.js$/.test(p))
-      .map(async (p) => {
-        const r = await fetch(site + p, {
-          signal: AbortSignal.any([mainAbort.signal, AbortSignal.timeout(20000)]),
-        });
-        check(r.ok, "public_script");
-        return r.text();
-      }),
-  );
-  check(
-    scripts.some((s) => s.includes("Load latest gear record")) &&
-      scripts.some((s) => s.includes("GearConflictError")),
-    "fixed_site_missing_gear_concurrency_repair",
-  );
-  check(
-    scripts.some((s) => s.includes("esovqvampbrhuhamkfcs.supabase.co")),
-    "fixed_site_recovery_backend",
-  );
+  await gearRecoveryPreflight(fetch, mainAbort.signal);
   pass("fixed_recovery_bundle_verified_before_creating_fixtures");
   advance("temporary_owner");
   user = { id: fixtureId };
