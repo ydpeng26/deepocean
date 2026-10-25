@@ -22,6 +22,7 @@ import { Route as ForumPreviewRouteImport } from './routes/forum-preview'
 import { Route as GearPreviewRouteImport } from './routes/gear-preview'
 import { Route as LogsPreviewRouteImport } from './routes/logs-preview'
 import { Route as NewDivePreviewRouteImport } from './routes/new-dive-preview'
+import { Route as OauthCallbackRouteImport } from './routes/oauth-callback'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OfflineSyncRouteImport } from './routes/offline-sync'
 import { Route as OfflineSyncPreviewRouteImport } from './routes/offline-sync-preview'
@@ -104,6 +105,11 @@ const LogsPreviewRoute = LogsPreviewRouteImport.update({
 const NewDivePreviewRoute = NewDivePreviewRouteImport.update({
   id: '/new-dive-preview',
   path: '/new-dive-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthCallbackRoute = OauthCallbackRouteImport.update({
+  id: '/oauth-callback',
+  path: '/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/gear-preview': typeof GearPreviewRoute
   '/logs-preview': typeof LogsPreviewRoute
   '/new-dive-preview': typeof NewDivePreviewRoute
+  '/oauth-callback': typeof OauthCallbackRoute
   '/offline': typeof OfflineRoute
   '/offline-sync': typeof OfflineSyncRoute
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/gear-preview': typeof GearPreviewRoute
   '/logs-preview': typeof LogsPreviewRoute
   '/new-dive-preview': typeof NewDivePreviewRoute
+  '/oauth-callback': typeof OauthCallbackRoute
   '/offline': typeof OfflineRoute
   '/offline-sync': typeof OfflineSyncRoute
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/gear-preview': typeof GearPreviewRoute
   '/logs-preview': typeof LogsPreviewRoute
   '/new-dive-preview': typeof NewDivePreviewRoute
+  '/oauth-callback': typeof OauthCallbackRoute
   '/offline': typeof OfflineRoute
   '/offline-sync': typeof OfflineSyncRoute
   '/offline-sync-preview': typeof OfflineSyncPreviewRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/gear-preview'
     | '/logs-preview'
     | '/new-dive-preview'
+    | '/oauth-callback'
     | '/offline'
     | '/offline-sync'
     | '/offline-sync-preview'
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/gear-preview'
     | '/logs-preview'
     | '/new-dive-preview'
+    | '/oauth-callback'
     | '/offline'
     | '/offline-sync'
     | '/offline-sync-preview'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/gear-preview'
     | '/logs-preview'
     | '/new-dive-preview'
+    | '/oauth-callback'
     | '/offline'
     | '/offline-sync'
     | '/offline-sync-preview'
@@ -421,6 +433,7 @@ export interface RootRouteChildren {
   GearPreviewRoute: typeof GearPreviewRoute
   LogsPreviewRoute: typeof LogsPreviewRoute
   NewDivePreviewRoute: typeof NewDivePreviewRoute
+  OauthCallbackRoute: typeof OauthCallbackRoute
   OfflineRoute: typeof OfflineRoute
   OfflineSyncRoute: typeof OfflineSyncRoute
   OfflineSyncPreviewRoute: typeof OfflineSyncPreviewRoute
@@ -523,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/new-dive-preview'
       fullPath: '/new-dive-preview'
       preLoaderRoute: typeof NewDivePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth-callback': {
+      id: '/oauth-callback'
+      path: '/oauth-callback'
+      fullPath: '/oauth-callback'
+      preLoaderRoute: typeof OauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -704,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   GearPreviewRoute: GearPreviewRoute,
   LogsPreviewRoute: LogsPreviewRoute,
   NewDivePreviewRoute: NewDivePreviewRoute,
+  OauthCallbackRoute: OauthCallbackRoute,
   OfflineRoute: OfflineRoute,
   OfflineSyncRoute: OfflineSyncRoute,
   OfflineSyncPreviewRoute: OfflineSyncPreviewRoute,

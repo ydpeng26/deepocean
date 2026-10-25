@@ -3,14 +3,15 @@ import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 const sdkSource = fs.readFileSync(
   new URL("../node_modules/@lovable.dev/cloud-auth-js/dist/index.js", import.meta.url),
   "utf8",
 );
-const integration = fs.readFileSync(
-  new URL("../src/integrations/lovable/index.ts", import.meta.url),
-  "utf8",
-);
+// Historical diagnosis, not a claim about the replacement native Google path.
+const integration = execFileSync("git", ["show", "3f319d2:src/integrations/lovable/index.ts"], {
+  encoding: "utf8",
+});
 const ast = ts.createSourceFile("integration.ts", integration, ts.ScriptTarget.Latest, true);
 let defaultBroker = false;
 function visit(node) {

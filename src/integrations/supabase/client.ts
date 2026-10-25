@@ -2,6 +2,13 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { getTabAuthStorage } from "@/lib/tab-auth-storage";
+import { googleOAuthKeys } from "@/lib/google-oauth-keys";
+
+export function getSupabaseProjectUrl(): string {
+  const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  if (!url) throw new Error("Missing Supabase URL");
+  return url;
+}
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -30,7 +37,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-function createSupabaseClient() {
+function createSupabaseClient(googleOnly = false) {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -48,7 +55,7 @@ function createSupabaseClient() {
   }
 
   const authStorage = getTabAuthStorage();
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && !googleOnly) {
     // Remove the old persistent session left by previous versions. Sessions now
     // live only for the lifetime of the current browser tab.
     try {
@@ -66,7 +73,14 @@ function createSupabaseClient() {
     auth: {
       storage: authStorage,
       persistSession: true,
-      autoRefreshToken: true,
+      autoRefreshToken: !googleOnly,
+      ...(googleOnly
+        ? {
+            storageKey: googleOAuthKeys(SUPABASE_URL).session,
+            flowType: "pkce" as const,
+            detectSessionInUrl: false,
+          }
+        : {}),
     },
   });
 }
@@ -79,5 +93,15 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();
     return Reflect.get(_supabase, prop, receiver);
+  },
+});
+
+// Separate, tab-scoped PKCE verifier/session: email/reset flows keep their
+// existing client behavior. The callback explicitly transfers a verified result.
+let _googleOAuth: ReturnType<typeof createSupabaseClient> | undefined;
+export const googleOAuth = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(_, prop, receiver) {
+    if (!_googleOAuth) _googleOAuth = createSupabaseClient(true);
+    return Reflect.get(_googleOAuth, prop, receiver);
   },
 });

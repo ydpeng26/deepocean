@@ -2,12 +2,18 @@ import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 
 function load(file, require, globals = {}) {
   const module = { exports: {} };
-  const source = fs
-    .readFileSync(new URL("../" + file, import.meta.url), "utf8")
-    .replaceAll("import.meta.env", "({PROD:false})");
+  // Historical broker UI checks remain reproducible after native Google replaces it.
+  const source = (
+    file === "src/integrations/lovable/index.ts"
+      ? execFileSync("git", ["show", "3f319d2:src/integrations/lovable/index.ts"], {
+          encoding: "utf8",
+        })
+      : fs.readFileSync(new URL("../" + file, import.meta.url), "utf8")
+  ).replaceAll("import.meta.env", "({PROD:false})");
   vm.runInNewContext(
     ts.transpileModule(source, { compilerOptions: { module: 1, jsx: 4, target: 9 } }).outputText,
     { module, exports: module.exports, require, URL, console: { error() {} }, ...globals },
