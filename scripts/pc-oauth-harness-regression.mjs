@@ -29,6 +29,14 @@ function callback(name) {
 const site = "https://supdiver-recovery-test.vercel.app",
   broker = "https://oauth.lovable.app/__supdiver_synthetic_oauth",
   api = "https://esovqvampbrhuhamkfcs.supabase.co";
+const completedURL = vm.runInNewContext("(" + callback("waitForURL") + ")", { site });
+assert.equal(completedURL(new URL(site + "/auth?next=/__oauth-complete")), false);
+assert.equal(completedURL(new URL(site + "/auth?next=%2F__oauth-complete")), false);
+assert.equal(completedURL(new URL("https://example.invalid/__oauth-complete")), false);
+assert.equal(completedURL(new URL(site + "/__oauth-complete")), true);
+console.log(
+  "PASS: actual_completion_URL_predicate_rejects_auth_return_query_and_foreign_origin_requires_real_destination_path",
+);
 class Storage {
   values = new Map();
   getItem(key) {

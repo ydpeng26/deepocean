@@ -328,7 +328,13 @@ try {
         button.click();
       });
       stage = language + " " + failure + " retry completion";
-      await h.auth.waitForURL("**/__oauth-complete", { timeout: 45000 });
+      await h.auth.waitForURL(
+        (url) => url.origin === site && url.pathname === "/__oauth-complete",
+        { timeout: 45000 },
+      );
+      await h.auth
+        .getByRole("heading", { name: "Synthetic OAuth completion", exact: true })
+        .waitFor();
       check(h.attempts === previous + 1, "duplicate_provider_request");
       stage = language + " " + failure + " saved state";
       check(
