@@ -1,9 +1,13 @@
-export function renderErrorPage(): string {
+import { errorCopy, errorPageLanguage } from "./error-copy";
+
+export function renderErrorPage(acceptLanguage?: string | null): string {
+  const language = errorPageLanguage(acceptLanguage);
+  const c = errorCopy[language];
   return `<!doctype html>
-<html lang="en">
+<html lang="${language}">
   <head>
     <meta charset="utf-8" />
-    <title>This page didn't load</title>
+    <title>${c.title} · SupDiver</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
@@ -17,14 +21,46 @@ export function renderErrorPage(): string {
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>This page didn't load</h1>
-      <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+    <main class="card">
+      <button id="language" type="button">${language === "en" ? "中文" : "EN"}</button>
+      <h1 id="title">${c.title}</h1>
+      <p id="hint">${c.hint}</p>
       <div class="actions">
-        <button class="primary" onclick="location.reload()">Try again</button>
-        <a class="secondary" href="/">Go home</a>
+        <button id="retry" type="button" class="primary">${c.retry}</button>
+        <noscript><a class="primary" href="">${c.retry}</a></noscript>
+        <a id="home" class="secondary" href="/">${c.home}</a>
       </div>
-    </div>
+    </main>
+    <script>
+      (() => {
+        const copies = ${JSON.stringify(errorCopy).replace(/</g, "\\u003c")};
+        let language = ${JSON.stringify(language)};
+        try { const saved = localStorage.getItem('deepocean-language'); if (saved === 'en' || saved === 'zh-CN') language = saved; } catch {}
+        const retry = document.getElementById('retry');
+        const toggle = document.getElementById('language');
+        function render() {
+          const c = copies[language]; document.documentElement.lang = language;
+          document.title = c.title + ' · SupDiver';
+          document.getElementById('title').textContent = c.title;
+          document.getElementById('hint').textContent = c.hint;
+          document.getElementById('home').textContent = c.home;
+          retry.textContent = retry.disabled ? c.pending : c.retry;
+          toggle.textContent = language === 'en' ? '中文' : 'EN';
+          toggle.setAttribute('aria-label', language === 'en' ? '切换到中文' : 'Switch to English');
+        }
+        toggle.addEventListener('click', () => {
+          language = language === 'en' ? 'zh-CN' : 'en';
+          try { localStorage.setItem('deepocean-language', language); } catch {}
+          render();
+        });
+        retry.addEventListener('click', () => {
+          if (retry.disabled) return;
+          retry.disabled = true; retry.setAttribute('aria-busy', 'true'); render();
+          location.reload();
+        });
+        render();
+      })();
+    </script>
   </body>
 </html>`;
 }

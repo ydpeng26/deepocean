@@ -1,7 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export type Language = "zh-CN" | "en";
-type LanguageContextValue = { language: Language; setLanguage: (language: Language) => void; toggleLanguage: () => void };
+type LanguageContextValue = {
+  language: Language;
+  setLanguage: (language: Language) => void;
+  toggleLanguage: () => void;
+};
 const STORAGE_KEY = "deepocean-language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
@@ -24,7 +28,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.lang = language;
   }, [language, ready]);
-  const value = useMemo(() => ({ language, setLanguage, toggleLanguage: () => setLanguage((current) => current === "zh-CN" ? "en" : "zh-CN") }), [language]);
+  const value = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      toggleLanguage: () => setLanguage((current) => (current === "zh-CN" ? "en" : "zh-CN")),
+    }),
+    [language],
+  );
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
@@ -32,4 +43,9 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error("useLanguage must be used inside LanguageProvider");
   return context;
+}
+
+// Error fallbacks must also work when the ordinary provider failed to mount.
+export function useOptionalLanguage() {
+  return useContext(LanguageContext);
 }

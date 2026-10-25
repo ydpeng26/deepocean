@@ -1,9 +1,10 @@
 // Diagnosis only: actual error UI/report helper; synthetic errors, no network.
-import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
-const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+// Preserve findings on the released baseline rather than retest repaired files.
+const read=file=>execFileSync('git',['show','6f2e1fa:'+file],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
 function load(file,require,globals={}){const module={exports:{}};vm.runInNewContext(ts.transpileModule(read(file),{compilerOptions:{module:1,jsx:4,target:9}}).outputText,{module,exports:module.exports,require,Error,Response,console:{error(){}},fetch(){throw Error('Network forbidden');},...globals});return module.exports;}
 const nodes=n=>Array.isArray(n)?n.flatMap(nodes):n&&typeof n==='object'?[n,...nodes(n.props?.children)]:[];
 const text=n=>Array.isArray(n)?n.map(text).join(' '):n&&typeof n==='object'?text(n.props?.children):typeof n==='string'?n:'';
