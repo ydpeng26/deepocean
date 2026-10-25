@@ -26,7 +26,7 @@ const jsx=(type,props,key)=>({type,props,key});
 const nodes=n=>Array.isArray(n)?n.flatMap(nodes):n&&typeof n==='object'?[n,...nodes(n.props?.children)]:[];
 function layoutHarness(){
  const a=authHarness(),gate=createMemberSessionGate(a.auth),context={user:{id:'A'}},cells=[],effects=[],cleanups=[],events=new Map();
- let cursor=0,unmounted=false,holdRoutes=false,failRoute=false,lateWrites=0,invalidations=0;const routeGates=[],navigations=[];
+ let cursor=0,unmounted=false,holdRoutes=false,failRoute=false,lateWrites=0,invalidations=0,storageStatus='available',storageRevision=0;const routeGates=[],navigations=[];
  const state=value=>{const i=cursor++;if(!(i in cells))cells[i]=value;return[cells[i],value=>{if(unmounted)lateWrites++;cells[i]=typeof value==='function'?value(cells[i]):value;}];};
  const router={async invalidate(){invalidations++;if(holdRoutes){const pending=deferred();routeGates.push(pending);await pending.promise;}if(failRoute)throw Error('synthetic route error');const snapshot=gate.getSnapshot();if(snapshot.ownerId)context.user={id:snapshot.ownerId};},async navigate(value){if(failRoute)throw Error('synthetic navigation error');navigations.push(value);}};
  const react={Fragment:'Fragment',useState:state,useEffect(fn,deps){const i=cursor++;const previous=cells[i];if(!previous||deps.some((v,index)=>!Object.is(v,previous[index]))){cells[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn();});}},useSyncExternalStore(subscribe,getSnapshot){const i=cursor++;if(!cells[i]){cells[i]=true;cleanups[i]=subscribe(()=>{});}return getSnapshot();}};
@@ -36,11 +36,13 @@ function layoutHarness(){
   if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};if(name==='react')return react;
   if(name==='@tanstack/react-router')return{createFileRoute:()=>options=>({...options,useRouteContext:()=>context}),Outlet:'Outlet',redirect:options=>options,useRouter:()=>router};
   if(name==='@/lib/authenticated-session')return{memberSessionGate:gate};
+  if(name==='@/hooks/useAuthStorageStatus')return{useAuthStorageStatus:()=>storageStatus};
+  if(name==='@/lib/tab-auth-storage')return{authStorageAvailable:()=>storageStatus==='available',authStorageState:{getRevision:()=>storageRevision}};
   if(name==='@/i18n/LanguageProvider')return{useLanguage:()=>({language:'en'})};
   if(name==='@/components/MemberHeader')return{MemberHeader:'MemberHeader'};
   return{};
  },{window,document}).Route;
- return{a,gate,context,navigations,routeGates,events,render(){cursor=0;const tree=route.component();effects.splice(0).forEach(fn=>fn());return tree;},async settle(){for(let i=0;i<5;i++){await tick();this.render();}},hold(value){holdRoutes=value;},fail(value){failRoute=value;},event(name,value={}){events.get(name)?.(value);},unmount(){unmounted=true;cleanups.forEach(fn=>fn?.());},get lateWrites(){return lateWrites;},get invalidations(){return invalidations;}};
+ return{storage(value){storageStatus=value;storageRevision++;},a,gate,context,navigations,routeGates,events,render(){cursor=0;const tree=route.component();effects.splice(0).forEach(fn=>fn());return tree;},async settle(){for(let i=0;i<5;i++){await tick();this.render();}},hold(value){holdRoutes=value;},fail(value){failRoute=value;},event(name,value={}){events.get(name)?.(value);},unmount(){unmounted=true;cleanups.forEach(fn=>fn?.());},get lateWrites(){return lateWrites;},get invalidations(){return invalidations;}};
 }
 const visible=tree=>nodes(tree).some(n=>n.type==='Outlet');
 const role=(tree,value)=>nodes(tree).some(n=>n.props?.role===value);
@@ -57,4 +59,6 @@ restore.a.error(false);const retry=nodes(restore.render()).find(n=>n.type==='but
 restore.fail(true);restore.hold(false);restore.a.owner('B');restore.render();await restore.settle();assert(role(restore.render(),'alert'));assert(!visible(restore.render()));restore.fail(false);nodes(restore.render()).find(n=>n.type==='button').props.onClick();await restore.settle();assert(visible(restore.render()));
 restore.hold(true);restore.a.owner('A');restore.render();await tick();restore.unmount();restore.routeGates.splice(0).forEach(g=>g.resolve());await tick();assert.equal(restore.lateWrites,0);assert.equal(restore.events.size,0);
 console.log('PASS: focus_and_visibility_recheck_persisted_pageshow_hides_before_async_check_errors_fail_closed_retry_and_unmount_cleanup');
+const storage=layoutHarness();storage.render();await storage.settle();assert(visible(storage.render()));const before=storage.invalidations;storage.storage('blocked');assert(!visible(storage.render()));await storage.settle();assert.equal(storage.invalidations,before);storage.storage('available');assert(!visible(storage.render()));await storage.settle();assert(visible(storage.render()));storage.unmount();
+console.log('PASS: storage_denial_hides_member_subtree_recovery_revision_requires_fresh_validation_before_redisplay');
 console.log('AUDIT: actual_source_local_models_passed; no_network_real_account_storage_clear_or_production_mutation; native_bfcache_and_recovery_browser_acceptance_pending');

@@ -4,10 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { MemberHeader } from "@/components/MemberHeader";
 import { memberSessionGate } from "@/lib/authenticated-session";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { useAuthStorageStatus } from "@/hooks/useAuthStorageStatus";
+import { authStorageAvailable, authStorageState } from "@/lib/tab-auth-storage";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    if (!authStorageAvailable(true)) throw redirect({ to: "/auth" });
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session?.user) throw redirect({ to: "/auth" });
     return { user: data.session.user };
@@ -19,17 +22,24 @@ function AuthenticatedLayout() {
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const { language } = useLanguage();
+  const storageStatus = useAuthStorageStatus();
+  const storageRevision = authStorageState.getRevision();
   const session = useSyncExternalStore(
     memberSessionGate.subscribe,
     memberSessionGate.getSnapshot,
     memberSessionGate.getSnapshot,
   );
-  const [validated, setValidated] = useState<{ ownerId: string; epoch: number } | null>(null);
+  const [validated, setValidated] = useState<{
+    ownerId: string;
+    epoch: number;
+    storageRevision: number;
+  } | null>(null);
   const [routeError, setRouteError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     setRouteError(false);
+    if (storageStatus !== "available") return;
     if (session.status !== "ready") return;
     if (!session.ownerId) {
       void router.navigate({ to: "/auth", replace: true }).catch(() => {
@@ -41,7 +51,7 @@ function AuthenticatedLayout() {
         async () => {
           await memberSessionGate.recheck();
           if (active && memberSessionGate.getSnapshot() === session)
-            setValidated({ ownerId: session.ownerId!, epoch: session.epoch });
+            setValidated({ ownerId: session.ownerId!, epoch: session.epoch, storageRevision });
         },
         () => {
           if (active) setRouteError(true);
@@ -51,7 +61,7 @@ function AuthenticatedLayout() {
     return () => {
       active = false;
     };
-  }, [router, session, attempt]);
+  }, [router, session, attempt, storageStatus, storageRevision]);
   useEffect(() => {
     const focus = () => {
       void memberSessionGate.recheck();
@@ -73,14 +83,16 @@ function AuthenticatedLayout() {
     };
   }, []);
   if (
+    storageStatus !== "available" ||
     session.status !== "ready" ||
     !session.ownerId ||
     session.ownerId !== user.id ||
     validated?.ownerId !== session.ownerId ||
     validated.epoch !== session.epoch ||
+    validated.storageRevision !== storageRevision ||
     routeError
   ) {
-    const failed = session.status === "error" || routeError;
+    const failed = storageStatus === "blocked" || session.status === "error" || routeError;
     return (
       <main
         className="min-h-screen flex flex-col items-center justify-center gap-4 p-6"

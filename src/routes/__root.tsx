@@ -5,9 +5,11 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineUpdateNotice } from "@/components/OfflineUpdateNotice";
+import { AuthStorageNotice } from "@/components/AuthStorageNotice";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { ErrorComponent, NotFoundComponent } from "@/components/ErrorRecovery";
 import { supabase } from "@/integrations/supabase/client";
+import { authStorageState } from "@/lib/tab-auth-storage";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -69,6 +71,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
+    const clearBlockedSessionCache = () => {
+      if (authStorageState.getSnapshot() === "blocked") queryClient.clear();
+    };
+    const unsubscribe = authStorageState.subscribe(clearBlockedSessionCache);
+    clearBlockedSessionCache();
+    return unsubscribe;
+  }, [queryClient]);
+
+  useEffect(() => {
     let accountId: string | null | undefined;
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextAccountId = session?.user.id ?? null;
@@ -87,6 +98,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthStorageNotice />
       <OfflineUpdateNotice />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />

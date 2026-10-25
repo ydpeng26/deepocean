@@ -10,9 +10,17 @@ const STORAGE_KEY = "deepocean-language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function getSavedLanguage(): Language {
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved === "zh-CN" || saved === "en") return saved;
-  return window.navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved === "zh-CN" || saved === "en") return saved;
+  } catch {
+    /* Language persistence is optional. */
+  }
+  try {
+    return window.navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
+  } catch {
+    return "zh-CN";
+  }
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -25,8 +33,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.lang = language;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, language);
+    } catch {
+      /* Keep current-page language working even without persistence. */
+    }
   }, [language, ready]);
   const value = useMemo(
     () => ({

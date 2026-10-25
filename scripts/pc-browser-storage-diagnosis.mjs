@@ -1,6 +1,6 @@
 // Actual source, synthetic denied/full browser storage. No browser/network/data mutation.
-import fs from 'node:fs';import vm from 'node:vm';import ts from 'typescript';import assert from 'node:assert/strict';
-const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+import {execFileSync} from 'node:child_process';import vm from 'node:vm';import ts from 'typescript';import assert from 'node:assert/strict';
+const read=file=>execFileSync('git',['show','d496bfe:'+file],{cwd:new URL('..',import.meta.url),encoding:'utf8'});
 function load(file,require,globals={}){const module={exports:{}};const source=read(file).replaceAll('import.meta.env','({VITE_SUPABASE_URL:"https://example.invalid",VITE_SUPABASE_PUBLISHABLE_KEY:"synthetic-public-key"})');vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:1,jsx:4,target:9}}).outputText,{module,exports:module.exports,require,URL,Headers,Request,DOMException,console:{error(){}},fetch(){throw Error('Network forbidden');},...globals});return module.exports;}
 function provider(mode){let cursor=0;const cells=[],effects=[],errors=[],stored=new Map(),document={documentElement:{lang:'zh-CN'}};
  const react={createContext:()=>({Provider:'Provider'}),useState(value){const i=cursor++;if(!(i in cells))cells[i]=value;return[cells[i],value=>{cells[i]=typeof value==='function'?value(cells[i]):value;}];},useMemo:fn=>fn(),useEffect(fn,deps){const i=cursor++;if(!cells[i]||deps.some((value,index)=>!Object.is(value,cells[i][index]))){cells[i]=deps;effects.push(fn);}}};

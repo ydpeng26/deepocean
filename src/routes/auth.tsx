@@ -8,6 +8,8 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useLiveCopy } from "@/i18n/liveCopy";
 import { passwordRecoveryEnabled } from "@/lib/password-recovery";
 import { safeAuthReturn } from "@/lib/auth-return";
+import { authStorageAvailable } from "@/lib/tab-auth-storage";
+import { useAuthStorageStatus } from "@/hooks/useAuthStorageStatus";
 
 const authCopy = {
   "zh-CN": {
@@ -85,6 +87,7 @@ function AuthPage() {
   const { next } = Route.useSearch();
   const { language, toggleLanguage } = useLanguage();
   const copy = authCopy[language];
+  const storageStatus = useAuthStorageStatus();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -149,11 +152,12 @@ function AuthPage() {
     if (!navigator.onLine) return;
     // Visiting the login page always starts a fresh login flow. This also
     // prevents a previously opened tab from silently forwarding the user.
-    void supabase.auth.signOut({ scope: "local" });
+    void supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!authStorageAvailable(true)) return;
     if (submittingRef.current) return;
     toast.dismiss();
     if (!email.trim() || password.length < 6) {
@@ -190,6 +194,7 @@ function AuthPage() {
   }
 
   async function handleResendConfirmation() {
+    if (!authStorageAvailable(true)) return;
     if (!email.trim() || resendLoading) return;
     toast.dismiss();
     setResendLoading(true);
@@ -209,6 +214,7 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
+    if (!authStorageAvailable(true)) return;
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -224,6 +230,7 @@ function AuthPage() {
   }
 
   async function requestReset() {
+    if (!authStorageAvailable(true)) return;
     if (resetBusy || !passwordRecoveryEnabled) return;
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       toast.error(language === "zh-CN" ? "请先填写有效邮箱。" : "Enter a valid email first.");
@@ -288,127 +295,129 @@ function AuthPage() {
           className="do-auth-panel"
           aria-label={mode === "signin" ? copy.signin : copy.signup}
         >
-          <div
-            className="do-auth-tabs"
-            role="tablist"
-            aria-label={language === "zh-CN" ? "账号操作" : "Account action"}
-          >
-            <button
-              ref={signinTab}
-              id="auth-signin-tab"
-              aria-controls="auth-panel"
-              tabIndex={mode === "signin" ? 0 : -1}
-              disabled={loading || resetBusy || resendLoading}
-              onKeyDown={tabKey}
-              type="button"
-              role="tab"
-              aria-selected={mode === "signin"}
-              className={mode === "signin" ? "active" : ""}
-              onClick={() => selectMode("signin")}
+          <fieldset disabled={storageStatus !== "available"} className="contents">
+            <div
+              className="do-auth-tabs"
+              role="tablist"
+              aria-label={language === "zh-CN" ? "账号操作" : "Account action"}
             >
-              {copy.signin}
-            </button>
-            <button
-              ref={signupTab}
-              id="auth-signup-tab"
-              aria-controls="auth-panel"
-              tabIndex={mode === "signup" ? 0 : -1}
-              disabled={loading || resetBusy || resendLoading}
-              onKeyDown={tabKey}
-              type="button"
-              role="tab"
-              aria-selected={mode === "signup"}
-              className={mode === "signup" ? "active" : ""}
-              onClick={() => selectMode("signup")}
-            >
-              {copy.signup}
-            </button>
-          </div>
-          <div className="do-auth-intro">
-            <p className="do-auth-kicker">SUPDIVER</p>
-            <h1>{mode === "signin" ? copy.welcome : copy.create}</h1>
-            <p>{mode === "signin" ? copy.signinIntro : copy.signupIntro}</p>
-          </div>
-
-          <form
-            id="auth-panel"
-            role="tabpanel"
-            aria-labelledby={`auth-${mode}-tab`}
-            onSubmit={handleSubmit}
-            className="do-auth-form"
-          >
-            <label htmlFor="email">{copy.email}</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={copy.emailPlaceholder}
-              maxLength={255}
-              required
-            />
-            <label htmlFor="password">{copy.password}</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={
-                mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder
-              }
-              maxLength={72}
-              minLength={6}
-              required
-            />
-            <button type="submit" disabled={loading} className="do-auth-submit">
-              {loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}
-              <ArrowRight />
-            </button>
-          </form>
-          {mode === "signin" && passwordRecoveryEnabled && (
-            <button
-              type="button"
-              className="do-auth-forgot"
-              onClick={requestReset}
-              disabled={resetBusy}
-            >
-              {language === "zh-CN"
-                ? resetBusy
-                  ? "发送中…"
-                  : "忘记密码？"
-                : resetBusy
-                  ? "Sending…"
-                  : "Forgot password?"}
-            </button>
-          )}
-
-          {mode === "signup" && awaitingConfirmation ? (
-            <div className="do-auth-confirmation" role="status">
-              <span>{copy.verifyEmail}</span>
-              <button type="button" onClick={handleResendConfirmation} disabled={resendLoading}>
-                {resendLoading ? copy.resending : copy.resendConfirmation}
+              <button
+                ref={signinTab}
+                id="auth-signin-tab"
+                aria-controls="auth-panel"
+                tabIndex={mode === "signin" ? 0 : -1}
+                disabled={loading || resetBusy || resendLoading}
+                onKeyDown={tabKey}
+                type="button"
+                role="tab"
+                aria-selected={mode === "signin"}
+                className={mode === "signin" ? "active" : ""}
+                onClick={() => selectMode("signin")}
+              >
+                {copy.signin}
+              </button>
+              <button
+                ref={signupTab}
+                id="auth-signup-tab"
+                aria-controls="auth-panel"
+                tabIndex={mode === "signup" ? 0 : -1}
+                disabled={loading || resetBusy || resendLoading}
+                onKeyDown={tabKey}
+                type="button"
+                role="tab"
+                aria-selected={mode === "signup"}
+                className={mode === "signup" ? "active" : ""}
+                onClick={() => selectMode("signup")}
+              >
+                {copy.signup}
               </button>
             </div>
-          ) : null}
+            <div className="do-auth-intro">
+              <p className="do-auth-kicker">SUPDIVER</p>
+              <h1>{mode === "signin" ? copy.welcome : copy.create}</h1>
+              <p>{mode === "signin" ? copy.signinIntro : copy.signupIntro}</p>
+            </div>
 
-          <div className="do-auth-divider">
-            <span />
-            {copy.or}
-            <span />
-          </div>
-          <button
-            type="button"
-            className="do-auth-google"
-            onClick={handleGoogle}
-            disabled={loading}
-          >
-            <span className="do-google-mark" aria-hidden="true">
-              G
-            </span>
-            {copy.continueGoogle}
-          </button>
+            <form
+              id="auth-panel"
+              role="tabpanel"
+              aria-labelledby={`auth-${mode}-tab`}
+              onSubmit={handleSubmit}
+              className="do-auth-form"
+            >
+              <label htmlFor="email">{copy.email}</label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={copy.emailPlaceholder}
+                maxLength={255}
+                required
+              />
+              <label htmlFor="password">{copy.password}</label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={
+                  mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder
+                }
+                maxLength={72}
+                minLength={6}
+                required
+              />
+              <button type="submit" disabled={loading} className="do-auth-submit">
+                {loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}
+                <ArrowRight />
+              </button>
+            </form>
+            {mode === "signin" && passwordRecoveryEnabled && (
+              <button
+                type="button"
+                className="do-auth-forgot"
+                onClick={requestReset}
+                disabled={resetBusy}
+              >
+                {language === "zh-CN"
+                  ? resetBusy
+                    ? "发送中…"
+                    : "忘记密码？"
+                  : resetBusy
+                    ? "Sending…"
+                    : "Forgot password?"}
+              </button>
+            )}
+
+            {mode === "signup" && awaitingConfirmation ? (
+              <div className="do-auth-confirmation" role="status">
+                <span>{copy.verifyEmail}</span>
+                <button type="button" onClick={handleResendConfirmation} disabled={resendLoading}>
+                  {resendLoading ? copy.resending : copy.resendConfirmation}
+                </button>
+              </div>
+            ) : null}
+
+            <div className="do-auth-divider">
+              <span />
+              {copy.or}
+              <span />
+            </div>
+            <button
+              type="button"
+              className="do-auth-google"
+              onClick={handleGoogle}
+              disabled={loading}
+            >
+              <span className="do-google-mark" aria-hidden="true">
+                G
+              </span>
+              {copy.continueGoogle}
+            </button>
+          </fieldset>
         </section>
       </main>
     </div>

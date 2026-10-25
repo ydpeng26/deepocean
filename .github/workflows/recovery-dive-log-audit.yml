@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dive-audit:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/dive-log-audit'
+    if: github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -26,9 +26,8 @@ jobs:
           else
             node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
-      - name: Diagnose dive log boundaries using disposable recovery fixtures only
+      - name: Verify browser storage faults using one disposable recovery account
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
-          DIVE_EXPECT_FIXED: 'true'
-        run: node scripts/recovery-dive-log-audit.mjs
+        run: node scripts/recovery-browser-storage.mjs
