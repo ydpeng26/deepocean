@@ -17,6 +17,7 @@ import {
   listGear,
   updateGear,
   validateGear,
+  GearConflictError,
   type GearCategory,
   type GearInput,
   type GearItem,
@@ -93,6 +94,8 @@ function GearPage() {
   const [draft, setDraft] = useState<GearInput>(empty);
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const [busy, setBusy] = useState(false);
+  const [conflict, setConflict] = useState(false);
+  const revision = useRef<string | null>(null);
   const lock = useRef(false),
     alive = useRef(true),
     hydrated = useRef<string | null>(null);
@@ -113,12 +116,18 @@ function GearPage() {
     const value = fields(selected);
     hydrated.current = selected.id;
     baseline.current = JSON.stringify(value);
+    revision.current = selected.updated_at;
+    setConflict(false);
     setDraft(value);
   }, [selected]);
   const discard = () =>
     JSON.stringify(draft) === baseline.current || confirm(t("放弃尚未保存的装备修改？"));
   async function save() {
-    if (lock.current || !profileState.profile || query.isError || (selectedId && !selected)) return;
+    if (lock.current || !profileState.profile || query.isError || conflict) return;
+    if (selectedId && !selected) {
+      setConflict(true);
+      return;
+    }
     let snapshot: GearInput;
     try {
       snapshot = validateGear(draft);
@@ -134,11 +143,13 @@ function GearPage() {
     try {
       const item = creating
         ? await createGear(snapshot, id, owner)
-        : await updateGear(id, snapshot, owner);
+        : await updateGear(id, snapshot, owner, revision.current ?? "");
       if (!alive.current) return;
       const value = fields(item);
       hydrated.current = item.id;
       baseline.current = JSON.stringify(value);
+      revision.current = item.updated_at;
+      setConflict(false);
       setDraft(value);
       queryClient.setQueryData<GearItem[]>(["gear"], (current = []) => [
         item,
@@ -149,6 +160,7 @@ function GearPage() {
       toast.success(creating ? t("新装备已添加") : t("装备资料已更新"));
       await queryClient.invalidateQueries({ queryKey: ["gear"] });
     } catch (error) {
+      if (alive.current && error instanceof GearConflictError) setConflict(true);
       if (alive.current)
         toast.error(error instanceof Error ? t(error.message) : t("保存失败，修改已保留，请重试"));
     } finally {
@@ -164,19 +176,53 @@ function GearPage() {
     lock.current = true;
     setBusy(true);
     try {
-      await deleteGear(id, owner);
+      await deleteGear(id, owner, revision.current ?? "");
       if (!alive.current) return;
       queryClient.setQueryData<GearItem[]>(["gear"], (current = []) =>
         current.filter((row) => row.id !== id),
       );
       setSelectedId(null);
       hydrated.current = null;
+      revision.current = null;
+      setConflict(false);
       setDraft(empty);
       baseline.current = JSON.stringify(empty);
       requestId.current = crypto.randomUUID();
       toast.success(t("装备已删除"));
+    } catch (error) {
+      if (alive.current) {
+        if (error instanceof GearConflictError) setConflict(true);
+        toast.error(
+          t(error instanceof GearConflictError ? error.message : "删除失败，请重新载入后重试"),
+        );
+      }
+    } finally {
+      lock.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
+  async function reloadLatest() {
+    if (lock.current || !confirm(t("加载最新记录将替换当前输入。请先复制需要的内容，是否继续？")))
+      return;
+    lock.current = true;
+    setBusy(true);
+    try {
+      const result = await query.refetch();
+      if (!alive.current) return;
+      if (result.error || !result.data) throw result.error || new Error("装备读取失败");
+      const item = result.data.find((row) => row.id === selectedId);
+      if (!item) {
+        setConflict(true);
+        return;
+      }
+      const value = fields(item);
+      hydrated.current = item.id;
+      revision.current = item.updated_at;
+      baseline.current = JSON.stringify(value);
+      setDraft(value);
+      setConflict(false);
     } catch {
-      if (alive.current) toast.error(t("删除失败，请重新载入后重试"));
+      if (alive.current) toast.error(t("读取失败不代表没有装备；未保存的修改仍保留在当前页面。"));
     } finally {
       lock.current = false;
       if (alive.current) setBusy(false);
@@ -185,7 +231,7 @@ function GearPage() {
   const set = <K extends keyof GearInput>(key: K, value: GearInput[K]) => {
     if (!lock.current) setDraft((current) => ({ ...current, [key]: value }));
   };
-  if (query.isError || profileState.isError || (selectedId && !selected && !isPending))
+  if (query.isError || profileState.isError)
     return (
       <AppShell>
         <div role="alert">
@@ -238,6 +284,8 @@ function GearPage() {
             setSelectedId(null);
             setDraft(empty);
             hydrated.current = "new";
+            revision.current = null;
+            setConflict(false);
             baseline.current = JSON.stringify(empty);
             requestId.current = crypto.randomUUID();
           }}
@@ -284,10 +332,27 @@ function GearPage() {
           <div className="flex items-center gap-3 border-b border-border pb-5">
             <Wrench className="h-5 w-5 text-sky-500" />
             <div>
-              <h2 className="text-xl">{selected ? t("编辑装备档案") : t("登记新装备")}</h2>
+              <h2 className="text-xl">{selectedId ? t("编辑装备档案") : t("登记新装备")}</h2>
               <p className="text-xs text-muted-foreground">{t("资料只对当前账号显示。")}</p>
             </div>
           </div>
+          {(conflict || (selectedId && !selected)) && (
+            <div role="alert" className="mt-5 border border-border p-4">
+              <p>
+                {t(
+                  "装备已在其他页面修改或删除。当前输入已保留，请先复制需要的内容，再加载最新记录。",
+                )}
+              </p>
+              <Button
+                disabled={busy}
+                variant="outline"
+                className="mt-3"
+                onClick={() => void reloadLatest()}
+              >
+                {t("加载最新装备记录")}
+              </Button>
+            </div>
+          )}
           <fieldset disabled={busy} className="mt-6 grid min-w-0 gap-5 border-0 p-0 sm:grid-cols-2">
             <div className="sm:col-span-2 grid gap-4 border border-border bg-sky-500/5 p-4 sm:grid-cols-[190px_1fr]">
               <GearVisual category={draft.category} />
@@ -375,7 +440,7 @@ function GearPage() {
             <div>
               {selected && (
                 <Button
-                  disabled={busy}
+                  disabled={busy || conflict}
                   type="button"
                   variant="ghost"
                   className="rounded-none text-destructive"
@@ -388,7 +453,11 @@ function GearPage() {
             </div>
             <Button
               disabled={
-                busy || !profileState.profile || (!draft.brand.trim() && !draft.model.trim())
+                busy ||
+                conflict ||
+                (!!selectedId && !selected) ||
+                !profileState.profile ||
+                (!draft.brand.trim() && !draft.model.trim())
               }
               className="rounded-none px-7"
               onClick={() => void save()}

@@ -99,6 +99,11 @@ export const liveEnglish: Record<string, string> = {
   "放弃尚未保存的装备修改？": "Discard unsaved gear changes?",
   新装备已添加: "New gear added",
   装备资料已更新: "Gear updated",
+  "装备已在其他页面修改或删除。当前输入已保留，请先复制需要的内容，再加载最新记录。":
+    "This gear changed or was deleted elsewhere. Your input is kept. Copy what you need before loading the latest record.",
+  "加载最新记录将替换当前输入。请先复制需要的内容，是否继续？":
+    "Loading the latest record will replace your input. Copy what you need first. Continue?",
+  加载最新装备记录: "Load latest gear record",
   "保存失败，修改已保留，请重试": "Save failed. Your changes are kept; please retry.",
   "确定删除这件装备吗？": "Delete this gear item?",
   装备已删除: "Gear deleted",

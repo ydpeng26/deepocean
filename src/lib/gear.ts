@@ -19,9 +19,17 @@ export type GearItem = {
   notes: string | null;
   photo_path: string | null;
   created_at: string;
+  updated_at: string;
 };
 
-export type GearInput = Omit<GearItem, "id" | "user_id" | "created_at">;
+export type GearInput = Omit<GearItem, "id" | "user_id" | "created_at" | "updated_at">;
+
+export class GearConflictError extends Error {
+  constructor() {
+    super("装备已在其他页面修改或删除。当前输入已保留，请先复制需要的内容，再加载最新记录。");
+    this.name = "GearConflictError";
+  }
+}
 
 async function userId(expectedId?: string) {
   const { data } = await supabase.auth.getSession();
@@ -123,30 +131,61 @@ export async function createGear(
 export async function updateGear(
   id: string,
   input: GearInput,
-  expectedUser?: string,
+  expectedUser: string,
+  expectedRevision: string,
 ): Promise<GearItem> {
   const owner = await userId(expectedUser);
+  if (!expectedRevision) throw new GearConflictError();
+  const values = validateGear(input);
+  // The revision predicate is evaluated atomically with the write, not just
+  // during a preflight read that another editor could race.
   const { data, error } = await supabase
     .from("gear_items")
-    .update(validateGear(input))
+    .update(values)
     .eq("id", id)
     .eq("user_id", owner)
+    .eq("updated_at", expectedRevision)
     .select("*")
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  if (!data || data.id !== id || data.user_id !== owner) throw Error("未确认保存，请重试");
+  await userId(owner);
+  if (!data) {
+    // A lost reply can hide a committed write. Confirm identical saved values
+    // without reapplying the stale payload or advancing the editor baseline.
+    const current = await supabase
+      .from("gear_items")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", owner)
+      .maybeSingle();
+    if (current.error) throw current.error;
+    await userId(owner);
+    const saved = current.data;
+    if (
+      saved &&
+      saved.id === id &&
+      saved.user_id === owner &&
+      Object.entries(values).every(([key, value]) => saved[key as keyof typeof saved] === value)
+    )
+      return saved;
+    throw new GearConflictError();
+  }
+  if (data.id !== id || data.user_id !== owner) throw Error("未确认保存，请重试");
   return data;
 }
 
-export async function deleteGear(id: string, expectedUser?: string) {
+export async function deleteGear(id: string, expectedUser: string, expectedRevision: string) {
   const owner = await userId(expectedUser);
+  if (!expectedRevision) throw new GearConflictError();
   const { data, error } = await supabase
     .from("gear_items")
     .delete()
     .eq("id", id)
     .eq("user_id", owner)
+    .eq("updated_at", expectedRevision)
     .select("id")
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  if (!data) throw Error("未确认删除，请重新载入");
+  await userId(owner);
+  if (!data) throw new GearConflictError();
 }
