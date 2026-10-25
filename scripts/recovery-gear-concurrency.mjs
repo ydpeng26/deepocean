@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
+import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -226,24 +227,42 @@ async function login(page, language, editor = "retry") {
   const response = await tokenResponse;
   advance(language + "_" + editor + "_read_login_response");
   check(response.ok(), "temporary_login");
-  const session = await response.json();
-  check(session.user?.id === fixtureId, "temporary_session_owner");
-  sessions.add(session.access_token);
   advance(language + "_" + editor + "_await_gear_route");
   await page.waitForURL("**/gear", { timeout: 45000 });
+  const token = await page.evaluate(gearFixtureToken, fixtureId);
+  check(typeof token === "string" && token.length > 0, "temporary_session_owner");
+  sessions.add(token);
   advance(language + "_" + editor + "_await_gear_brand");
   await field(page, copy.brand).waitFor();
+  await page.waitForFunction(
+    ({ label, marker }) =>
+      [...document.querySelectorAll("label")].some(
+        (n) => n.textContent.trim() === label && n.querySelector("input")?.value === marker,
+      ),
+    { label: copy.brand, marker },
+  );
   check((await field(page, copy.brand).inputValue()) === marker, "fixture_editor_loaded");
 }
 const conflict = (page, copy) => page.getByRole("alert").filter({ hasText: copy.conflict });
 async function save(page, copy) {
+  const response = page.waitForResponse(
+    (r) => r.url().startsWith(api + "/rest/v1/gear_items?") && r.request().method() === "PATCH",
+  );
   await button(page, copy.save).click();
-  await page.getByText(copy.saved, { exact: true }).waitFor();
+  check((await response).ok(), "gear_save_http");
   await page.waitForFunction(() => document.querySelector("fieldset")?.disabled === false);
+  check((await conflict(page, copy).count()) === 0, "gear_save_no_conflict");
 }
 async function reopen(page, copy) {
   await page.goto(site + "/gear", { waitUntil: "domcontentloaded" });
   await field(page, copy.brand).waitFor();
+  await page.waitForFunction(
+    ({ label, marker }) =>
+      [...document.querySelectorAll("label")].some(
+        (n) => n.textContent.trim() === label && n.querySelector("input")?.value === marker,
+      ),
+    { label: copy.brand, marker },
+  );
 }
 async function suite(language) {
   const copy = copies[language],

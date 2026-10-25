@@ -4,8 +4,132 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
+import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
+import vm from "node:vm";
 const runner = new URL("./recovery-gear-concurrency.mjs", import.meta.url);
 const source = fs.readFileSync(runner, "utf8");
+const owner = "synthetic-owner",
+  token = "synthetic-access-token";
+const fixtureStorage = (value) => ({
+  getItem(key) {
+    assert.equal(key, "sb-esovqvampbrhuhamkfcs-auth-token");
+    return value;
+  },
+});
+const value = JSON.stringify({ user: { id: owner }, access_token: token });
+assert.equal(gearFixtureToken(owner, fixtureStorage(value)), token);
+assert.equal(gearFixtureToken("other-owner", fixtureStorage(value)), null);
+for (const value of [
+  "invalid",
+  "null",
+  "{}",
+  JSON.stringify({ user: { id: owner }, access_token: "" }),
+])
+  assert.equal(gearFixtureToken(owner, fixtureStorage(value)), null);
+assert.equal(
+  gearFixtureToken(owner, {
+    getItem() {
+      throw Error("synthetic denied storage");
+    },
+  }),
+  null,
+);
+assert.equal(
+  vm.runInNewContext("(" + gearFixtureToken.toString() + ")(owner)", {
+    owner,
+    sessionStorage: fixtureStorage(value),
+  }),
+  token,
+);
+const loginSource = source.slice(
+  source.indexOf("async function login("),
+  source.indexOf("const conflict ="),
+);
+let submitted = false,
+  tokenReads = 0;
+const loginSessions = new Set();
+const fakePage = {
+  goto: async () => {},
+  waitForResponse: () =>
+    Promise.resolve({
+      ok: () => true,
+      json() {
+        throw Error("Response body deliberately unavailable");
+      },
+    }),
+  async waitForURL() {
+    assert(submitted);
+  },
+  async waitForFunction() {},
+  async evaluate(fn, id) {
+    tokenReads++;
+    return fn(id, fixtureStorage(value));
+  },
+};
+const fakeField = () => ({
+  fill: async () => {},
+  waitFor: async () => {},
+  inputValue: async () => "synthetic-marker",
+});
+await vm.runInNewContext(loginSource + ';login(page,"zh-CN","A")', {
+  copies: { "zh-CN": { email: "Email", password: "Password", brand: "Brand", login: "Sign in" } },
+  page: fakePage,
+  advance() {},
+  site: "https://supdiver-recovery-test.vercel.app",
+  api: "https://esovqvampbrhuhamkfcs.supabase.co",
+  email: "synthetic@example.invalid",
+  password: "synthetic-only",
+  fixtureId: owner,
+  marker: "synthetic-marker",
+  field: fakeField,
+  button: () => ({
+    async click() {
+      submitted = true;
+    },
+  }),
+  gearFixtureToken,
+  sessions: loginSessions,
+  check(ok, code) {
+    assert(ok, code);
+  },
+});
+assert.equal(tokenReads, 1);
+assert(loginSessions.has(token));
+console.log(
+  "PASS: actual login flow succeeds with an unreadable transport response body, verifies fixture-owned session after navigation; wrong owner/malformed/denied storage fails closed",
+);
+const saveSource = source.slice(
+  source.indexOf("async function save("),
+  source.indexOf("async function reopen("),
+);
+async function saveModel(ok, conflicts) {
+  return vm.runInNewContext(saveSource + ";save(page,copy)", {
+    page: {
+      waitForResponse: () => Promise.resolve({ ok: () => ok }),
+      async waitForFunction() {},
+      getByText() {
+        throw Error("Duplicate success toasts must not be selected");
+      },
+    },
+    copy: { save: "Save gear" },
+    api: "https://esovqvampbrhuhamkfcs.supabase.co",
+    button: () => ({ async click() {} }),
+    conflict: () => ({
+      async count() {
+        return conflicts;
+      },
+    }),
+    check(ok, code) {
+      assert(ok, code);
+    },
+  });
+}
+await saveModel(true, 0);
+await assert.rejects(saveModel(false, 0));
+await assert.rejects(saveModel(true, 1));
+console.log(
+  "PASS: actual save helper waits for PATCH completion and unlocked fields, rejects HTTP/conflict errors, and does not select duplicate old success toasts",
+);
 const result = spawnSync(process.execPath, [runner.pathname], {
   encoding: "utf8",
   env: { PATH: process.env.PATH },
