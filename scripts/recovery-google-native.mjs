@@ -1,6 +1,8 @@
 // Recovery-only deployed-page acceptance. All authorization/API responses are
 // synthetic and intercepted; no real Google request, user, email or backend write.
 import { createHash } from "node:crypto";
+import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
+const publicAssets = new Set();
 const site = "https://supdiver-recovery-test.vercel.app";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const tokenKey = "sb-esovqvampbrhuhamkfcs-auth-token";
@@ -47,7 +49,14 @@ async function harness(language, initialMode) {
   let mode = initialMode,
     challenge,
     routeFailure;
-  const stats = { authorize: 0, exchanges: 0, userReads: 0, pageErrors: 0, forbidden: 0 };
+  const stats = {
+    authorize: 0,
+    exchanges: 0,
+    userReads: 0,
+    pageErrors: 0,
+    forbidden: 0,
+    pageErrorDiagnostics: [],
+  };
   activeStats = stats;
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
@@ -55,8 +64,24 @@ async function harness(language, initialMode) {
     serviceWorkers: "block",
   });
   context.on("page", (page) =>
-    page.on("pageerror", () => {
+    page.on("pageerror", (error) => {
       stats.pageErrors++;
+      if (stats.pageErrorDiagnostics.length < 5) {
+        const path = new URL(page.url()).pathname;
+        const pageKind =
+          path === "/auth"
+            ? "auth"
+            : path === "/oauth-callback"
+              ? "callback"
+              : path === "/__native-complete"
+                ? "completion"
+                : "other";
+        stats.pageErrorDiagnostics.push({
+          pageKind,
+          stage,
+          ...nativeErrorDiagnostic(error, publicAssets),
+        });
+      }
     }),
   );
   await context.addInitScript(
@@ -316,6 +341,8 @@ try {
   });
   check(response.ok && new URL(response.url).origin === site, "recovery_manifest_only");
   const manifest = await response.json();
+  for (const path of manifest)
+    if (/^\/assets\/[a-zA-Z0-9_-]+\.js$/.test(path)) publicAssets.add(path);
   const scripts = await Promise.all(
     manifest
       .filter((path) => /^\/assets\/[^/]+\.js$/.test(path))

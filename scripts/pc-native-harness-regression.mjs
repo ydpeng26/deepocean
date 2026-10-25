@@ -4,6 +4,40 @@ import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
+const privateMarker = "SYNTHETIC_PRIVATE_MUST_NOT_LEAK";
+const diagnostic = nativeErrorDiagnostic(
+  {
+    name: privateMarker,
+    message: "Cannot read properties of undefined " + privateMarker,
+    stack:
+      "Error: " +
+      privateMarker +
+      "\n at x (https://app.invalid/assets/known-abc.js:1:42)\n at https://private.invalid/" +
+      privateMarker +
+      ":2:3\n at /assets/" +
+      privateMarker +
+      ".js:4:5",
+  },
+  new Set(["/assets/known-abc.js"]),
+);
+assert.deepEqual(diagnostic, {
+  name: "OtherError",
+  category: "javascript_reference_or_type",
+  frames: [{ asset: "known-abc.js", line: 1, column: 42 }],
+});
+assert(!JSON.stringify(diagnostic).includes(privateMarker));
+assert.equal(
+  nativeErrorDiagnostic({ name: "AbortError", message: "signal is aborted without reason" })
+    .category,
+  "aborted_operation",
+);
+assert.equal(
+  nativeErrorDiagnostic({
+    message: "Failed to fetch dynamically imported module: " + privateMarker,
+  }).category,
+  "module_load",
+);
 const source = fs.readFileSync(new URL("./recovery-google-native.mjs", import.meta.url), "utf8");
 const ast = ts.createSourceFile(
   "runner.mjs",
