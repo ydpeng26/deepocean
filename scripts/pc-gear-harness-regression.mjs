@@ -3,6 +3,7 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
+import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 const runner = new URL("./recovery-gear-concurrency.mjs", import.meta.url);
 const source = fs.readFileSync(runner, "utf8");
 const result = spawnSync(process.execPath, [runner.pathname], {
@@ -45,6 +46,26 @@ console.log(
 );
 // Actual native Response objects exercise the preflight body, not just its guard.
 const origin = "https://supdiver-recovery-test.vercel.app";
+const diagnostic = gearBrowserDiagnostic({
+  message: "strict mode violation: resolved to 2 elements SECRET_SENTINEL user@example.invalid",
+  stack: "at login (/cloud/recovery-gear-concurrency.mjs:212:17) SECRET_SENTINEL",
+});
+assert.deepEqual(diagnostic, {
+  category: "ambiguous_locator",
+  positions: [{ line: 212, column: 17 }],
+  locatorMatches: 2,
+});
+assert(!JSON.stringify(diagnostic).includes("SECRET_SENTINEL"));
+assert(!JSON.stringify(diagnostic).includes("@"));
+for (const [message, category] of [
+  ["Timeout exceeded", "timeout"],
+  ["Target page closed", "closed_target"],
+  ["Response body unavailable", "response_body"],
+  ["net::ERR_FAILED", "network"],
+  ["foo is not a function", "javascript_type_or_reference"],
+  ["arbitrary secret", "unclassified"],
+])
+  assert.equal(gearBrowserDiagnostic({ message }).category, category);
 const marker = "GearConflictError Load latest gear record esovqvampbrhuhamkfcs.supabase.co";
 function transport({
   status = 200,

@@ -2,6 +2,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
+import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -207,23 +208,30 @@ async function context(language, id) {
 }
 const field = (page, name) => page.getByLabel(name, { exact: true });
 const button = (page, name) => page.getByRole("button", { name, exact: true });
-async function login(page, language) {
+async function login(page, language, editor = "retry") {
   const copy = copies[language];
+  advance(language + "_" + editor + "_open_login");
   await page.goto(site + "/auth?next=%2Fgear", { waitUntil: "domcontentloaded", timeout: 60000 });
+  advance(language + "_" + editor + "_fill_email");
   await field(page, copy.email).fill(email);
+  advance(language + "_" + editor + "_fill_password");
   await field(page, copy.password).fill(password);
   const tokenResponse = page.waitForResponse(
     (r) =>
       r.url().startsWith(api + "/auth/v1/token?grant_type=password") &&
       r.request().method() === "POST",
   );
+  advance(language + "_" + editor + "_submit_login");
   await button(page, copy.login).click();
   const response = await tokenResponse;
+  advance(language + "_" + editor + "_read_login_response");
   check(response.ok(), "temporary_login");
   const session = await response.json();
   check(session.user?.id === fixtureId, "temporary_session_owner");
   sessions.add(session.access_token);
+  advance(language + "_" + editor + "_await_gear_route");
   await page.waitForURL("**/gear", { timeout: 45000 });
+  advance(language + "_" + editor + "_await_gear_brand");
   await field(page, copy.brand).waitFor();
   check((await field(page, copy.brand).inputValue()) === marker, "fixture_editor_loaded");
 }
@@ -248,13 +256,19 @@ async function suite(language) {
     a.setDefaultTimeout(25000);
     b.setDefaultTimeout(25000);
     advance(language + "_independent_editors");
-    await login(a, language);
-    await login(b, language);
+    await login(a, language, "A");
+    await login(b, language, "B");
+    advance(language + "_B_fill_stale_model");
     await field(b, copy.model).fill("stale B draft");
+    advance(language + "_A_fill_new_notes");
     await field(a, copy.notes).fill("newer A notes");
+    advance(language + "_A_save_newer_record");
     await save(a, copy);
+    advance(language + "_independent_read_newer_record");
     const newer = await waitRow(id, (r) => r.notes === "newer A notes");
+    advance(language + "_B_stale_save");
     await button(b, copy.save).click();
+    advance(language + "_B_wait_conflict");
     await conflict(b, copy).waitFor();
     check((await field(b, copy.model).inputValue()) === "stale B draft", "conflict_draft_retained");
     check(
@@ -414,6 +428,7 @@ try {
   for (const language of ["zh-CN", "en"]) await suite(language);
 } catch (error) {
   failed = true;
+  console.log("DIAGNOSTIC: " + JSON.stringify(gearBrowserDiagnostic(error)));
   console.log(
     "INCOMPLETE: stage=" +
       stage +
