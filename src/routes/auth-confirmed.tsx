@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, LoaderCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { safeAuthReturn } from "@/lib/auth-return";
+import { emailConfirmationInput } from "@/lib/email-confirmation-flow";
+import { createBrowserEmailConfirmation } from "@/lib/email-confirmation";
 
 type ConfirmationStatus = "checking" | "success" | "error";
 
@@ -52,70 +53,93 @@ function AuthConfirmedPage() {
   const { language } = useLanguage();
   const copy = confirmationCopy[language];
   const [status, setStatus] = useState<ConfirmationStatus>("checking");
+  const [entering, setEntering] = useState(false);
+  const controller = useRef<ReturnType<typeof createBrowserEmailConfirmation> | null>(null);
+  const task = useRef<Promise<string> | null>(null);
+  const alive = useRef(false);
+  const expired = useRef(false);
+  const invalid = useRef(false);
+  const navigating = useRef(false);
+  const destination = useRef(safeAuthReturn(next));
+
+  useEffect(() => {
+    document.title = language === "en" ? "Email confirmation · SupDiver" : "邮箱验证 · SupDiver";
+  }, [language]);
 
   useEffect(() => {
     let active = true;
-    let completed = false;
-
-    const finish = (nextStatus: ConfirmationStatus) => {
-      if (!active || completed) return;
-      completed = true;
-      setStatus(nextStatus);
-    };
-
-    const confirmSession = async () => {
-      const query = new URLSearchParams(window.location.search);
-      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      if (query.get("error") || hash.get("error")) {
-        finish("error");
-        return;
-      }
-
-      const tokenHash = query.get("token_hash");
-      if (tokenHash) {
-        const verified = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "signup",
+    alive.current = true;
+    if (!task.current) {
+      try {
+        const input = emailConfirmationInput(window.location.search, window.location.hash);
+        // Consume URL material once before SDK initialization. Keep only the
+        // already-validated return destination in this component's ref.
+        window.history.replaceState(window.history.state, "", "/auth-confirmed");
+        task.current = Promise.resolve().then(() => {
+          controller.current = createBrowserEmailConfirmation(
+            () => alive.current && !expired.current && !invalid.current,
+            () => {
+              invalid.current = true;
+              if (alive.current) setStatus("error");
+            },
+          );
+          return controller.current.run(input);
         });
-        if (verified.data.session) finish("success");
-        else finish("error");
-        return;
+      } catch {
+        invalid.current = true;
+        task.current = Promise.reject(new Error("Email confirmation could not be prepared"));
       }
-
-      const current = await supabase.auth.getSession();
-      if (current.data.session) {
-        finish("success");
-        return;
-      }
-
-      const code = query.get("code");
-      if (!code) {
-        if (current.error) finish("error");
-        return;
-      }
-
-      const exchanged = await supabase.auth.exchangeCodeForSession(code);
-      if (exchanged.data.session) finish("success");
-      else if (exchanged.error) finish("error");
-    };
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) finish("success");
-    });
-    void confirmSession();
-    const timeout = window.setTimeout(() => finish("error"), 10_000);
+    }
+    const timeout = window.setTimeout(() => {
+      expired.current = true;
+      controller.current?.cancel();
+      if (active) setStatus("error");
+    }, 10_000);
+    void task.current.then(
+      () => {
+        window.clearTimeout(timeout);
+        if (active && !expired.current && !invalid.current) setStatus("success");
+      },
+      () => {
+        window.clearTimeout(timeout);
+        if (active) setStatus("error");
+      },
+    );
 
     return () => {
       active = false;
+      alive.current = false;
       window.clearTimeout(timeout);
-      listener.subscription.unsubscribe();
+      // React effect replay reactivates the same one-use attempt synchronously.
+      // A genuine unmount cancels before any later response may be committed.
+      queueMicrotask(() => {
+        if (!alive.current) controller.current?.cancel();
+      });
     };
   }, []);
 
-  const enterApp = () => {
-    const destination = safeAuthReturn(next);
-    if (destination) window.location.href = destination;
-    else navigate({ to: "/dives" });
+  const enterApp = async () => {
+    if (status !== "success" || navigating.current) return;
+    navigating.current = true;
+    setEntering(true);
+    try {
+      if (
+        !(await controller.current?.matches()) ||
+        !alive.current ||
+        invalid.current ||
+        expired.current
+      ) {
+        if (alive.current) setStatus("error");
+        return;
+      }
+      if (destination.current) window.location.href = destination.current;
+      else await navigate({ to: "/dives" });
+    } catch {
+      if (alive.current) setStatus("error");
+    } finally {
+      navigating.current = false;
+      if (alive.current) setEntering(false);
+    }
   };
 
   return (
@@ -162,7 +186,7 @@ function AuthConfirmedPage() {
                 : copy.errorBody}
           </p>
           {status === "success" ? (
-            <button type="button" className="do-auth-submit" onClick={enterApp}>
+            <button type="button" className="do-auth-submit" onClick={enterApp} disabled={entering}>
               {copy.enter}
               <ArrowRight />
             </button>

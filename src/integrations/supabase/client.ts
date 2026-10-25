@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { getTabAuthStorage } from "@/lib/tab-auth-storage";
 import { googleOAuthKeys } from "@/lib/google-oauth-keys";
+import { emailConfirmationKeys } from "@/lib/email-confirmation-keys";
 
 export function getSupabaseProjectUrl(): string {
   const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -37,7 +38,8 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-function createSupabaseClient(googleOnly = false) {
+function createSupabaseClient(mode: "main" | "google" | "confirmation" = "main") {
+  const temporary = mode !== "main";
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -55,7 +57,7 @@ function createSupabaseClient(googleOnly = false) {
   }
 
   const authStorage = getTabAuthStorage();
-  if (typeof window !== "undefined" && !googleOnly) {
+  if (typeof window !== "undefined" && !temporary) {
     // Remove the old persistent session left by previous versions. Sessions now
     // live only for the lifetime of the current browser tab.
     try {
@@ -73,10 +75,18 @@ function createSupabaseClient(googleOnly = false) {
     auth: {
       storage: authStorage,
       persistSession: true,
-      autoRefreshToken: !googleOnly,
-      ...(googleOnly
+      autoRefreshToken: !temporary,
+      ...(!temporary &&
+      typeof window !== "undefined" &&
+      window.location?.pathname.replace(/\/+$/, "") === "/auth-confirmed"
+        ? { detectSessionInUrl: false }
+        : {}),
+      ...(temporary
         ? {
-            storageKey: googleOAuthKeys(SUPABASE_URL).session,
+            storageKey: (mode === "google"
+              ? googleOAuthKeys(SUPABASE_URL)
+              : emailConfirmationKeys(SUPABASE_URL)
+            ).session,
             flowType: "pkce" as const,
             detectSessionInUrl: false,
           }
@@ -101,7 +111,17 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
 let _googleOAuth: ReturnType<typeof createSupabaseClient> | undefined;
 export const googleOAuth = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
-    if (!_googleOAuth) _googleOAuth = createSupabaseClient(true);
+    if (!_googleOAuth) _googleOAuth = createSupabaseClient("google");
     return Reflect.get(_googleOAuth, prop, receiver);
+  },
+});
+
+// Confirmation owns URL consumption on its route; keep unverified/late results
+// in dedicated tab storage until the current request and user are verified.
+let _emailConfirmation: ReturnType<typeof createSupabaseClient> | undefined;
+export const emailConfirmation = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(_, prop, receiver) {
+    if (!_emailConfirmation) _emailConfirmation = createSupabaseClient("confirmation");
+    return Reflect.get(_emailConfirmation, prop, receiver);
   },
 });

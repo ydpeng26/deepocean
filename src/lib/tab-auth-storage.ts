@@ -15,6 +15,7 @@ export class AuthStorageUnavailable extends Error {
 export function createTabAuthStorage(getStorage: () => TabStorage) {
   let status: AuthStorageStatus = "checking";
   const listeners = new Set<() => void>();
+  const writeGuards = new Set<(key: string, value: string) => boolean>();
   const probe = `supdiver:session-probe:${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   let probeOwned = false;
   function publish(next: AuthStorageStatus) {
@@ -65,6 +66,12 @@ export function createTabAuthStorage(getStorage: () => TabStorage) {
     },
     setItem(key, value) {
       if (status !== "available") throw new AuthStorageUnavailable();
+      // A cancelled one-use operation must not overwrite a newer session.
+      // Policy rejection is not a browser-storage failure: keep its status.
+      for (const guard of writeGuards) {
+        if (!guard(key, value))
+          throw new Error("Session write no longer belongs to the active request");
+      }
       try {
         getStorage().setItem(key, value);
       } catch {
@@ -84,6 +91,12 @@ export function createTabAuthStorage(getStorage: () => TabStorage) {
   retry();
   return {
     storage,
+    guardWrite(guard: (key: string, value: string) => boolean) {
+      writeGuards.add(guard);
+      return () => {
+        writeGuards.delete(guard);
+      };
+    },
     retry,
     getSnapshot: () => status,
     subscribe(listener: () => void) {
@@ -133,4 +146,10 @@ export function authStorageAvailable(recheck = false) {
   getTabAuthStorage();
   if (recheck) return browserStorage?.retry() ?? false;
   return status === "available";
+}
+
+export function guardTabAuthWrite(guard: (key: string, value: string) => boolean) {
+  getTabAuthStorage();
+  if (!browserStorage) throw new AuthStorageUnavailable();
+  return browserStorage.guardWrite(guard);
 }
