@@ -364,6 +364,11 @@ try {
     "native_entry_fix_must_be_deployed_first",
   );
   pass("fixed_recovery_deployed_native_Google_entry_and_callback_bundle_preflight");
+  check(
+    scripts.some((text) => text.includes("Unexpected OAuth cleanup key")),
+    "storage_failure_cleanup_fix_must_be_deployed_first",
+  );
+  pass("fixed_recovery_preserves_storage_blocked_latch_and_scoped_OAuth_cleanup");
   const { chromium } = await import(process.env.RECOVERY_PLAYWRIGHT_MODULE || "playwright");
   browser = await chromium.launch({ channel: process.env.RECOVERY_BROWSER_CHANNEL || undefined });
   for (const language of ["zh-CN", "en"]) {

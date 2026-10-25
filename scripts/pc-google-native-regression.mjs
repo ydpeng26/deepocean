@@ -236,6 +236,91 @@ console.log(
   "PASS: native_flow_start_exchange_save_failures_cancellation_expiry_owner_change_storage_denial_single_flight_replay_safe_return_and_scoped_cleanup",
 );
 
+// Use the actual storage adapter: a main-session write failure latches blocked,
+// so ordinary adapter removals are intentionally ignored until explicit retry.
+{
+  const { createTabAuthStorage } = load("src/lib/tab-auth-storage.ts");
+  const h = harness();
+  let denyMain = true;
+  const originalSet = h.storage.setItem;
+  h.storage.setItem = (key, value) => {
+    if (denyMain && key === "main-auth") throw Error(marker);
+    return originalSet(key, value);
+  };
+  const guarded = createTabAuthStorage(() => h.storage);
+  h.deps.storage = guarded.storage;
+  h.deps.available = () => guarded.getSnapshot() === "available";
+  h.deps.removeTemporaryKey = (key) => {
+    assert(Object.values(keys).includes(key));
+    h.storage.removeItem(key);
+  };
+  const originalSave = h.deps.main.setSession;
+  h.deps.main.setSession = async (tokens) => {
+    guarded.storage.setItem("main-auth", "synthetic-session");
+    return originalSave(tokens);
+  };
+  await h.flow.start();
+  await rejects(h.flow.finish("synthetic-code"));
+  assert.equal(guarded.getSnapshot(), "blocked");
+  clean(h);
+  denyMain = false;
+  assert.equal(guarded.retry(), true);
+  await h.flow.start();
+  assert.equal(await h.flow.finish("synthetic-retry-code"), "/dives");
+  assert.equal(h.entries.get("main-auth"), "synthetic-session");
+  for (const key of Object.values(keys)) assert(!h.entries.has(key));
+  assert.equal(h.entries.get("unrelated-draft"), "keep");
+}
+
+// Actual browser wiring limits best-effort removals to the four temporary keys,
+// and does not use a fresh successful probe to hide a main-session write failure.
+{
+  let wiring,
+    probes = [],
+    removed = [];
+  const storage = {};
+  const browser = load(
+    "src/lib/google-oauth.ts",
+    {
+      "@/integrations/supabase/client": {
+        supabase: { auth: {} },
+        googleOAuth: { auth: {} },
+        getSupabaseProjectUrl: () => projectUrl,
+      },
+      "@/lib/tab-auth-storage": {
+        getTabAuthStorage: () => storage,
+        authStorageAvailable: (recheck) => {
+          probes.push(recheck);
+          return true;
+        },
+      },
+      "@/lib/google-oauth-keys": keysModule,
+      "@/lib/google-oauth-flow": {
+        createGoogleOAuthFlow: (deps) => {
+          wiring = deps;
+          return { finish: async () => "/dives" };
+        },
+      },
+    },
+    {
+      window: {
+        location: { origin, pathname: "/oauth-callback" },
+        sessionStorage: { removeItem: (key) => removed.push(key) },
+      },
+    },
+  );
+  await browser.finishGoogleOAuth("synthetic-code", false);
+  assert.equal(wiring.available(), true);
+  assert.deepEqual(probes, [true, undefined]);
+  for (const key of Object.values(keys)) wiring.removeTemporaryKey(key);
+  assert.throws(() => wiring.removeTemporaryKey("main-auth"));
+  assert.throws(() => wiring.removeTemporaryKey("unrelated-draft"));
+  assert.deepEqual(removed, Object.values(keys));
+}
+console.log(
+  "PASS: actual_guarded_storage_write_rejection_cleans_only_temporary_OAuth_keys_without_unblocking_or_losing_drafts_and_explicit_retry_succeeds",
+);
+
 // Installed SDK must generate the precise PKCE verifier format/key used above.
 {
   const h = harness();

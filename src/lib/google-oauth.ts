@@ -1,6 +1,7 @@
 import { supabase, googleOAuth, getSupabaseProjectUrl } from "@/integrations/supabase/client";
 import { getTabAuthStorage, authStorageAvailable } from "@/lib/tab-auth-storage";
 import { createGoogleOAuthFlow } from "@/lib/google-oauth-flow";
+import { googleOAuthKeys } from "@/lib/google-oauth-keys";
 
 let flow: ReturnType<typeof createGoogleOAuthFlow> | undefined;
 function getFlow() {
@@ -8,11 +9,18 @@ function getFlow() {
     const storage = getTabAuthStorage();
     if (!storage || !authStorageAvailable(true))
       throw new Error("Google OAuth storage unavailable");
+    const temporaryKeys = new Set(Object.values(googleOAuthKeys(getSupabaseProjectUrl())));
     flow = createGoogleOAuthFlow({
       main: supabase.auth,
       oauth: googleOAuth.auth,
       storage,
-      available: () => authStorageAvailable(true),
+      available: () => authStorageAvailable(),
+      removeTemporaryKey: (key) => {
+        // Try removing only our temporary keys even when writes are blocked.
+        // Never reset the blocked latch by probing or touch main auth/drafts.
+        if (!temporaryKeys.has(key)) throw new Error("Unexpected OAuth cleanup key");
+        window.sessionStorage.removeItem(key);
+      },
       projectUrl: getSupabaseProjectUrl(),
       origin: window.location.origin,
       onCallback: () => window.location.pathname === "/oauth-callback",

@@ -10,6 +10,7 @@ export function createGoogleOAuthFlow(deps: {
   main: Pick<Auth, "getSession" | "setSession">;
   oauth: Pick<Auth, "signInWithOAuth" | "exchangeCodeForSession" | "stopAutoRefresh">;
   storage: Storage;
+  removeTemporaryKey?: (key: string) => void;
   available: () => boolean;
   projectUrl: string;
   origin: string;
@@ -50,7 +51,8 @@ export function createGoogleOAuthFlow(deps: {
     let failed = false;
     for (const key of [keys.transaction, keys.verifier, keys.session, keys.user]) {
       try {
-        deps.storage.removeItem(key);
+        if (deps.removeTemporaryKey) deps.removeTemporaryKey(key);
+        else deps.storage.removeItem(key);
       } catch {
         failed = true;
       }
