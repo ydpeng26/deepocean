@@ -179,7 +179,7 @@ function AuthPage() {
     try {
       toast.dismiss();
       if (!email.trim() || password.length < 6) {
-        toast.error(copy.emailError, { id: "auth-status" });
+        toast.error(copy.emailError);
         return;
       }
       if (mode === "signup") {
@@ -199,9 +199,9 @@ function AuthPage() {
       }
       const { data } = await supabase.auth.getSession();
       if (data.session) goNext();
-      else if (mode === "signin") toast.info(copy.verifyEmail, { id: "auth-status" });
+      else if (mode === "signin") toast.info(copy.verifyEmail);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
+      toast.error(err instanceof Error ? err.message : copy.genericError);
     } finally {
       finishAction(ticket);
     }
@@ -219,9 +219,11 @@ function AuthPage() {
         options: { emailRedirectTo: getEmailConfirmationUrl() },
       });
       if (error) throw error;
-      toast.success(copy.resendSent, { id: "auth-status" });
+      // Let Sonner allocate a fresh ID: a dismissed toast can still be in its
+      // removal animation when a fast retry finishes. Reusing it hides success.
+      toast.success(copy.resendSent);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : copy.genericError, { id: "auth-status" });
+      toast.error(err instanceof Error ? err.message : copy.genericError);
     } finally {
       finishAction(ticket);
     }
@@ -242,7 +244,7 @@ function AuthPage() {
       }
       goNext();
     } catch {
-      toast.error(copy.googleError, { id: "auth-status" });
+      toast.error(copy.googleError);
     } finally {
       if (!redirected) {
         finishAction(ticket);

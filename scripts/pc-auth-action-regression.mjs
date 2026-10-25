@@ -4,6 +4,59 @@ import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import assert from "node:assert/strict";
+// Execute the installed renderer's real subscription callback. A dismissed
+// entry keeps delete=true when updated under the same ID, even with new text.
+const sonnerSource = fs.readFileSync(
+  new URL("../node_modules/sonner/dist/index.mjs", import.meta.url),
+  "utf8",
+);
+const sonnerAst = ts.createSourceFile(
+  "sonner.mjs",
+  sonnerSource,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.JS,
+);
+let subscriberSource;
+function findSubscriber(node) {
+  if (
+    ts.isCallExpression(node) &&
+    node.expression.getText(sonnerAst) === "ToastState.subscribe" &&
+    node.arguments[0].getText(sonnerAst).includes("setToasts")
+  )
+    subscriberSource = node.arguments[0].getText(sonnerAst);
+  ts.forEachChild(node, findSubscriber);
+}
+findSubscriber(sonnerAst);
+assert(subscriberSource);
+function toastRenderer() {
+  let entries = [];
+  const frames = [],
+    timers = [];
+  const publish = vm.runInNewContext("(" + subscriberSource + ")", {
+    requestAnimationFrame: (fn) => frames.push(fn),
+    setTimeout: (fn) => timers.push(fn),
+    ReactDOM: { flushSync: (fn) => fn() },
+    setToasts: (fn) => {
+      entries = fn(entries);
+    },
+  });
+  return {
+    entries: () => entries,
+    publish(value) {
+      publish(value);
+      while (frames.length) frames.shift()();
+      while (timers.length) timers.shift()();
+    },
+  };
+}
+{
+  const renderer = toastRenderer();
+  renderer.publish({ id: "auth-status", type: "error" });
+  renderer.publish({ id: "auth-status", dismiss: true });
+  renderer.publish({ id: "auth-status", type: "success" });
+  assert.equal(renderer.entries()[0].delete, true, "historical shared-ID failure reproduced");
+}
 const gate = () => {
   let resolve;
   const promise = new Promise((r) => {
@@ -19,6 +72,8 @@ const nodes = (n) =>
       ? [n, ...nodes(n.props?.children)]
       : [];
 function harness(language = "en", enabled = true) {
+  const renderer = toastRenderer();
+  let toastSequence = 0;
   let cursor = 0,
     blocked = false,
     probes = 0,
@@ -69,7 +124,14 @@ function harness(language = "en", enabled = true) {
       toast: Object.fromEntries(
         ["dismiss", "error", "success", "info"].map((kind) => [
           kind,
-          (message) => toasts.push({ kind, message }),
+          (message, options) => {
+            toasts.push({ kind, message });
+            if (kind === "dismiss") {
+              for (const entry of renderer.entries())
+                renderer.publish({ id: entry.id, dismiss: true });
+            } else
+              renderer.publish({ id: options?.id ?? ++toastSequence, title: message, type: kind });
+          },
         ]),
       ),
     },
@@ -130,6 +192,7 @@ function harness(language = "en", enabled = true) {
   const h = {
     calls,
     toasts,
+    renderedToasts: renderer.entries,
     navigations,
     render,
     field,
@@ -248,6 +311,21 @@ for (const language of ["zh-CN", "en"]) {
         retry.resolve();
         await second;
         h.assertBusy(false);
+        if (view === "signup" && owner === "aux") {
+          const title =
+            language === "en"
+              ? "Confirmation email resent. Check your inbox and spam folder"
+              : "确认邮件已重新发送，请检查收件箱和垃圾邮件";
+          const successes = h
+            .renderedToasts()
+            .filter((t) => t.type === "success" && t.title === title);
+          assert.equal(successes.length, 1);
+          assert.notEqual(
+            successes[0].delete,
+            true,
+            "retry success must not inherit dismissed error removal",
+          );
+        }
       }
   {
     const h = harness(language),

@@ -438,8 +438,11 @@ async function run() {
       text.includes(marker),
     );
   check(
-    text.includes("aria-busy") && literal("resend") && literal("reset"),
-    "shared_auth_action_lock_must_be_deployed_first",
+    text.includes("aria-busy") &&
+      literal("resend") &&
+      literal("reset") &&
+      !text.includes("auth-status"),
+    "shared_auth_action_lock_and_fresh_feedback_ids_must_be_deployed_first",
   );
   pass("fixed_recovery_auth_action_lock_bundle_preflight");
   const { chromium } = await import(process.env.RECOVERY_PLAYWRIGHT_MODULE || "playwright");
