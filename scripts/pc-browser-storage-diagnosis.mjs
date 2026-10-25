@@ -1,0 +1,20 @@
+// Actual source, synthetic denied/full browser storage. No browser/network/data mutation.
+import fs from 'node:fs';import vm from 'node:vm';import ts from 'typescript';import assert from 'node:assert/strict';
+const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
+function load(file,require,globals={}){const module={exports:{}};const source=read(file).replaceAll('import.meta.env','({VITE_SUPABASE_URL:"https://example.invalid",VITE_SUPABASE_PUBLISHABLE_KEY:"synthetic-public-key"})');vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:1,jsx:4,target:9}}).outputText,{module,exports:module.exports,require,URL,Headers,Request,DOMException,console:{error(){}},fetch(){throw Error('Network forbidden');},...globals});return module.exports;}
+function provider(mode){let cursor=0;const cells=[],effects=[],errors=[],stored=new Map(),document={documentElement:{lang:'zh-CN'}};
+ const react={createContext:()=>({Provider:'Provider'}),useState(value){const i=cursor++;if(!(i in cells))cells[i]=value;return[cells[i],value=>{cells[i]=typeof value==='function'?value(cells[i]):value;}];},useMemo:fn=>fn(),useEffect(fn,deps){const i=cursor++;if(!cells[i]||deps.some((value,index)=>!Object.is(value,cells[i][index]))){cells[i]=deps;effects.push(fn);}}};
+ const storage={getItem(key){if(mode==='read-denied')throw new DOMException('synthetic denied','SecurityError');return stored.get(key);},setItem(key,value){if(mode==='write-full')throw new DOMException('synthetic quota','QuotaExceededError');stored.set(key,value);}};
+ const module=load('src/i18n/LanguageProvider.tsx',name=>name==='react'?react:name==='react/jsx-runtime'?{jsx:(type,props)=>({type,props})}:{},{window:{localStorage:storage,navigator:{language:'en-US'}},document});
+ return{errors,document,render(){cursor=0;const tree=module.LanguageProvider({children:'synthetic child'});effects.splice(0).forEach(fn=>{try{fn();}catch(error){errors.push(error.name);}});return tree;}};
+}
+const ordinary=provider('normal');ordinary.render();assert.equal(ordinary.render().props.value.language,'en');assert.equal(ordinary.document.documentElement.lang,'en');assert.equal(ordinary.errors.length,0);
+const denied=provider('read-denied');denied.render();denied.render();assert(denied.errors.includes('SecurityError'));
+const full=provider('write-full');full.render();assert.equal(full.render().props.value.language,'en');assert(full.errors.includes('QuotaExceededError'));assert.equal(full.document.documentElement.lang,'zh-CN');
+console.log('FINDING: actual_language_provider_read_denial_and_write_quota_escape_effects_optional_preference_can_break_initialization_or_lang_attribute_update');
+let initialized=0;const deniedWindow={localStorage:{removeItem(){}}};Object.defineProperty(deniedWindow,'sessionStorage',{get(){throw new DOMException('synthetic session storage denial','SecurityError');}});
+const blocked=load('src/integrations/supabase/client.ts',name=>name==='@supabase/supabase-js'?{createClient(){initialized++;return{auth:{}};}}:{},{window:deniedWindow});assert.throws(()=>blocked.supabase.auth,error=>error.name==='SecurityError');assert.equal(initialized,0);
+console.log('FINDING: actual_auth_client_unprotected_sessionStorage_property_access_prevents_client_initialization_when_browser_denies_storage');
+let configured;const tabStorage={};const ordinaryClient=load('src/integrations/supabase/client.ts',()=>({createClient(_url,_key,options){configured=options;return{auth:{}};}}),{window:{sessionStorage:tabStorage,localStorage:{removeItem(){throw new DOMException('synthetic denied','SecurityError');}}}});assert.doesNotThrow(()=>ordinaryClient.supabase.auth);assert.equal(configured.auth.storage,tabStorage);assert.equal(configured.auth.persistSession,true);
+console.log('PASS: ordinary_language_choice_and_tab_auth_storage_work_legacy_localStorage_cleanup_denial_is_already_contained');
+console.log('AUDIT: local_diagnosis_complete=true; two_finding_groups; no_network_real_quota_exhaustion_storage_clear_or_application_change; native_browser_acceptance_pending');
