@@ -46,6 +46,7 @@ import {
   toggleForumLike,
   updateForumPost,
   type ForumTopic,
+  type ForumVisibility,
 } from "@/lib/forum";
 
 export const Route = createFileRoute("/forum-preview")({
@@ -79,6 +80,7 @@ type Post = {
   following?: boolean;
   linkedDiveId?: string | null;
   updatedAt?: string;
+  visibility?: ForumVisibility;
   ratio: "wide" | "portrait" | "standard";
 };
 
@@ -354,20 +356,29 @@ const copy = {
   },
 } as const;
 
-export function ForumPage({ preview = false }: { preview?: boolean }) {
+export function ForumPage({
+  preview = false,
+  savedOnly = false,
+}: {
+  preview?: boolean;
+  savedOnly?: boolean;
+}) {
   const queryClient = useQueryClient();
   const photoRef = useRef<HTMLInputElement>(null);
   const { language, toggleLanguage } = useLanguage();
   const c = copy[language];
   const { profile, avatarUrl } = useProfile(!preview);
   const forumQuery = useQuery({
-    queryKey: ["forum-posts"],
-    queryFn: listForumPosts,
-    enabled: !preview,
+    queryKey: ["forum-posts", profile?.id],
+    queryFn: () => listForumPosts(profile!.id),
+    enabled: !preview && !!profile?.id,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 45_000,
   });
   const currentName = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const currentAvatar = avatarUrl ?? "/images/user-fish-hero-preview.jpg";
-  const [feed, setFeed] = useState<"recommended" | "following" | "latest">("recommended");
+  const [feed, setFeed] = useState<"recommended" | "following" | "latest" | "mine">("recommended");
   const [topic, setTopic] = useState<"all" | ForumTopic>("all");
   const [search, setSearch] = useState("");
   const [postWindow, setPostWindow] = useState({ key: "", size: 40 });
@@ -391,6 +402,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const [postTopic, setPostTopic] = useState<ForumTopic>("stories");
   const [postPhoto, setPostPhoto] = useState<File | null>(null);
   const [linkedDiveId, setLinkedDiveId] = useState("");
+  const [postVisibility, setPostVisibility] = useState<ForumVisibility>("public");
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const editingBaseline = useRef<{ owner: string; revision: string | undefined } | null>(null);
   const [composerError, setComposerError] = useState("");
@@ -434,6 +446,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
       following: post.following,
       linkedDiveId: post.linkedDiveId,
       updatedAt: post.updatedAt,
+      visibility: post.visibility,
       ratio: post.imageUrl ? (index % 3 === 1 ? "portrait" : "wide") : "standard",
     }),
   );
@@ -455,12 +468,25 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
         return (
           matchesSearch &&
           matchesFeed &&
+          (!savedOnly || post.saved) &&
+          (feed !== "mine" || post.userId === profile?.id) &&
           (topic === "all" || post.topic === topic) &&
           !hiddenPosts.includes(post.id) &&
           !blockedAuthors.includes(post.author)
         );
       }),
-    [blockedAuthors, feed, followed, hiddenPosts, profile?.id, search, sourcePosts, topic],
+    [
+      blockedAuthors,
+      feed,
+      followed,
+      hiddenPosts,
+      profile?.id,
+      search,
+      sourcePosts,
+      topic,
+      savedOnly,
+      preview,
+    ],
   );
   const recommendedPeople = Array.from(
     new Map(
@@ -483,6 +509,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["forum-posts"] }, { throwOnError: true }),
       queryClient.invalidateQueries({ queryKey: ["forum-blocks"] }),
+      queryClient.invalidateQueries({ queryKey: ["community-stats"] }),
     ]);
   }
   const { busy: interactionBusy, run } = useForumAction({
@@ -509,6 +536,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setPostTopic("stories");
     setPostPhoto(null);
     setLinkedDiveId("");
+    setPostVisibility("public");
     setEditingPost(null);
     editingBaseline.current = null;
     setComposerError("");
@@ -533,6 +561,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
             topic: postTopic,
             location: postLocation,
             linkedDiveId,
+            visibility: postVisibility,
           },
           editingBaseline.current?.owner ?? "",
           editingBaseline.current?.revision,
@@ -546,6 +575,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
           location: postLocation,
           image: postPhoto,
           linkedDiveId,
+          visibility: postVisibility,
         });
       publishingRef.current = false;
       resetComposer();
@@ -581,6 +611,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setPostLocation(post.location);
     setPostTopic(post.topic);
     setLinkedDiveId(post.linkedDiveId ?? "");
+    setPostVisibility(post.visibility ?? "public");
     setEditingPost(post.id);
     setComposerError("");
     editingBaseline.current = { owner: post.userId ?? "", revision: post.updatedAt };
@@ -595,6 +626,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setComposer(true);
   }
   async function sharePost(post: Post) {
+    if (post.visibility === "private") return;
     const url = `${window.location.origin}/forum#post-${post.id}`;
     if (navigator.share) await navigator.share({ title: post.titleZh, text: post.textZh, url });
     else {
@@ -707,16 +739,20 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
           </aside>
           <section className="do-forum-feed">
             <div className="do-forum-feed-tabs" aria-label={c.forum}>
-              {(["recommended", "following", "latest"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  data-active={feed === value}
-                  onClick={() => setFeed(value)}
-                >
-                  {c[value]}
-                </button>
-              ))}
+              {savedOnly ? (
+                <h2>{language === "zh-CN" ? "我的收藏" : "My saved posts"}</h2>
+              ) : (
+                (["recommended", "following", "latest", "mine"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    data-active={feed === value}
+                    onClick={() => setFeed(value)}
+                  >
+                    {value === "mine" ? (language === "zh-CN" ? "我的帖子" : "My posts") : c[value]}
+                  </button>
+                ))
+              )}
             </div>
             {!preview && forumQuery.isPending && <div className="do-forum-empty">{c.loading}</div>}
             {!preview && forumQuery.isError && (
@@ -729,7 +765,11 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
             )}
             {!forumQuery.isPending && !forumQuery.isError && !visiblePosts.length && (
               <button type="button" className="do-forum-empty" onClick={openComposer}>
-                {c.empty}
+                {savedOnly
+                  ? language === "zh-CN"
+                    ? "暂无可查看的收藏，已删除或转私密的帖子不会显示。"
+                    : "No accessible saved posts. Deleted or private stories are not shown."
+                  : c.empty}
               </button>
             )}
             <div className="do-forum-posts">
@@ -820,6 +860,9 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                       )}
                     </div>
                     <div className="do-forum-post-body">
+                      {post.visibility === "private" && (
+                        <small>{language === "zh-CN" ? "仅自己可见" : "Only me"}</small>
+                      )}
                       <h2>{language === "zh-CN" ? post.titleZh : post.titleEn}</h2>
                       <p>{language === "zh-CN" ? post.textZh : post.textEn}</p>
                       <button
@@ -855,6 +898,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                         <button
                           type="button"
                           aria-label={c.share}
+                          disabled={post.visibility === "private"}
                           onClick={() => void sharePost(post)}
                         >
                           <Share2 />
@@ -1022,6 +1066,19 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
             </div>
             {composerError && <p role="alert">{composerError}</p>}
             <div className="do-forum-composer-fields">
+              <label>
+                {language === "zh-CN" ? "帖子可见性" : "Post visibility"}
+                <select
+                  value={postVisibility}
+                  disabled={publishing}
+                  onChange={(event) => setPostVisibility(event.target.value as ForumVisibility)}
+                >
+                  <option value="public">
+                    {language === "zh-CN" ? "论坛公开（已登录用户可见）" : "Forum members"}
+                  </option>
+                  <option value="private">{language === "zh-CN" ? "仅自己可见" : "Only me"}</option>
+                </select>
+              </label>
               <input
                 value={postTitle}
                 disabled={publishing}
@@ -1031,6 +1088,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
               />
               <input
                 value={postLocation}
+                id="forum-post-location"
                 disabled={publishing}
                 onChange={(event) => setPostLocation(event.target.value)}
                 placeholder={c.location}
@@ -1091,9 +1149,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
               <button
                 type="button"
                 onClick={() =>
-                  document
-                    .querySelector<HTMLInputElement>(".do-forum-composer-fields input:nth-child(2)")
-                    ?.focus()
+                  document.querySelector<HTMLInputElement>("#forum-post-location")?.focus()
                 }
               >
                 <MapPin />
@@ -1122,23 +1178,25 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
           </section>
         </div>
       )}
-      {commentPost && commentDrafts[commentKey] && (
-        <ForumCommentsDialog
-          key={commentKey}
-          post={{
-            id: commentPost.id,
-            title: language === "en" ? commentPost.titleEn : commentPost.titleZh,
-          }}
-          ownerId={profile?.id ?? ""}
-          language={language}
-          preview={preview}
-          draft={commentDrafts[commentKey]}
-          onDraftChange={(draft) =>
-            setCommentDrafts((items) => ({ ...items, [commentKey]: draft }))
-          }
-          onClose={() => setCommentPost(null)}
-        />
-      )}
+      {commentPost &&
+        commentDrafts[commentKey] &&
+        (preview || livePosts.some((post) => post.id === commentPost.id)) && (
+          <ForumCommentsDialog
+            key={commentKey}
+            post={{
+              id: commentPost.id,
+              title: language === "en" ? commentPost.titleEn : commentPost.titleZh,
+            }}
+            ownerId={profile?.id ?? ""}
+            language={language}
+            preview={preview}
+            draft={commentDrafts[commentKey]}
+            onDraftChange={(draft) =>
+              setCommentDrafts((items) => ({ ...items, [commentKey]: draft }))
+            }
+            onClose={() => setCommentPost(null)}
+          />
+        )}
     </div>
   );
 }

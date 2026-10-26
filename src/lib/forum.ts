@@ -4,6 +4,7 @@ const db = supabase as any;
 const FORUM_MEDIA_BUCKET = "forum-media";
 
 export type ForumTopic = "stories" | "creatures" | "encyclopedia" | "sites" | "gear" | "stays";
+export type ForumVisibility = "public" | "private";
 
 export type ForumPost = {
   id: string;
@@ -24,6 +25,7 @@ export type ForumPost = {
   following: boolean;
   linkedDiveId: string | null;
   updatedAt: string;
+  visibility: ForumVisibility;
 };
 
 export type ForumComment = {
@@ -60,7 +62,7 @@ async function signedUrls(bucket: string, paths: Array<string | null | undefined
   for (let start = 0; start < unique.length; start += 100) {
     const result = await supabase.storage
       .from(bucket)
-      .createSignedUrls(unique.slice(start, start + 100), 60 * 60);
+      .createSignedUrls(unique.slice(start, start + 100), 60);
     if (result.error) throw result.error;
     data.push(...(result.data ?? []));
   }
@@ -103,15 +105,15 @@ async function completeForumRows(makeQuery: () => any, key: string, owner: strin
   }
 }
 
-export async function listForumPosts(): Promise<ForumPost[]> {
-  const userId = await currentUserId();
+export async function listForumPosts(expectedUserId?: string): Promise<ForumPost[]> {
+  const userId = await currentUserId(expectedUserId);
   const [rows, bookmarks, follows, blocks, likes] = await Promise.all([
     completeForumRows(
       () =>
         db
           .from("forum_posts")
           .select(
-            "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,updated_at,forum_likes(count),forum_comments(count)",
+            "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,visibility,created_at,updated_at,forum_likes(count),forum_comments(count)",
             { count: "exact" },
           ),
       "id",
@@ -150,7 +152,10 @@ export async function listForumPosts(): Promise<ForumPost[]> {
   const following = new Set((follows ?? []).map((row: any) => row.following_id));
   const liked = new Set(likes.map((row: any) => row.post_id));
   const visible = rows
-    .filter((row: any) => !blocked.has(row.user_id))
+    .filter(
+      (row: any) =>
+        !blocked.has(row.user_id) && (row.visibility !== "private" || row.user_id === userId),
+    )
     .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
   const imageUrls = await signedUrls(
     FORUM_MEDIA_BUCKET,
@@ -177,7 +182,26 @@ export async function listForumPosts(): Promise<ForumPost[]> {
     following: following.has(row.user_id),
     linkedDiveId: row.linked_dive_id ?? null,
     updatedAt: row.updated_at,
+    visibility: row.visibility === "private" ? "private" : "public",
   }));
+}
+
+export type CommunityStats = { likesReceived: number; savesReceived: number; followers: number };
+export async function getMyCommunityStats(expectedUserId: string): Promise<CommunityStats> {
+  const owner = await currentUserId(expectedUserId);
+  const { data, error } = await db.rpc("get_my_community_stats");
+  if (error) throw error;
+  await currentUserId(owner);
+  const row = data?.[0];
+  const raw = [row?.likes_received, row?.saves_received, row?.followers];
+  const values = raw.map(Number);
+  if (
+    !row ||
+    raw.some((value) => value === null || value === undefined || value === "") ||
+    values.some((value) => !Number.isSafeInteger(value) || value < 0)
+  )
+    throw new Error("社区统计未完整读取 / Community stats unavailable.");
+  return { likesReceived: values[0], savesReceived: values[1], followers: values[2] };
 }
 
 export async function createForumPost(input: {
@@ -188,6 +212,7 @@ export async function createForumPost(input: {
   location?: string;
   image?: File | null;
   linkedDiveId?: string | null;
+  visibility?: ForumVisibility;
 }) {
   const userId = await currentUserId();
   const id = input.requestId ?? crypto.randomUUID();
@@ -208,12 +233,13 @@ export async function createForumPost(input: {
     location: input.location?.trim() || null,
     image_path: imagePath,
     linked_dive_id: input.linkedDiveId || null,
+    visibility: input.visibility ?? "public",
   };
   // A lost response must not turn a retry into another post (or overwrite a photo).
   async function alreadySaved() {
     const { data, error } = await db
       .from("forum_posts")
-      .select("id,user_id,title,body,topic,location,image_path,linked_dive_id")
+      .select("id,user_id,title,body,topic,location,image_path,linked_dive_id,visibility")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
@@ -245,6 +271,7 @@ export async function updateForumPost(
     topic: ForumTopic;
     location?: string;
     linkedDiveId?: string | null;
+    visibility?: ForumVisibility;
   },
   expectedUserId: string,
   revision?: string,
@@ -257,6 +284,7 @@ export async function updateForumPost(
     topic: input.topic,
     location: input.location?.trim() || null,
     linked_dive_id: input.linkedDiveId || null,
+    ...(input.visibility ? { visibility: input.visibility } : {}),
   };
   const { data, error } = await db
     .from("forum_posts")
