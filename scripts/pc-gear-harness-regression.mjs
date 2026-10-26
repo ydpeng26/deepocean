@@ -6,8 +6,33 @@ import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
 import vm from "node:vm";
+import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
 const runner = new URL("./recovery-gear-concurrency.mjs", import.meta.url);
 const source = fs.readFileSync(runner, "utf8");
+function notesMatch(controls, expected) {
+  return vm.runInNewContext("(" + gearNotesMatch.toString() + ")(expected)", {
+    expected,
+    document: {
+      querySelectorAll(selector) {
+        assert.equal(selector, "fieldset textarea");
+        return controls;
+      },
+    },
+  });
+}
+assert(
+  notesMatch(
+    [{ value: "newer A notes", parentElement: { textContent: "备注newer A notes" } }],
+    "newer A notes",
+  ),
+);
+assert(!notesMatch([{ value: "old notes" }], "newer A notes"));
+assert(!notesMatch([], "newer A notes"));
+assert(!notesMatch([{ value: "newer A notes" }, { value: "newer A notes" }], "newer A notes"));
+assert(source.includes('await b.waitForFunction(gearNotesMatch, "newer A notes")'));
+console.log(
+  "PASS: serialized notes reload check reads the unique real textarea value, tolerates parent label text containing note content, rejects wrong/missing/duplicate controls",
+);
 const owner = "synthetic-owner",
   token = "synthetic-access-token";
 const fixtureStorage = (value) => ({

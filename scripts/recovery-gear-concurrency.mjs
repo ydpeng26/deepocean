@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
+import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -332,12 +333,10 @@ async function suite(language) {
     b.once("dialog", (d) => d.accept());
     await button(b, copy.reload).click();
     await field(b, copy.model).waitFor();
-    await b.waitForFunction(
-      ({ label, value }) =>
-        [...document.querySelectorAll("label")].some(
-          (n) => n.textContent.trim() === label && n.querySelector("textarea")?.value === value,
-        ),
-      { label: copy.notes, value: "newer A notes" },
+    await b.waitForFunction(gearNotesMatch, "newer A notes");
+    check(
+      (await field(b, copy.notes).inputValue()) === "newer A notes",
+      "explicit_reload_latest_notes",
     );
     check((await field(b, copy.model).inputValue()) === "base", "explicit_reload_latest_model");
     await field(b, copy.model).fill("fresh B");
