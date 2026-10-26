@@ -7,8 +7,177 @@ import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
 import vm from "node:vm";
 import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
+import { gearTrafficDiagnostic } from "./lib/gear-traffic-diagnostic.mjs";
+import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
 const runner = new URL("./recovery-gear-concurrency.mjs", import.meta.url);
 const source = fs.readFileSync(runner, "utf8");
+const sensitiveUrl =
+  "https://foreign.example.invalid/private/SECRET_SENTINEL?email=synthetic@example.invalid&access_token=SECRET_SENTINEL";
+const boundary = gearTrafficDiagnostic(
+  sensitiveUrl,
+  "SECRET_SENTINEL",
+  "SECRET_SENTINEL",
+  "SECRET_SENTINEL",
+);
+assert.deepEqual(boundary, {
+  origin: "foreign",
+  family: "other",
+  method: "OTHER",
+  resource: "other",
+  reason: "route_handler_error",
+});
+assert(!JSON.stringify(boundary).includes("SECRET_SENTINEL"));
+assert(!JSON.stringify(boundary).includes("@"));
+assert.equal(
+  gearTrafficDiagnostic(
+    "https://zmhtlhpeulhhcvlnjdrb.supabase.co/rest/v1/profiles?select=SECRET_SENTINEL",
+    "GET",
+    "fetch",
+    "foreign_origin",
+  ).origin,
+  "production",
+);
+assert.equal(
+  gearTrafficDiagnostic(
+    "https://esovqvampbrhuhamkfcs.supabase.co/rest/v1/rpc/private_function?token=SECRET_SENTINEL",
+    "POST",
+    "xhr",
+    "fixture_mutations_only",
+  ).family,
+  "other_rpc",
+);
+assert.equal(
+  nativeErrorDiagnostic(Error("Minified React error #418; SECRET_SENTINEL")).category,
+  "react",
+);
+assert(
+  !JSON.stringify(nativeErrorDiagnostic(Error("SECRET_SENTINEL"))).includes("SECRET_SENTINEL"),
+);
+assert(source.includes('check(!unsafe, "blocked_request_boundary_violation")'));
+assert(source.includes('"unexpected_browser_script_error"'));
+assert(!source.includes('"browser_errors_or_unsafe_traffic"'));
+console.log(
+  "PASS: separate blocked-request and page-error checks preserved; request diagnostics omit raw URLs/queries/headers/bodies/identities; script errors report fixed categories only",
+);
+// Exercise the actual cloud context's routing and page-error callbacks locally.
+const contextSource = source.slice(
+  source.indexOf("async function context("),
+  source.indexOf("function reportContext("),
+);
+const callbacks = {};
+const fakeContext = {
+  async addInitScript() {},
+  on(name, callback) {
+    callbacks[name] = callback;
+  },
+  async route(_pattern, callback) {
+    callbacks.route = callback;
+  },
+};
+const sandbox = vm.createContext({
+  browser: {
+    async newContext() {
+      return fakeContext;
+    },
+  },
+  site: "https://supdiver-recovery-test.vercel.app",
+  api: "https://esovqvampbrhuhamkfcs.supabase.co",
+  fixtureId: "fixture-owner",
+  email: "synthetic@example.invalid",
+  stage: "synthetic-phase",
+  unsafe: false,
+  URL,
+  gearTrafficDiagnostic,
+  nativeErrorDiagnostic,
+  check(ok, code) {
+    if (!ok) {
+      const e = Error(code);
+      e.auditCode = code;
+      throw e;
+    }
+  },
+});
+const fixtureContext = await vm.runInContext(
+  contextSource + ';context("zh-CN","fixture-row")',
+  sandbox,
+);
+function routeFixture(url, method = "GET") {
+  const state = { continued: 0, aborted: 0 };
+  return {
+    state,
+    request: () => ({
+      url: () => url,
+      method: () => method,
+      resourceType: () => "fetch",
+      postDataJSON: () => ({ email: "synthetic@example.invalid" }),
+    }),
+    async continue() {
+      state.continued++;
+    },
+    async abort() {
+      state.aborted++;
+    },
+  };
+}
+for (const [url, method, expected] of [
+  ["https://supdiver-recovery-test.vercel.app/assets/synthetic.js", "GET", "continued"],
+  ["https://esovqvampbrhuhamkfcs.supabase.co/rest/v1/gear_items?select=*", "GET", "continued"],
+  [
+    "https://esovqvampbrhuhamkfcs.supabase.co/rest/v1/gear_items?id=eq.fixture-row&user_id=eq.fixture-owner&updated_at=eq.v0",
+    "PATCH",
+    "continued",
+  ],
+  [
+    "https://esovqvampbrhuhamkfcs.supabase.co/rest/v1/gear_items?id=eq.fixture-row&user_id=eq.fixture-owner",
+    "PATCH",
+    "aborted",
+  ],
+  [
+    "https://esovqvampbrhuhamkfcs.supabase.co/rest/v1/other?token=SECRET_SENTINEL",
+    "GET",
+    "aborted",
+  ],
+  [sensitiveUrl, "GET", "aborted"],
+]) {
+  const route = routeFixture(url, method);
+  await callbacks.route(route);
+  assert.equal(route.state[expected], 1);
+}
+assert.equal(fixtureContext.stats.blocked, 3);
+assert(sandbox.unsafe);
+let pageError;
+callbacks.page({
+  on(name, callback) {
+    assert.equal(name, "pageerror");
+    pageError = callback;
+  },
+});
+pageError(Error("Minified React error #418; SECRET_SENTINEL"));
+assert.equal(fixtureContext.stats.errors, 1);
+assert.equal(fixtureContext.stats.errorKinds[0].category, "react");
+assert.equal(fixtureContext.stats.errorKinds[0].reactCode, 418);
+const contextReport = source.slice(
+  source.indexOf("function reportContext("),
+  source.indexOf("// Gear has exactly one textarea."),
+);
+const lines = [];
+sandbox.console = {
+  log(line) {
+    lines.push(line);
+  },
+};
+sandbox.fixtureStats = fixtureContext.stats;
+vm.runInContext(contextReport + ';reportContext("fixture-context",fixtureStats)', sandbox);
+const output = lines.join("");
+assert(!output.includes("SECRET_SENTINEL"));
+assert(!output.includes("synthetic@example.invalid"));
+assert(!output.includes("fixture-owner"));
+assert(!output.includes("https://"));
+assert(output.includes('"pageErrors":1'));
+assert(output.includes('"blockedRequests":3'));
+console.log(
+  "PASS: actual route callbacks still block foreign/read-boundary/missing-revision writes, permit scoped operations, capture page errors independently, and emit sanitized context reports",
+);
 function notesMatch(controls, expected) {
   return vm.runInNewContext("(" + gearNotesMatch.toString() + ")(expected)", {
     expected,

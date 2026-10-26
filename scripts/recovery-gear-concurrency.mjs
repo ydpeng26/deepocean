@@ -5,6 +5,8 @@ import { gearRecoveryPreflight } from "./lib/gear-recovery-preflight.mjs";
 import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
 import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
+import { gearTrafficDiagnostic } from "./lib/gear-traffic-diagnostic.mjs";
+import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -126,7 +128,17 @@ const copies = {
   },
 };
 async function context(language, id) {
-  const stats = { patches: 0, deletes: 0, mode: null, revision: null, fixtureId: id, errors: 0 };
+  const stats = {
+    patches: 0,
+    deletes: 0,
+    mode: null,
+    revision: null,
+    fixtureId: id,
+    errors: 0,
+    blocked: 0,
+    errorKinds: [],
+    blockedKinds: [],
+  };
   const c = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
     locale: language === "en" ? "en-US" : "zh-CN",
@@ -136,16 +148,41 @@ async function context(language, id) {
     (language) => localStorage.setItem("deepocean-language", language),
     language,
   );
-  c.on("page", (p) => p.on("pageerror", () => stats.errors++));
+  c.on("page", (p) =>
+    p.on("pageerror", (error) => {
+      stats.errors++;
+      if (stats.errorKinds.length < 6) {
+        const diagnostic = nativeErrorDiagnostic(error);
+        const reactCode =
+          diagnostic.category === "react"
+            ? String(error.message).match(/Minified React error #(\d{1,4})\b/)
+            : null;
+        stats.errorKinds.push({
+          ...diagnostic,
+          phase: stage,
+          ...(reactCode ? { reactCode: Number(reactCode[1]) } : {}),
+        });
+      }
+    }),
+  );
   await c.route("**/*", async (route) => {
     const request = route.request(),
       u = new URL(request.url()),
       method = request.method();
+    const blocked = async (reason) => {
+      unsafe = true;
+      stats.blocked++;
+      if (stats.blockedKinds.length < 6)
+        stats.blockedKinds.push({
+          phase: stage,
+          ...gearTrafficDiagnostic(request.url(), method, request.resourceType(), reason),
+        });
+      await route.abort().catch(() => {});
+    };
     try {
       if (u.origin === site && ["GET", "HEAD", "OPTIONS"].includes(method)) return route.continue();
       if (u.origin !== api) {
-        unsafe = true;
-        return route.abort();
+        return blocked("foreign_origin");
       }
       if (["GET", "HEAD", "OPTIONS"].includes(method)) {
         if (
@@ -156,8 +193,7 @@ async function context(language, id) {
             "/auth/v1/settings",
           ].includes(u.pathname)
         ) {
-          unsafe = true;
-          return route.abort();
+          return blocked("read_path_not_allowed");
         }
         return route.continue();
       }
@@ -201,12 +237,23 @@ async function context(language, id) {
         });
       }
       return route.continue();
-    } catch {
-      unsafe = true;
-      await route.abort().catch(() => {});
+    } catch (error) {
+      await blocked(error.auditCode);
     }
   });
   return { context: c, stats };
+}
+function reportContext(label, stats) {
+  console.log(
+    "DIAGNOSTIC: " +
+      JSON.stringify({
+        context: label,
+        pageErrors: stats.errors,
+        blockedRequests: stats.blocked,
+        errorKinds: stats.errorKinds,
+        blockedKinds: stats.blockedKinds,
+      }),
+  );
 }
 // Gear has exactly one textarea. Scope notes to that actual control rather than
 // depending on implicit accessible-label resolution through nested label markup.
@@ -386,11 +433,11 @@ async function suite(language) {
       "deleted_draft_retained",
     );
     pass(language + "_deleted_record_not_resurrected_unsaved_input_remains_copyable");
-    check(
-      A.stats.errors === 0 && B.stats.errors === 0 && !unsafe,
-      "browser_errors_or_unsafe_traffic",
-    );
+    check(!unsafe, "blocked_request_boundary_violation");
+    check(A.stats.errors === 0 && B.stats.errors === 0, "unexpected_browser_script_error");
   } finally {
+    reportContext(language + "_A", A.stats);
+    reportContext(language + "_B", B.stats);
     await A.context.close();
     await B.context.close();
   }
@@ -427,12 +474,14 @@ async function suite(language) {
       (await row(retryId)).model === "after acknowledged retry",
       "acknowledged_revision_adopted",
     );
-    check(C.stats.errors === 0 && !unsafe, "retry_browser_errors_or_unsafe_traffic");
+    check(!unsafe, "blocked_retry_request_boundary_violation");
+    check(C.stats.errors === 0, "unexpected_retry_browser_script_error");
     pass(
       language +
         "_double_submit_one_patch_lost_reply_explicit_retry_confirms_without_rewrite_next_edit_passes",
     );
   } finally {
+    reportContext(language + "_retry", C.stats);
     await C.context.close();
   }
   await req("/rest/v1/gear_items?id=eq." + retryId + "&user_id=eq." + fixtureId, {
