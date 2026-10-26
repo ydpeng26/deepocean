@@ -300,6 +300,9 @@ export async function runGuestAcceptance() {
     await browser?.close().catch(() => {
       complete = false;
     });
+    // A failed/aborted browser write can still be finishing at the Edge server.
+    // Let its bounded 15-second RPC window settle before exact fixture cleanup.
+    if (!complete && fixtures.size) await new Promise(resolve => setTimeout(resolve, 16000));
     cleaned = true;
     for (const [id, expected] of fixtures) {
       try {
