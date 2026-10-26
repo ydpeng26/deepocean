@@ -1,5 +1,13 @@
 # Remaining member safety checks — 2026-10-26
 
+## Authorized formal release verified
+
+After run 48 acceptance, the user explicitly approved this batch's formal release. Main was fast-forwarded with an expected-head guard from `3dbf600ce0f021d8cc8f80ce5bdf0efffaa103cb` to `b53dc10c9f27cb194fed1e806ca170143df47a0e`, without rewriting history. The release guard verified exact run/job success, application equality to accepted `b269ae145168777233ae3037063b337ce9eab8a9`, original workflow restoration, and the new dedicated workflow's manual-only isolated-branch boundary. All 35 local regression suites passed again.
+
+Formal deepocean deployment [88PefMbG5DpApabyZovy7HfAmafg](https://vercel.com/ydpeng26s-projects/deepocean/88PefMbG5DpApabyZovy7HfAmafg) reported deployment completed. Independent public reads of `https://www.supdiver.com` returned HTTP 200 for auth, gear, profile, certificates, marine, forum and offline-sync. All 65 manifest-listed JS assets loaded; the four new conflict guards, private member wrapper and explicit gear-notes id are present. The single client bundle contains the formal backend and not the recovery backend.
+
+These are formal delivery/domain/backend checks, not production-account write tests. No database, credentials, login configuration, existing user rows or photos were changed. Stateful acceptance remains the isolated run 48 evidence. Real Safari BFCache first paint/VoiceOver, Edge and real camera codec coverage remain pending as stated below. This documentation-only follow-up stays on the isolated branch; it does not trigger another formal release.
+
 ## Latest checkpoint — run 48 recovery acceptance passed
 
 [Run 48](https://github.com/ydpeng26/deepocean/actions/runs/40272669211), job `121408674149`, source `b269ae145168777233ae3037063b337ce9eab8a9`, completed successfully. Independently read safe logs confirm all seven groups passed in both Chinese and English: profile stale edit/draft/reload/fresh save/double submit; certificate stale edit/private draft; undecodable generated-image rejection without upload/save and with draft retention; marine stale edit/photo retention; forum stale edit and lost-reply retry without rewriting; comment stale edit and remote-deletion copyable draft; all seven accessible gear labels plus synchronous pagehide hiding and synthetic pageshow revalidation.
