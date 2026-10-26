@@ -4,7 +4,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import { spawnSync } from "node:child_process";
-import { feedbackFixtureWrite } from "./recovery-feedback.mjs";
+import { feedbackFixtureWrite, feedbackFixtureRead } from "./recovery-feedback.mjs";
 import { recoveryOrigin } from "./recovery-member-safety.mjs";
 const read = (file) => fs.readFileSync(new URL("../" + file, import.meta.url), "utf8");
 function load(file, require, globals = {}) {
@@ -288,6 +288,21 @@ const fixturePayload = {
   body: "FEEDBACK-SAFETY-local fixture",
 };
 const fixtureUrl = recoveryOrigin + "/rest/v1/website_feedback";
+const readUrl = fixtureUrl + "?select=id,user_id,category,body&id=eq." + id + "&user_id=eq.A";
+assert.equal(
+  feedbackFixtureRead(readUrl, "A"),
+  id,
+  "Fresh UUID pre-insert lookup must be allowed for the generated owner",
+);
+for (const url of [
+  readUrl.replace("eq.A", "eq.B"),
+  readUrl.replace("&id=eq." + id, ""),
+  readUrl.replace("select=id,user_id,category,body", "select=*"),
+  readUrl + "&or=(user_id.eq.B)",
+  readUrl.replace(recoveryOrigin, "https://www.supdiver.com"),
+  readUrl + "&id=eq.other",
+])
+  assert.equal(feedbackFixtureRead(url, "A"), null);
 assert(feedbackFixtureWrite(fixtureUrl, "POST", fixturePayload, "A", new Set([id])));
 for (const [url, method, payload, ids] of [
   [
