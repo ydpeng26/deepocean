@@ -99,6 +99,7 @@ export async function runFeedbackAcceptance() {
       account,
       errors: 0,
       blocked: 0,
+      blockedKinds: [],
       posts: 0,
       mode: null,
       failedRead: false,
@@ -114,8 +115,32 @@ export async function runFeedbackAcceptance() {
       const request = route.request(),
         u = new URL(request.url()),
         method = request.method();
-      const block = async () => {
+      const block = async (reason = "path_boundary") => {
         state.blocked++;
+        if (state.blockedKinds.length < 8)
+          state.blockedKinds.push({
+            phase: stage,
+            method,
+            reason: [
+              "read_origin",
+              "read_table",
+              "read_other_owner",
+              "fixture_feedback_read_only",
+              "fixture_login_only",
+              "fixture_feedback_write_only",
+              "lost_commit",
+            ].includes(reason)
+              ? reason
+              : "path_boundary",
+            endpoint:
+              u.origin !== recoveryOrigin
+                ? "other_origin"
+                : /^\/rest\/v1\/[a-z_]+$/.test(u.pathname)
+                  ? u.pathname.slice(9)
+                  : /^\/auth\/v1\/(user|settings|token|logout)$/.test(u.pathname)
+                    ? u.pathname
+                    : "other_path",
+          });
         await route.abort().catch(() => {});
       };
       try {
@@ -192,8 +217,8 @@ export async function runFeedbackAcceptance() {
           });
         }
         return route.continue();
-      } catch {
-        return block();
+      } catch (error) {
+        return block(error.auditCode || error.message);
       }
     });
     const page = await context.newPage();
@@ -527,6 +552,16 @@ export async function runFeedbackAcceptance() {
   } catch (error) {
     console.log("DIAGNOSTIC: " + JSON.stringify(gearBrowserDiagnostic(error)));
     console.log(
+      "DIAGNOSTIC: " +
+        JSON.stringify({
+          positions: [
+            ...String(error.stack ?? "").matchAll(/recovery-feedback\.mjs:(\d{1,6}):(\d{1,6})/g),
+          ]
+            .slice(0, 4)
+            .map((m) => ({ line: Number(m[1]), column: Number(m[2]) })),
+        }),
+    );
+    console.log(
       "INCOMPLETE: stage=" +
         stage +
         "; check=" +
@@ -547,6 +582,7 @@ export async function runFeedbackAcceptance() {
             pageErrors: state.errors,
             blockedRequests: state.blocked,
             feedbackPosts: state.posts,
+            blockedKinds: state.blockedKinds,
           }),
       );
     cleanupOK = true;
