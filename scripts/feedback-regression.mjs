@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { spawnSync } from "node:child_process";
+import { feedbackFixtureWrite } from "./recovery-feedback.mjs";
+import { recoveryOrigin } from "./recovery-member-safety.mjs";
 const read = (file) => fs.readFileSync(new URL("../" + file, import.meta.url), "utf8");
 function load(file, require, globals = {}) {
   const module = { exports: {} };
@@ -260,7 +263,7 @@ for (const language of ["zh-CN", "en"]) {
 assert(!read("src/routes/forum-preview.tsx").includes('className="do-forum-hero-orbit"'));
 assert(!read("src/routes/forum-preview.tsx").includes("OCEAN STORIES"));
 assert(read("src/routeTree.gen.ts").includes("'/_authenticated/feedback'"));
-const sql = read("supabase/migrations/20261026130330_website_feedback.sql");
+const sql = read("supabase/migrations/20261026135542_website_feedback.sql");
 for (const boundary of [
   "ENABLE ROW LEVEL SECURITY",
   "FROM PUBLIC, anon, authenticated",
@@ -277,4 +280,51 @@ for (const boundary of [
 assert(!/SECURITY DEFINER|GRANT.*(?:UPDATE|DELETE).*TO authenticated/.test(sql));
 console.log(
   "PASS: feedback navigation is bilingual and active, forum count widget removed, authenticated route generated, SQL source has private owner policies and server-side limits (live SQL acceptance still pending)",
+);
+const fixturePayload = {
+  id,
+  user_id: "A",
+  category: "suggestion",
+  body: "FEEDBACK-SAFETY-local fixture",
+};
+const fixtureUrl = recoveryOrigin + "/rest/v1/website_feedback";
+assert(feedbackFixtureWrite(fixtureUrl, "POST", fixturePayload, "A", new Set([id])));
+for (const [url, method, payload, ids] of [
+  [
+    fixtureUrl.replace(recoveryOrigin, "https://www.supdiver.com"),
+    "POST",
+    fixturePayload,
+    new Set([id]),
+  ],
+  [fixtureUrl.replace("website_feedback", "profiles"), "POST", fixturePayload, new Set([id])],
+  [fixtureUrl, "PATCH", fixturePayload, new Set([id])],
+  [fixtureUrl, "POST", { ...fixturePayload, user_id: "B" }, new Set([id])],
+  [fixtureUrl, "POST", { ...fixturePayload, body: "Not a synthetic fixture" }, new Set([id])],
+  [fixtureUrl, "POST", { ...fixturePayload, created_at: "2000-01-01" }, new Set([id])],
+  [fixtureUrl, "POST", fixturePayload, new Set()],
+])
+  assert(!feedbackFixtureWrite(url, method, payload, "A", ids));
+const guarded = spawnSync(process.execPath, ["scripts/recovery-feedback.mjs"], {
+  encoding: "utf8",
+  env: { PATH: process.env.PATH },
+});
+assert.equal(guarded.status, 1);
+assert(guarded.stdout.includes("github_cloud_only") && guarded.stdout.includes("complete=false"));
+const runner = read("scripts/recovery-feedback.mjs");
+assert(
+  runner.indexOf('check(process.env.GITHUB_ACTIONS === "true"') <
+    runner.indexOf("admin = process.env.RECOVERY_SERVICE_ROLE_KEY"),
+);
+for (const guard of [
+  "exact_cleanup_account_guard",
+  "session_revocation",
+  "feedback_fixture_absence",
+  "profile_and_feedback_absence",
+  "concurrent_minute_limit_serialized",
+  "daily_limit_enforced",
+  "480000",
+])
+  assert(runner.includes(guard), guard);
+console.log(
+  "PASS: actual cloud feedback write boundary rejects foreign/untracked/non-synthetic/extra-field writes; local invocation fails before credentials or network; exact cleanup and deadline guards remain present",
 );

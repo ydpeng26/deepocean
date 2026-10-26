@@ -1,4 +1,5 @@
 -- New private feedback only. Existing records, auth rules and buckets are untouched.
+-- Filename aligned to the version returned by the recovery migration service.
 CREATE TABLE public.website_feedback (
   id uuid PRIMARY KEY,
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,

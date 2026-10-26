@@ -26,9 +26,8 @@ jobs:
           else
             node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
-      - name: Verify stale deletion and avatar replacement with exact fixture cleanup
+      - name: Verify private feedback, signup guidance and forum presentation
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
-          RECOVERY_MEMBER_FOLLOWUPS: "true"
-        run: node scripts/recovery-member-safety.mjs
+        run: node scripts/recovery-feedback.mjs
