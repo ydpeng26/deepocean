@@ -7,6 +7,7 @@ import { gearFixtureToken } from "./lib/gear-fixture-session.mjs";
 import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
 import { gearTrafficDiagnostic } from "./lib/gear-traffic-diagnostic.mjs";
 import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
+import { initializeGearLanguage, isGearFontStylesheet } from "./lib/gear-browser-setup.mjs";
 const api = "https://esovqvampbrhuhamkfcs.supabase.co";
 const site = "https://supdiver-recovery-test.vercel.app";
 const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
@@ -136,6 +137,7 @@ async function context(language, id) {
     fixtureId: id,
     errors: 0,
     blocked: 0,
+    fontStubs: 0,
     errorKinds: [],
     blockedKinds: [],
   };
@@ -144,10 +146,7 @@ async function context(language, id) {
     locale: language === "en" ? "en-US" : "zh-CN",
     serviceWorkers: "block",
   });
-  await c.addInitScript(
-    (language) => localStorage.setItem("deepocean-language", language),
-    language,
-  );
+  await c.addInitScript(initializeGearLanguage, language);
   c.on("page", (p) =>
     p.on("pageerror", (error) => {
       stats.errors++;
@@ -181,6 +180,14 @@ async function context(language, id) {
     };
     try {
       if (u.origin === site && ["GET", "HEAD", "OPTIONS"].includes(method)) return route.continue();
+      if (isGearFontStylesheet(request.url(), method, request.resourceType())) {
+        stats.fontStubs++;
+        return route.fulfill({
+          status: 200,
+          contentType: "text/css",
+          body: "/* external font omitted in isolated gear concurrency fixture */",
+        });
+      }
       if (u.origin !== api) {
         return blocked("foreign_origin");
       }
@@ -250,6 +257,7 @@ function reportContext(label, stats) {
         context: label,
         pageErrors: stats.errors,
         blockedRequests: stats.blocked,
+        fontStylesheetsStubbed: stats.fontStubs,
         errorKinds: stats.errorKinds,
         blockedKinds: stats.blockedKinds,
       }),

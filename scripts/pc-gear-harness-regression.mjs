@@ -9,6 +9,7 @@ import vm from "node:vm";
 import { gearNotesMatch } from "./lib/gear-notes-control.mjs";
 import { gearTrafficDiagnostic } from "./lib/gear-traffic-diagnostic.mjs";
 import { nativeErrorDiagnostic } from "./lib/native-error-diagnostic.mjs";
+import { initializeGearLanguage, isGearFontStylesheet } from "./lib/gear-browser-setup.mjs";
 const runner = new URL("./recovery-gear-concurrency.mjs", import.meta.url);
 const source = fs.readFileSync(runner, "utf8");
 const sensitiveUrl =
@@ -66,7 +67,9 @@ const contextSource = source.slice(
 );
 const callbacks = {};
 const fakeContext = {
-  async addInitScript() {},
+  async addInitScript(fn, arg) {
+    callbacks.init = { fn, arg };
+  },
   on(name, callback) {
     callbacks[name] = callback;
   },
@@ -89,6 +92,8 @@ const sandbox = vm.createContext({
   URL,
   gearTrafficDiagnostic,
   nativeErrorDiagnostic,
+  initializeGearLanguage,
+  isGearFontStylesheet,
   check(ok, code) {
     if (!ok) {
       const e = Error(code);
@@ -101,14 +106,14 @@ const fixtureContext = await vm.runInContext(
   contextSource + ';context("zh-CN","fixture-row")',
   sandbox,
 );
-function routeFixture(url, method = "GET") {
-  const state = { continued: 0, aborted: 0 };
+function routeFixture(url, method = "GET", resourceType = "fetch") {
+  const state = { continued: 0, aborted: 0, fulfilled: 0 };
   return {
     state,
     request: () => ({
       url: () => url,
       method: () => method,
-      resourceType: () => "fetch",
+      resourceType: () => resourceType,
       postDataJSON: () => ({ email: "synthetic@example.invalid" }),
     }),
     async continue() {
@@ -116,6 +121,12 @@ function routeFixture(url, method = "GET") {
     },
     async abort() {
       state.aborted++;
+    },
+    async fulfill(response) {
+      assert.equal(response.status, 200);
+      assert.equal(response.contentType, "text/css");
+      assert(!response.body.includes("url("));
+      state.fulfilled++;
     },
   };
 }
@@ -145,6 +156,65 @@ for (const [url, method, expected] of [
 }
 assert.equal(fixtureContext.stats.blocked, 3);
 assert(sandbox.unsafe);
+const fontUrl =
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap";
+assert(isGearFontStylesheet(fontUrl, "GET", "stylesheet"));
+for (const [url, method, type] of [
+  [fontUrl + "&token=SECRET_SENTINEL", "GET", "stylesheet"],
+  [fontUrl, "POST", "stylesheet"],
+  [fontUrl, "GET", "script"],
+  [fontUrl.replace("fonts.googleapis.com", "foreign.invalid"), "GET", "stylesheet"],
+  [fontUrl.replace("Noto+Sans+SC", "Other+Font"), "GET", "stylesheet"],
+])
+  assert(!isGearFontStylesheet(url, method, type));
+const fontRoute = routeFixture(fontUrl, "GET", "stylesheet");
+await callbacks.route(fontRoute);
+assert.equal(fontRoute.state.fulfilled, 1);
+assert.equal(fontRoute.state.continued, 0);
+assert.equal(fontRoute.state.aborted, 0);
+assert.equal(fixtureContext.stats.fontStubs, 1);
+assert.equal(fixtureContext.stats.blocked, 3);
+const unknownCss = routeFixture(fontUrl + "&token=SECRET_SENTINEL", "GET", "stylesheet");
+await callbacks.route(unknownCss);
+assert.equal(unknownCss.state.aborted, 1);
+assert.equal(fixtureContext.stats.blocked, 4);
+let writes = 0;
+for (const origin of ["null", "https://foreign.invalid", "https://www.supdiver.com"]) {
+  vm.runInNewContext("(" + callbacks.init.fn.toString() + ")(language)", {
+    language: callbacks.init.arg,
+    location: { origin },
+    localStorage: {
+      setItem() {
+        writes++;
+        throw Error("Opaque-origin storage accessed");
+      },
+    },
+  });
+}
+assert.equal(writes, 0);
+vm.runInNewContext("(" + callbacks.init.fn.toString() + ")(language)", {
+  language: "en",
+  location: { origin: "https://supdiver-recovery-test.vercel.app" },
+  localStorage: {
+    setItem(key, value) {
+      assert.equal(key, "deepocean-language");
+      assert.equal(value, "en");
+      writes++;
+    },
+  },
+});
+assert.equal(writes, 1);
+assert.throws(() =>
+  vm.runInNewContext("(" + callbacks.init.fn.toString() + ")(language)", {
+    language: "en",
+    location: { origin: "https://supdiver-recovery-test.vercel.app" },
+    localStorage: {
+      setItem() {
+        throw Error("Synthetic actual-site storage denial");
+      },
+    },
+  }),
+);
 let pageError;
 callbacks.page({
   on(name, callback) {
@@ -174,7 +244,11 @@ assert(!output.includes("synthetic@example.invalid"));
 assert(!output.includes("fixture-owner"));
 assert(!output.includes("https://"));
 assert(output.includes('"pageErrors":1'));
-assert(output.includes('"blockedRequests":3'));
+assert(output.includes('"blockedRequests":4'));
+assert(output.includes('"fontStylesheetsStubbed":1'));
+console.log(
+  "PASS: actual context init skips opaque/foreign/production origins but preserves real-site storage failures; only exact known font CSS is fulfilled locally without forwarding; unknown CSS remains blocked",
+);
 console.log(
   "PASS: actual route callbacks still block foreign/read-boundary/missing-revision writes, permit scoped operations, capture page errors independently, and emit sanitized context reports",
 );
