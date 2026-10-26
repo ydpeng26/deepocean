@@ -19,6 +19,9 @@ export const liveEnglish: Record<string, string> = {
   请选择图片文件: "Choose an image file",
   "原始图片请大于 0 且不超过 20MB": "The original image must be larger than 0 and at most 20 MB",
   请上传相遇照片: "Upload an encounter photo",
+  重新加载相遇记录: "Reload encounters",
+  "相遇记录已在其他页面修改或删除。当前输入与照片已保留，请复制需要的内容后关闭编辑框，重新加载并打开最新记录。":
+    "Encounter changed or was deleted elsewhere. Your edits and photo are kept. Copy what you need, close the editor, reload and open the latest record.",
   "建议请填写 1 至 1000 个字符": "Enter a suggestion between 1 and 1000 characters",
   "这次建议可能已保存不同内容，请重新载入核对":
     "This suggestion may have saved different content. Reload to check.",

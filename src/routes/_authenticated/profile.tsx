@@ -23,6 +23,7 @@ import {
   signedAvatarUrl,
   updateMyProfile,
   uploadAvatar,
+  ProfileConflictError,
   type Profile,
   type ProfileUpdate,
 } from "@/lib/profile";
@@ -131,6 +132,8 @@ function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarPreviewRef = useRef<string | null>(null);
   const initializedAccount = useRef<string | null>(null);
+  const editBaseline = useRef<Profile | null>(null);
+  const [conflict, setConflict] = useState(false);
   const operationRef = useRef<"save" | "upload" | null>(null);
   const mountedRef = useRef(true);
 
@@ -146,6 +149,8 @@ function ProfilePage() {
     // Avatar/cache refreshes must never reset unsaved text in this editor.
     if (profile && initializedAccount.current !== profile.id) {
       initializedAccount.current = profile.id;
+      editBaseline.current = { ...profile };
+      setConflict(false);
       setName(profile.display_name ?? "");
       setCert(profile.cert_level ?? "");
       setTanks(String(profile.tank_count ?? 0));
@@ -153,12 +158,21 @@ function ProfilePage() {
     }
   }, [profile]);
   const save = useMutation({
-    mutationFn: ({ values, accountId }: { values: ProfileUpdate; accountId: string }) =>
-      updateMyProfile(values, accountId),
+    mutationFn: ({
+      values,
+      accountId,
+      baseline,
+    }: {
+      values: ProfileUpdate;
+      accountId: string;
+      baseline: Pick<Profile, keyof ProfileUpdate>;
+    }) => updateMyProfile(values, accountId, baseline),
     onSuccess: (confirmed: Profile) => {
       if (!mountedRef.current) return;
       // Only the database-confirmed values may be labelled as saved.
       queryClient.setQueryData(["profile"], confirmed);
+      editBaseline.current = { ...confirmed };
+      setConflict(false);
       setName(confirmed.display_name ?? "");
       setCert(confirmed.cert_level ?? "");
       setTanks(String(confirmed.tank_count));
@@ -167,7 +181,8 @@ function ProfilePage() {
       setSaved(true);
       toast.success(language === "zh-CN" ? "个人资料已保存" : "Profile saved");
     },
-    onError: () => {
+    onError: (error) => {
+      if (mountedRef.current && error instanceof ProfileConflictError) setConflict(true);
       if (mountedRef.current)
         toast.error(
           language === "zh-CN"
@@ -180,8 +195,15 @@ function ProfilePage() {
     },
   });
   const upload = useMutation({
-    mutationFn: ({ file, accountId }: { file: File; accountId: string }) =>
-      uploadAvatar(file, accountId),
+    mutationFn: ({
+      file,
+      accountId,
+      baselineAvatar,
+    }: {
+      file: File;
+      accountId: string;
+      baselineAvatar: string | null;
+    }) => uploadAvatar(file, accountId, baselineAvatar),
     onSuccess: (path, { accountId }) => {
       if (!mountedRef.current) return;
       queryClient.setQueryData<Profile | null>(["profile"], (current) =>
@@ -200,6 +222,7 @@ function ProfilePage() {
     },
     onError: (error) => {
       if (!mountedRef.current) return;
+      if (error instanceof ProfileConflictError) setConflict(true);
       if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
       avatarPreviewRef.current = null;
       setAvatarPreview(null);
@@ -234,7 +257,15 @@ function ProfilePage() {
     setSaved(false);
   }
   function saveProfile() {
-    if (operationRef.current || isPending || isError || !profile) return;
+    if (
+      operationRef.current ||
+      conflict ||
+      isPending ||
+      isError ||
+      !profile ||
+      !editBaseline.current
+    )
+      return;
     const count = Number(tanks);
     if (!Number.isInteger(count) || count < 0 || count > 2147483647) {
       toast.error(
@@ -248,6 +279,7 @@ function ProfilePage() {
     setSaved(false);
     save.mutate({
       accountId: profile.id,
+      baseline: { ...editBaseline.current },
       values: {
         display_name: name.trim() || (language === "zh-CN" ? "潜水员" : "Diver"),
         cert_level: cert || null,
@@ -260,6 +292,38 @@ function ProfilePage() {
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
   }
+  async function reloadProfile() {
+    if (
+      operationRef.current ||
+      !window.confirm(
+        language === "en"
+          ? "Discard unsaved profile edits and load the latest profile?"
+          : "放弃尚未保存的资料修改并加载最新资料？",
+      )
+    )
+      return;
+    operationRef.current = "save";
+    try {
+      const result = await refetch();
+      if (!mountedRef.current) return;
+      if (result.error || !result.data || result.data.id !== profile?.id) {
+        toast.error(c.loadError);
+        return;
+      }
+      const latest = result.data;
+      editBaseline.current = { ...latest };
+      setName(latest.display_name ?? "");
+      setCert(latest.cert_level ?? "");
+      setTanks(String(latest.tank_count));
+      setBio(latest.bio ?? "");
+      setConflict(false);
+      setSaved(false);
+    } catch {
+      if (mountedRef.current) toast.error(c.loadError);
+    } finally {
+      operationRef.current = null;
+    }
+  }
 
   return (
     <div className="do-profile-page">
@@ -269,6 +333,18 @@ function ProfilePage() {
           <h1>{c.title}</h1>
           <p>{c.intro}</p>
         </section>
+        {conflict && (
+          <div role="alert">
+            <p>
+              {language === "en"
+                ? "Profile changed elsewhere. Your edits are kept; copy them before reloading."
+                : "资料已在其他页面修改，当前输入已保留，请先复制需要的内容再重新加载。"}
+            </p>
+            <button type="button" disabled={busy} onClick={() => void reloadProfile()}>
+              {c.retry}
+            </button>
+          </div>
+        )}
         {isPending ? (
           <div className="do-profile-loading">{c.load}</div>
         ) : isError || !profile ? (
@@ -303,13 +379,17 @@ function ProfilePage() {
                 disabled={busy}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file && !operationRef.current && profile && !isError) {
+                  if (file && !operationRef.current && !conflict && profile && !isError) {
                     operationRef.current = "upload";
                     if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
                     const previewUrl = URL.createObjectURL(file);
                     avatarPreviewRef.current = previewUrl;
                     setAvatarPreview(previewUrl);
-                    upload.mutate({ file, accountId: profile.id });
+                    upload.mutate({
+                      file,
+                      accountId: profile.id,
+                      baselineAvatar: profile.avatar_url,
+                    });
                   }
                   event.target.value = "";
                 }}
@@ -392,8 +472,15 @@ function ProfilePage() {
                 </div>
                 <Waves aria-hidden="true" />
               </div>
-              <Link to="/certificates" className="do-profile-cert-link" style={{ margin: "18px 28px 0" }}>
-                <Award aria-hidden="true" />{language === "zh-CN" ? "管理我的证书档案与正面照片" : "Manage my certificates and front photos"}
+              <Link
+                to="/certificates"
+                className="do-profile-cert-link"
+                style={{ margin: "18px 28px 0" }}
+              >
+                <Award aria-hidden="true" />
+                {language === "zh-CN"
+                  ? "管理我的证书档案与正面照片"
+                  : "Manage my certificates and front photos"}
               </Link>
               <div className="do-profile-fields">
                 <label>
@@ -436,7 +523,7 @@ function ProfilePage() {
                 <button
                   type="button"
                   className="do-profile-save"
-                  disabled={busy}
+                  disabled={busy || conflict}
                   onClick={saveProfile}
                 >
                   {save.isPending ? (

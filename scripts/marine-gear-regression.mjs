@@ -91,10 +91,10 @@ function database() {
             if (key === "then") return (resolve) => Promise.resolve(resolve(execute()));
             if (key === "single") return async () => execute(true);
             if (key === "maybeSingle")
-              return async () =>
-                execute(false).data instanceof Array
-                  ? { data: execute(false).data[0] ?? null, error: null }
-                  : execute(false);
+              return async () => {
+                const result = execute(false);
+                return result.data instanceof Array ? { ...result, data: result.data[0] ?? null } : result;
+              };
             return (...args) => {
               if (key === "insert" || key === "update") {
                 operation = key;
@@ -350,10 +350,10 @@ function gearEditor(readError = false) {
     }
     throw Error("Unsettled editor");
   };
-  state.field = (label) =>
-    nodes(
-      nodes(state.tree).find((node) => node.type === "label" && content(node).startsWith(label)),
-    ).find((node) => node.type === "Input" || node.type === "Textarea");
+  state.field = (label) => {
+    const associated = nodes(state.tree).find((node) => node.type === "Label" && content(node) === label);
+    return nodes(state.tree).find((node) => node.props?.id === associated?.props.htmlFor && ["Input", "Textarea", "select"].includes(node.type));
+  };
   state.button = (label) =>
     nodes(state.tree).find((node) => node.type === "Button" && content(node).includes(label));
   state.render();
@@ -361,6 +361,9 @@ function gearEditor(readError = false) {
 }
 {
   const editor = gearEditor();
+  for (const label of ["装备类型", "品牌", "型号", "购入日期", "下次保养日期", "累计使用次数", "备注"])
+    assert(editor.field(label), "Explicit accessible label must resolve one control: " + label);
+  assert.equal(nodes(editor.tree).filter((n) => n.type === "label").length, 0, "No nested native labels");
   editor.field("品牌").props.onChange({ target: { value: "Unsaved" } });
   editor.render();
   editor.items = [{ ...editor.items[0], brand: "Server refreshed" }];

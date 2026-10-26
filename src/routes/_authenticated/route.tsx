@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MemberHeader } from "@/components/MemberHeader";
 import { memberSessionGate } from "@/lib/authenticated-session";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const privateRoot = useRef<HTMLDivElement>(null);
   const { user } = Route.useRouteContext();
   const router = useRouter();
   const { language } = useLanguage();
@@ -73,12 +74,20 @@ function AuthenticatedLayout() {
       // A restored document must not immediately expose its old member subtree.
       void memberSessionGate.recheck(event.persisted);
     };
+    const leaving = () => {
+      // Hide synchronously before a browser can freeze/snapshot this document.
+      // React's scheduled render alone is not a pre-snapshot privacy boundary.
+      privateRoot.current?.setAttribute("hidden", "");
+      memberSessionGate.suspend();
+    };
     window.addEventListener("focus", focus);
     window.addEventListener("pageshow", restored);
+    window.addEventListener("pagehide", leaving);
     document.addEventListener("visibilitychange", visible);
     return () => {
       window.removeEventListener("focus", focus);
       window.removeEventListener("pageshow", restored);
+      window.removeEventListener("pagehide", leaving);
       document.removeEventListener("visibilitychange", visible);
     };
   }, []);
@@ -122,9 +131,9 @@ function AuthenticatedLayout() {
     );
   }
   return (
-    <Fragment key={`${user.id}:${session.epoch}`}>
+    <div ref={privateRoot} key={`${user.id}:${session.epoch}`} data-private-member-root>
       <MemberHeader />
       <Outlet />
-    </Fragment>
+    </div>
   );
 }

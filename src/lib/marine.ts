@@ -23,6 +23,32 @@ export type Suggestion = {
   body: string;
   created_at: string;
 };
+export class EncounterConflictError extends Error {
+  constructor() {
+    super(
+      "相遇记录已在其他页面修改或删除，当前输入与照片已保留。请复制后重新打开最新记录。 / Encounter changed or was deleted elsewhere. Your edits and photo are kept; copy them before reopening the latest record.",
+    );
+    this.name = "EncounterConflictError";
+  }
+}
+const encounterFields = [
+  "species_name",
+  "encountered_on",
+  "location",
+  "needs_help",
+  "photo_path",
+  "created_at",
+] as const;
+function atEncounterBaseline<T extends { eq(key: string, value: string | boolean): T }>(
+  query: T,
+  original: Encounter,
+) {
+  for (const key of encounterFields) {
+    if (original[key] === undefined || original[key] === null) throw new EncounterConflictError();
+    query = query.eq(key, original[key]);
+  }
+  return query;
+}
 async function user(expectedId?: string) {
   const { data } = await supabase.auth.getSession();
   if (!data.session?.user) throw Error("请先登录");
@@ -133,9 +159,13 @@ export async function saveEncounter(
   }
   await user(current.id);
   const query = existing
-    ? db.from("marine_encounters").update(payload).eq("id", id).eq("user_id", current.id)
+    ? atEncounterBaseline(
+        db.from("marine_encounters").update(payload).eq("id", id).eq("user_id", current.id),
+        existing,
+      )
     : db.from("marine_encounters").insert({ id, ...payload });
-  const { data, error } = await query.select("*").single();
+  const { data, error } = await query.select("*").maybeSingle();
+  await user(current.id);
   if (error) {
     if (!existing && error.code === "23505") {
       const prior = await confirmRetry();
@@ -143,17 +173,32 @@ export async function saveEncounter(
     }
     throw error;
   }
+  if (!data && existing) {
+    try {
+      const confirmed = await confirmRetry();
+      if (confirmed) return confirmed;
+    } catch (error) {
+      if (error instanceof Error && error.message === "此请求已保存不同内容，请重新载入后编辑")
+        throw new EncounterConflictError();
+      throw error;
+    }
+    throw new EncounterConflictError();
+  }
   if (!data || data.id !== id || data.user_id !== current.id) throw Error("未确认保存，请重试");
   return data;
 }
 export async function deleteEncounter(encounter: Encounter) {
   const current = await user();
-  const { error } = await db
-    .from("marine_encounters")
-    .delete()
-    .eq("id", encounter.id)
-    .eq("user_id", current.id);
+  if (encounter.user_id !== current.id) throw new EncounterConflictError();
+  const { data, error } = await atEncounterBaseline(
+    db.from("marine_encounters").delete().eq("id", encounter.id).eq("user_id", current.id),
+    encounter,
+  )
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new EncounterConflictError();
+  await user(current.id);
   await supabase.storage.from("marine-photos").remove([encounter.photo_path]);
 }
 export async function listSuggestions(id: string): Promise<Suggestion[]> {

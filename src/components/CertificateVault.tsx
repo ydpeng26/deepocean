@@ -12,6 +12,7 @@ import {
   uploadCertificateFront,
   certificatePhotoUrl,
   validateCertificate,
+  CertificateConflictError,
   type DiverCertificate,
   type CertificateInput,
 } from "@/lib/certificates";
@@ -38,6 +39,8 @@ export function CertificateVault() {
   const [selectedId, select] = useState<string | null>(null);
   const selected = records.find((item) => item.id === selectedId) ?? records[0];
   const [draft, setDraft] = useState<Draft | null>(null);
+  const baseline = useRef<string | null | undefined>(undefined);
+  const [conflict, setConflict] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false),
@@ -92,6 +95,8 @@ export function CertificateVault() {
   }
   function start(item?: DiverCertificate) {
     if (lock.current || !discard()) return;
+    baseline.current = item ? item.updated_at : null;
+    setConflict(false);
     setDraft(
       item
         ? {
@@ -109,7 +114,7 @@ export function CertificateVault() {
     setFile(null);
   }
   async function submit() {
-    if (lock.current || !draft || !profile) return;
+    if (lock.current || conflict || !draft || !profile) return;
     try {
       validateCertificate(draft);
     } catch (error) {
@@ -123,7 +128,7 @@ export function CertificateVault() {
     try {
       if (file)
         snapshot.front_photo_path = await uploadCertificateFront(snapshot.id, file, ownerId);
-      const saved = await saveCertificate(snapshot.id, snapshot, ownerId);
+      const saved = await saveCertificate(snapshot.id, snapshot, ownerId, baseline.current);
       if (!alive.current) return;
       select(saved.id);
       setDraft(null);
@@ -135,6 +140,7 @@ export function CertificateVault() {
       toast.success(t("证书已保存", "Certificate saved"));
       await refresh(ownerId);
     } catch (error) {
+      if (alive.current && error instanceof CertificateConflictError) setConflict(true);
       if (alive.current)
         toast.error(
           t(
@@ -163,7 +169,7 @@ export function CertificateVault() {
     setBusy(true);
     const ownerId = profile.id;
     try {
-      await archiveCertificate(item.id, true, ownerId);
+      const archived = await archiveCertificate(item.id, true, ownerId, item.updated_at);
       if (!alive.current) return;
       await refresh(ownerId);
       toast.success(t("证书已移除", "Certificate removed"), {
@@ -171,7 +177,7 @@ export function CertificateVault() {
         action: {
           label: t("撤销", "Undo"),
           onClick: () => {
-            void archiveCertificate(item.id, false, ownerId)
+            void archiveCertificate(item.id, false, ownerId, archived.updated_at)
               .then(() => {
                 if (alive.current) return refresh(ownerId);
               })
@@ -179,8 +185,13 @@ export function CertificateVault() {
           },
         },
       });
-    } catch {
-      if (alive.current) toast.error(t("移除失败，请重试", "Removal failed"));
+    } catch (error) {
+      if (alive.current)
+        toast.error(
+          error instanceof CertificateConflictError
+            ? error.message
+            : t("移除失败，请重试", "Removal failed"),
+        );
     } finally {
       lock.current = false;
       if (alive.current) setBusy(false);
@@ -194,6 +205,14 @@ export function CertificateVault() {
   return (
     <div className="do-cert-page do-cert-live">
       <main className="do-cert-main">
+        {conflict && (
+          <p role="alert">
+            {t(
+              "证书已在其他页面修改或移除，草稿与照片已保留。请先复制需要的内容，再取消编辑并重新加载证书。",
+              "Certificate changed or was removed elsewhere. Your draft and photo are kept. Copy what you need, then cancel editing and reload certificates.",
+            )}
+          </p>
+        )}
         <section className="do-cert-intro">
           <div>
             <span>DIVER CREDENTIALS</span>
@@ -214,9 +233,17 @@ export function CertificateVault() {
             "Self-reported credentials are not verified by SupDiver or an agency. Numbers and photos are always owner-only.",
           )}
         </p>
-        {query.isPending ? (
+        {query.isError && draft && (
+          <p role="alert">
+            {t(
+              "最新证书暂时无法读取，当前草稿仍保留。",
+              "Latest certificates could not be loaded. Your current draft is kept.",
+            )}
+          </p>
+        )}
+        {query.isPending && !draft ? (
           <p role="status">{t("正在读取证书…", "Loading certificates…")}</p>
-        ) : query.isError ? (
+        ) : query.isError && !draft ? (
           <div role="alert">
             <p>{t("暂时无法读取证书，请重试。", "Certificates couldn't be loaded.")}</p>
             <button onClick={() => void query.refetch()}>{t("重新加载", "Reload")}</button>
@@ -232,6 +259,15 @@ export function CertificateVault() {
               <button className="do-cert-add" disabled={busy} onClick={() => start()}>
                 <Plus />
                 {t("新增证书", "Add certificate")}
+              </button>
+              <button
+                type="button"
+                disabled={busy || query.isFetching}
+                onClick={() => {
+                  if (!lock.current) void query.refetch();
+                }}
+              >
+                {t("重新加载证书", "Reload certificates")}
               </button>
               <ol className="do-cert-live-list">
                 {records.map((item) => (
@@ -465,7 +501,7 @@ export function CertificateVault() {
                       >
                         {t("取消", "Cancel")}
                       </button>
-                      <button disabled={busy || !profile} onClick={() => void submit()}>
+                      <button disabled={busy || conflict || !profile} onClick={() => void submit()}>
                         {busy ? t("保存中…", "Saving…") : t("保存证书", "Save certificate")}
                       </button>
                     </div>

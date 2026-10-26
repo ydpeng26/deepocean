@@ -14,6 +14,7 @@ import {
   listSuggestions,
   saveEncounter,
   shareEncounterToForum,
+  EncounterConflictError,
   type Encounter,
 } from "@/lib/marine";
 
@@ -33,6 +34,7 @@ function MarineWall() {
   const [help, setHelp] = useState(false);
   const [editor, setEditor] = useState(false);
   const [editing, setEditing] = useState<Encounter | undefined>();
+  const [conflict, setConflict] = useState(false);
   const [selected, setSelected] = useState<Encounter | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
@@ -99,6 +101,7 @@ function MarineWall() {
   }
   function openEditor(item?: Encounter) {
     if (lock.current) return;
+    setConflict(false);
     requestId.current = item?.id ?? crypto.randomUUID();
     setEditing(item);
     setFile(null);
@@ -111,7 +114,7 @@ function MarineWall() {
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (lock.current || !profile) return;
+    if (lock.current || conflict || !profile) return;
     if ((!name.trim() && !needsHelp) || !location.trim() || !date) {
       toast.error(t("请填写生物名称、相遇时间和地点；不认识时可勾选寻求帮助"));
       return;
@@ -134,6 +137,7 @@ function MarineWall() {
       setFile(null);
       toast.success(t("海洋相遇已保存"));
     } catch (error) {
+      if (alive.current && error instanceof EncounterConflictError) setConflict(true);
       if (alive.current)
         toast.error(
           (error instanceof Error ? t(error.message) + "; " : "") +
@@ -162,6 +166,15 @@ function MarineWall() {
           </button>
         </header>
         <div className="do-marine-tabs">
+          <button
+            type="button"
+            disabled={busy || query.isFetching}
+            onClick={() => {
+              if (!lock.current) void query.refetch();
+            }}
+          >
+            {t("重新加载相遇记录")}
+          </button>
           <button disabled={busy} aria-pressed={!help} onClick={() => setHelp(false)}>
             {t("我的展览墙")}
           </button>
@@ -249,6 +262,13 @@ function MarineWall() {
                 {editing ? t("编辑海洋相遇") : t("记录一次海洋相遇")}
               </h2>
               <form onSubmit={save}>
+                {conflict && (
+                  <p role="alert">
+                    {t(
+                      "相遇记录已在其他页面修改或删除。当前输入与照片已保留，请复制需要的内容后关闭编辑框，重新加载并打开最新记录。",
+                    )}
+                  </p>
+                )}
                 <fieldset disabled={busy} className="do-marine-save-fields">
                   {(preview || editing?.imageUrl) && (
                     <img
@@ -331,7 +351,7 @@ function MarineWall() {
                         )
                       : t("此条相遇只会显示在你自己的展览墙。")}
                   </p>
-                  <button type="submit" disabled={busy || !profile}>
+                  <button type="submit" disabled={busy || conflict || !profile}>
                     {busy ? t("正在保存…") : t("保存相遇")}
                   </button>
                 </fieldset>
@@ -390,8 +410,13 @@ function MarineWall() {
                         if (!isCurrentOwner(owner)) return;
                         setSelected(null);
                         await refresh();
-                      } catch {
-                        if (isCurrentOwner(owner)) toast.error(t("删除失败，请重试"));
+                      } catch (error) {
+                        if (isCurrentOwner(owner))
+                          toast.error(
+                            error instanceof EncounterConflictError
+                              ? error.message
+                              : t("删除失败，请重试"),
+                          );
                       } finally {
                         finishAction();
                       }

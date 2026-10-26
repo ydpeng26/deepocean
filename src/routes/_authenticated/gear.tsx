@@ -365,9 +365,10 @@ function GearPage() {
                 </p>
               </div>
             </div>
-            <label className="space-y-2">
-              <Label>{t("装备类型")}</Label>
+            <div className="space-y-2">
+              <Label htmlFor="gear-category">{t("装备类型")}</Label>
               <select
+                id="gear-category"
                 className="h-10 w-full border border-input bg-background px-3 text-sm"
                 value={draft.category}
                 onChange={(e) => set("category", e.target.value as GearCategory)}
@@ -378,63 +379,69 @@ function GearPage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="space-y-2">
-              <Label>{t("品牌")}</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gear-brand">{t("品牌")}</Label>
               <Input
+                id="gear-brand"
                 className="rounded-none"
                 value={draft.brand}
                 maxLength={80}
                 onChange={(e) => set("brand", e.target.value)}
               />
-            </label>
-            <label className="space-y-2">
-              <Label>{t("型号")}</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gear-model">{t("型号")}</Label>
               <Input
+                id="gear-model"
                 className="rounded-none"
                 value={draft.model}
                 maxLength={100}
                 onChange={(e) => set("model", e.target.value)}
               />
-            </label>
-            <label className="space-y-2">
-              <Label>{t("购入日期")}</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gear-purchased">{t("购入日期")}</Label>
               <Input
+                id="gear-purchased"
                 className="rounded-none"
                 type="date"
                 value={draft.purchased_on ?? ""}
                 onChange={(e) => set("purchased_on", e.target.value || null)}
               />
-            </label>
-            <label className="space-y-2">
-              <Label>{t("下次保养日期")}</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gear-service">{t("下次保养日期")}</Label>
               <Input
+                id="gear-service"
                 className="rounded-none"
                 type="date"
                 value={draft.next_service_on ?? ""}
                 onChange={(e) => set("next_service_on", e.target.value || null)}
               />
-            </label>
-            <label className="space-y-2">
-              <Label>{t("累计使用次数")}</Label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gear-count">{t("累计使用次数")}</Label>
               <Input
+                id="gear-count"
                 className="rounded-none"
                 type="number"
                 min="0"
                 value={draft.dive_count}
                 onChange={(e) => set("dive_count", Math.max(0, Number(e.target.value) || 0))}
               />
-            </label>
-            <label className="space-y-2 sm:col-span-2">
-              <Label>{t("备注")}</Label>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="gear-notes">{t("备注")}</Label>
               <Textarea
+                id="gear-notes"
                 className="rounded-none"
                 rows={4}
                 value={draft.notes ?? ""}
                 maxLength={1000}
                 onChange={(e) => set("notes", e.target.value || null)}
               />
-            </label>
+            </div>
           </fieldset>
           <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-border pt-6">
             <div>

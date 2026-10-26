@@ -31,6 +31,14 @@ export type CertificateInput = Pick<
   | "is_public"
   | "front_photo_path"
 >;
+export class CertificateConflictError extends Error {
+  constructor() {
+    super(
+      "证书已在其他页面修改或移除，当前输入已保留。请复制后重新打开最新记录。 / Certificate changed or was removed elsewhere. Your edits are kept; copy them before reopening the latest record.",
+    );
+    this.name = "CertificateConflictError";
+  }
+}
 
 async function owner(expected?: string) {
   const { data, error } = await supabase.auth.getSession();
@@ -87,28 +95,86 @@ export async function saveCertificate(
   id: string,
   input: CertificateInput,
   expectedUser: string,
+  revision?: string | null,
 ): Promise<DiverCertificate> {
   const user_id = await owner(expectedUser),
     values = validateCertificate(input);
-  const { data, error } = await db
-    .from("diver_certificates")
-    .upsert({ id, user_id, ...values }, { onConflict: "id" })
-    .select("*")
-    .single();
-  if (error) throw error;
+  if (revision === undefined || revision === "") throw new CertificateConflictError();
+  const prior = async () => {
+    const result = await db
+      .from("diver_certificates")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user_id)
+      .maybeSingle();
+    if (result.error) throw result.error;
+    const row = result.data;
+    if (
+      row &&
+      row.id === id &&
+      row.user_id === user_id &&
+      row.deleted_at === null &&
+      Object.entries(values).every(([key, value]) => row[key as keyof DiverCertificate] === value)
+    )
+      return row;
+    return null;
+  };
+  if (revision === null) {
+    const existing = await db
+      .from("diver_certificates")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user_id)
+      .maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) {
+      const confirmed = await prior();
+      if (confirmed) return confirmed;
+      throw new CertificateConflictError();
+    }
+  }
+  await owner(user_id);
+  const mutation =
+    revision === null
+      ? db.from("diver_certificates").insert({ id, user_id, ...values })
+      : db
+          .from("diver_certificates")
+          .update(values)
+          .eq("id", id)
+          .eq("user_id", user_id)
+          .eq("updated_at", revision)
+          .is("deleted_at", null);
+  const { data, error } = await mutation.select("*").maybeSingle();
+  await owner(user_id);
+  if (error && error.code !== "23505") throw error;
+  if (!data) {
+    const confirmed = await prior();
+    if (confirmed) return confirmed;
+    throw new CertificateConflictError();
+  }
   if (!data || data.user_id !== user_id) throw new Error("未确认保存 / Save not confirmed");
   return data;
 }
-export async function archiveCertificate(id: string, archived: boolean, expectedUser: string) {
+export async function archiveCertificate(
+  id: string,
+  archived: boolean,
+  expectedUser: string,
+  revision?: string,
+) {
   const userId = await owner(expectedUser);
+  if (!revision) throw new CertificateConflictError();
   const { data, error } = await db
     .from("diver_certificates")
     .update({ deleted_at: archived ? new Date().toISOString() : null })
     .eq("id", id)
     .eq("user_id", userId)
-    .select("id")
-    .single();
-  if (error || !data) throw error || new Error("未确认操作 / Change not confirmed");
+    .eq("updated_at", revision)
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new CertificateConflictError();
+  await owner(userId);
+  return data;
 }
 export async function uploadCertificateFront(id: string, file: File, expectedUser: string) {
   const userId = await owner(expectedUser);

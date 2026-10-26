@@ -37,8 +37,10 @@ export function ForumCommentsDialog({
     [error, setError] = useState("");
   const dialogRef = useRef<HTMLElement>(null);
   useModalFocus(dialogRef, true, onClose, () => !lock.current);
-  const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; body: string; revision: string } | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState<{ id: string; revision: string } | null>(null);
   const [commentWindow, setCommentWindow] = useState({ key: "", size: 50 });
   const windowKey = `${ownerId}:${post.id}`;
   const windowSize = commentWindow.key === windowKey ? commentWindow.size : 50;
@@ -110,6 +112,33 @@ export function ForumCommentsDialog({
             {error}
           </p>
         )}
+        {editing &&
+          (query.isError ||
+            query.isPending ||
+            !query.data?.some((comment) => comment.id === editing.id)) && (
+            <div role="alert">
+              <p>
+                {t(
+                  "原回应暂不可用，未保存的修改仍保留，请先复制。",
+                  "The original response is unavailable. Your unsaved edits are kept; copy them first.",
+                )}
+              </p>
+              <textarea
+                aria-label={t("保留的回应草稿", "Retained response draft")}
+                value={editing.body}
+                readOnly
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (!lock.current) setEditing(null);
+                }}
+              >
+                {t("取消编辑", "Cancel editing")}
+              </button>
+            </div>
+          )}
         {!preview && (
           <div className="do-forum-comment-actions">
             <button
@@ -149,8 +178,7 @@ export function ForumCommentsDialog({
                         disabled={busy}
                         value={editing.body}
                         onChange={(event) => {
-                          if (!lock.current)
-                            setEditing({ id: comment.id, body: event.target.value });
+                          if (!lock.current) setEditing({ ...editing, body: event.target.value });
                         }}
                       />
                       <div className="do-forum-comment-actions">
@@ -161,7 +189,13 @@ export function ForumCommentsDialog({
                             if (editing)
                               void act(
                                 () =>
-                                  updateForumComment(editing.id, post.id, editing.body, ownerId),
+                                  updateForumComment(
+                                    editing.id,
+                                    post.id,
+                                    editing.body,
+                                    ownerId,
+                                    editing.revision,
+                                  ),
                                 () => setEditing(null),
                               );
                           }}
@@ -184,7 +218,7 @@ export function ForumCommentsDialog({
                   )}
                   {comment.userId === ownerId && !editing && (
                     <div className="do-forum-comment-actions">
-                      {deleting === comment.id ? (
+                      {deleting?.id === comment.id ? (
                         <>
                           <span>{t("确定删除这条回应？", "Delete this response?")}</span>
                           <button
@@ -192,7 +226,13 @@ export function ForumCommentsDialog({
                             disabled={busy}
                             onClick={() =>
                               void act(
-                                () => deleteForumComment(comment.id, post.id, ownerId),
+                                () =>
+                                  deleteForumComment(
+                                    comment.id,
+                                    post.id,
+                                    ownerId,
+                                    deleting.revision,
+                                  ),
                                 () => setDeleting(null),
                               )
                             }
@@ -217,7 +257,11 @@ export function ForumCommentsDialog({
                             onClick={() => {
                               if (!lock.current) {
                                 setDeleting(null);
-                                setEditing({ id: comment.id, body: comment.body });
+                                setEditing({
+                                  id: comment.id,
+                                  body: comment.body,
+                                  revision: comment.updatedAt,
+                                });
                                 setError("");
                               }
                             }}
@@ -228,7 +272,8 @@ export function ForumCommentsDialog({
                             type="button"
                             disabled={busy}
                             onClick={() => {
-                              if (!lock.current) setDeleting(comment.id);
+                              if (!lock.current)
+                                setDeleting({ id: comment.id, revision: comment.updatedAt });
                             }}
                           >
                             {t("删除回应", "Delete response")}

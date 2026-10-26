@@ -6,7 +6,7 @@ import ts from 'typescript';
 const state = { owner: 'account-a', result: null, error: null, writes: [] };
 const chain = new Proxy({}, { get: (_, method) => (...args) => {
   state.writes.push([method, ...args]);
-  return method === 'single' ? Promise.resolve({ data: state.result, error: state.error }) : chain;
+  return method === 'single' || method === 'maybeSingle' ? Promise.resolve({ data: state.result, error: state.error }) : chain;
 } });
 const supabase = { auth: { getSession: async () => ({ data: { session: { user: { id: state.owner } } } }) },
   from: () => chain, rpc: async () => ({ data: [], error: null }) };
@@ -35,16 +35,16 @@ console.log('PASS: required_fields_lengths_and_real_calendar_dates');
 await assert.rejects(api.saveCertificate('stable-id', input, 'account-b'));
 assert.equal(state.writes.length, 0);
 console.log('PASS: changed_account_blocks_write');
-state.result = { id: 'stable-id', user_id: 'account-a' };
-await api.saveCertificate('stable-id', input, 'account-a');
-await api.saveCertificate('stable-id', input, 'account-a');
-assert.equal(state.writes.filter(([m]) => m === 'upsert').every(([, row]) => row.id === 'stable-id' && row.user_id === 'account-a' && !row.is_public), true);
+state.result = { ...validated, id: 'stable-id', user_id: 'account-a', deleted_at: null, updated_at: 'v1' };
+await api.saveCertificate('stable-id', input, 'account-a', null);
+await api.saveCertificate('stable-id', input, 'account-a', null);
+assert.equal(state.writes.filter(([m]) => ['upsert','insert','update'].includes(m)).length, 0, 'Identical retry confirms existing row without rewriting');
 console.log('PASS: retries_keep_stable_id_and_session_owner');
 state.result = null;
-await assert.rejects(api.saveCertificate('stable-id', input, 'account-a'));
-await assert.rejects(api.archiveCertificate('stable-id', true, 'account-a'));
+await assert.rejects(api.saveCertificate('stable-id', input, 'account-a', null));
+await assert.rejects(api.archiveCertificate('stable-id', true, 'account-a', 'v1'));
 state.result = { user_id: 'account-b' };
-await assert.rejects(api.saveCertificate('stable-id', input, 'account-a'));
+await assert.rejects(api.saveCertificate('stable-id', input, 'account-a', null));
 console.log('PASS: missing_or_wrong_owner_save_confirmation_rejected');
 for (const file of [{ type: 'application/pdf', size: 5 }, { type: 'image/jpeg', size: 0 }, { type: 'image/png', size: 10485761 }]) {
   await assert.rejects(api.uploadCertificateFront('stable-id', file, 'account-a'));

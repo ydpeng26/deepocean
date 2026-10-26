@@ -28,9 +28,15 @@ export function createMemberSessionGate(auth: Auth) {
     };
     listeners.forEach((listener) => listener());
   }
+  function suspend() {
+    ++request;
+    // Invalidate validated layout epochs even when the same account returns.
+    snapshot = { ...snapshot, status: "checking", epoch: snapshot.epoch + 1 };
+    listeners.forEach((listener) => listener());
+  }
   async function recheck(hide = false) {
+    if (hide) suspend();
     const current = ++request;
-    if (hide) publish(snapshot.ownerId, "checking");
     try {
       const { data, error } = await auth.getSession();
       if (current !== request || !listeners.size) return;
@@ -41,6 +47,7 @@ export function createMemberSessionGate(auth: Auth) {
   }
   return {
     getSnapshot: () => snapshot,
+    suspend,
     recheck,
     subscribe(listener: () => void) {
       listeners.add(listener);

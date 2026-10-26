@@ -76,23 +76,46 @@ export type ProfileUpdate = {
   bio: string | null;
 };
 
+export class ProfileConflictError extends Error {
+  constructor() {
+    super(
+      "资料已在其他页面修改或删除，当前输入已保留。请复制需要的内容，再重新加载。 / Profile changed or was deleted elsewhere. Your edits are kept; copy them before reloading.",
+    );
+    this.name = "ProfileConflictError";
+  }
+}
+const profileFields = ["display_name", "cert_level", "tank_count", "bio"] as const;
+
 export async function updateMyProfile(
   input: ProfileUpdate,
   expectedUserId?: string,
+  baseline?: Pick<Profile, keyof ProfileUpdate>,
 ): Promise<Profile> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
   if (expectedUserId && user.id !== expectedUserId)
     throw new Error("登录账号已变化，请重新载入资料");
-  const { data, error } = await supabase
-    .from("profiles")
-    .update(input)
-    .eq("id", user.id)
+  if (!baseline) throw new ProfileConflictError();
+  let query = supabase.from("profiles").update(input).eq("id", user.id);
+  for (const key of profileFields)
+    query = baseline[key] === null ? query.is(key, null) : query.eq(key, baseline[key]!);
+  const { data, error } = await query
     .select("id, display_name, avatar_url, cert_level, tank_count, bio")
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error("未确认资料保存，请重试");
+  if (!data) {
+    const current = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (current.error) throw current.error;
+    const row = current.data;
+    if (!row || !profileFields.every((key) => row[key] === input[key]))
+      throw new ProfileConflictError();
+    return row as Profile;
+  }
   return data as Profile;
 }
 
@@ -104,12 +127,17 @@ export async function getPublicProfile(id: string): Promise<PublicProfile | null
   return data?.[0] ?? null;
 }
 
-export async function uploadAvatar(file: File, expectedUserId?: string): Promise<string> {
+export async function uploadAvatar(
+  file: File,
+  expectedUserId?: string,
+  baselineAvatar?: string | null,
+): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession();
   const user = sessionData.session?.user;
   if (!user) throw new Error("请先登录");
   if (expectedUserId && user.id !== expectedUserId)
     throw new Error("登录账号已变化，请重新载入资料");
+  if (baselineAvatar === undefined) throw new ProfileConflictError();
   const webImage = await prepareWebImage(file, { maxEdge: 640, quality: 0.84 });
   const path = `${user.id}/${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, webImage, {
@@ -118,13 +146,16 @@ export async function uploadAvatar(file: File, expectedUserId?: string): Promise
     upsert: false,
   });
   if (error) throw error;
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({ avatar_url: path })
-    .eq("id", user.id)
-    .select("id")
-    .single();
+  const latest = await supabase.auth.getSession();
+  if (latest.data.session?.user.id !== user.id) throw new Error("登录账号已变化，请重新载入资料");
+  let mutation = supabase.from("profiles").update({ avatar_url: path }).eq("id", user.id);
+  mutation =
+    baselineAvatar === null
+      ? mutation.is("avatar_url", null)
+      : mutation.eq("avatar_url", baselineAvatar);
+  const { data: updated, error: updateError } = await mutation.select("id").maybeSingle();
   if (updateError) throw updateError;
+  if (!updated) throw new ProfileConflictError();
   return path;
 }
 

@@ -78,6 +78,7 @@ type Post = {
   saved?: boolean;
   following?: boolean;
   linkedDiveId?: string | null;
+  updatedAt?: string;
   ratio: "wide" | "portrait" | "standard";
 };
 
@@ -391,6 +392,8 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
   const [postPhoto, setPostPhoto] = useState<File | null>(null);
   const [linkedDiveId, setLinkedDiveId] = useState("");
   const [editingPost, setEditingPost] = useState<string | null>(null);
+  const editingBaseline = useRef<{ owner: string; revision: string | undefined } | null>(null);
+  const [composerError, setComposerError] = useState("");
   const [hiddenPosts, setHiddenPosts] = useState<string[]>([]);
   const [blockedAuthors, setBlockedAuthors] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
@@ -430,6 +433,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
       saved: post.saved,
       following: post.following,
       linkedDiveId: post.linkedDiveId,
+      updatedAt: post.updatedAt,
       ratio: post.imageUrl ? (index % 3 === 1 ? "portrait" : "wide") : "standard",
     }),
   );
@@ -506,6 +510,8 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setPostPhoto(null);
     setLinkedDiveId("");
     setEditingPost(null);
+    editingBaseline.current = null;
+    setComposerError("");
   }
   async function publishPost() {
     if (publishingRef.current || !draft.trim()) return;
@@ -519,13 +525,18 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     requestIdRef.current ??= crypto.randomUUID();
     try {
       if (editingPost)
-        await updateForumPost(editingPost, {
-          title: postTitle,
-          body: draft,
-          topic: postTopic,
-          location: postLocation,
-          linkedDiveId,
-        });
+        await updateForumPost(
+          editingPost,
+          {
+            title: postTitle,
+            body: draft,
+            topic: postTopic,
+            location: postLocation,
+            linkedDiveId,
+          },
+          editingBaseline.current?.owner ?? "",
+          editingBaseline.current?.revision,
+        );
       else
         await createForumPost({
           requestId: requestIdRef.current,
@@ -540,11 +551,20 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
       resetComposer();
       showNotice(editingPost ? c.changesSaved : c.published);
       await refreshForum();
-    } catch {
+    } catch (error) {
+      setComposerError(
+        error instanceof Error
+          ? error.message
+          : language === "en"
+            ? "Submission not confirmed. Your draft is kept."
+            : "提交未确认，草稿已保留。",
+      );
       toast.error(
-        language === "zh-CN"
-          ? "提交未确认，草稿已保留，请重试。如已发布，将不会重复创建。"
-          : "Submission not confirmed. Your draft is kept; retrying will not create a duplicate.",
+        error instanceof Error
+          ? error.message
+          : language === "zh-CN"
+            ? "提交未确认，草稿已保留，请重试。如已发布，将不会重复创建。"
+            : "Submission not confirmed. Your draft is kept; retrying will not create a duplicate.",
       );
     } finally {
       publishingRef.current = false;
@@ -562,6 +582,8 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
     setPostTopic(post.topic);
     setLinkedDiveId(post.linkedDiveId ?? "");
     setEditingPost(post.id);
+    setComposerError("");
+    editingBaseline.current = { owner: post.userId ?? "", revision: post.updatedAt };
     setComposer(true);
   }
   function openComposer() {
@@ -767,7 +789,10 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
                           preview
                             ? (setHiddenPosts((items) => [...items, post.id]),
                               showNotice(c.deleted))
-                            : void run(() => deleteForumPost(post.id), c.deleted)
+                            : void run(
+                                () => deleteForumPost(post.id, profile?.id ?? "", post.updatedAt),
+                                c.deleted,
+                              )
                         }
                         onReport={() =>
                           preview
@@ -1003,6 +1028,7 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
               <strong>{currentName}</strong>
               <span>{profile?.cert_level || "DIVER"}</span>
             </div>
+            {composerError && <p role="alert">{composerError}</p>}
             <div className="do-forum-composer-fields">
               <input
                 value={postTitle}

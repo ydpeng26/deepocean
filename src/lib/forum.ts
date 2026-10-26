@@ -23,6 +23,7 @@ export type ForumPost = {
   saved: boolean;
   following: boolean;
   linkedDiveId: string | null;
+  updatedAt: string;
 };
 
 export type ForumComment = {
@@ -32,7 +33,16 @@ export type ForumComment = {
   avatarUrl: string | null;
   body: string;
   createdAt: string;
+  updatedAt: string;
 };
+export class ForumConflictError extends Error {
+  constructor() {
+    super(
+      "内容已在其他页面修改或删除，草稿已保留。请复制需要的内容，再重新打开最新记录。 / Content changed or was deleted elsewhere. Your draft is kept; copy what you need before reopening the latest record.",
+    );
+    this.name = "ForumConflictError";
+  }
+}
 
 async function currentUserId(expectedId?: string) {
   const { data } = await supabase.auth.getSession();
@@ -101,7 +111,7 @@ export async function listForumPosts(): Promise<ForumPost[]> {
         db
           .from("forum_posts")
           .select(
-            "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,forum_likes(count),forum_comments(count)",
+            "id,user_id,author_name,author_badge,title,body,topic,location,image_path,linked_dive_id,created_at,updated_at,forum_likes(count),forum_comments(count)",
             { count: "exact" },
           ),
       "id",
@@ -166,6 +176,7 @@ export async function listForumPosts(): Promise<ForumPost[]> {
     saved: saved.has(row.id),
     following: following.has(row.user_id),
     linkedDiveId: row.linked_dive_id ?? null,
+    updatedAt: row.updated_at,
   }));
 }
 
@@ -235,25 +246,58 @@ export async function updateForumPost(
     location?: string;
     linkedDiveId?: string | null;
   },
+  expectedUserId: string,
+  revision?: string,
 ) {
-  const { error } = await db
+  const userId = await currentUserId(expectedUserId);
+  if (!revision) throw new ForumConflictError();
+  const values = {
+    title: input.title.trim(),
+    body: input.body.trim(),
+    topic: input.topic,
+    location: input.location?.trim() || null,
+    linked_dive_id: input.linkedDiveId || null,
+  };
+  const { data, error } = await db
     .from("forum_posts")
-    .update({
-      title: input.title.trim(),
-      body: input.body.trim(),
-      topic: input.topic,
-      location: input.location?.trim() || null,
-      linked_dive_id: input.linkedDiveId || null,
-    })
+    .update(values)
     .eq("id", id)
-    .select("id")
-    .single();
+    .eq("user_id", userId)
+    .eq("updated_at", revision)
+    .select("*")
+    .maybeSingle();
   if (error) throw error;
+  await currentUserId(userId);
+  if (!data) {
+    const current = await db
+      .from("forum_posts")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (current.error) throw current.error;
+    if (
+      !current.data ||
+      !Object.entries(values).every(([key, value]) => current.data[key] === value)
+    )
+      throw new ForumConflictError();
+  }
 }
 
-export async function deleteForumPost(id: string) {
-  const { error } = await db.from("forum_posts").delete().eq("id", id);
+export async function deleteForumPost(id: string, expectedUserId: string, revision?: string) {
+  const userId = await currentUserId(expectedUserId);
+  if (!revision) throw new ForumConflictError();
+  const { data, error } = await db
+    .from("forum_posts")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId)
+    .eq("updated_at", revision)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  await currentUserId(userId);
+  if (!data) throw new ForumConflictError();
 }
 
 async function setForumRelation(
@@ -319,7 +363,7 @@ export async function listForumComments(postId: string): Promise<ForumComment[]>
     () =>
       db
         .from("forum_comments")
-        .select("id,user_id,author_name,body,created_at", { count: "exact" })
+        .select("id,user_id,author_name,body,created_at,updated_at", { count: "exact" })
         .eq("post_id", postId),
     "id",
     owner,
@@ -332,6 +376,7 @@ export async function listForumComments(postId: string): Promise<ForumComment[]>
     avatarUrl: null,
     body: row.body,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }));
 }
 
@@ -342,7 +387,7 @@ function commentBody(body: string) {
   return text;
 }
 
-const commentFields = "id,user_id,post_id,author_name,body,created_at";
+const commentFields = "id,user_id,post_id,author_name,body,created_at,updated_at";
 type CommentRow = {
   id: string;
   user_id: string;
@@ -350,6 +395,7 @@ type CommentRow = {
   author_name: string;
   body: string;
   created_at: string;
+  updated_at: string;
 };
 function savedComment(row: CommentRow): ForumComment {
   return {
@@ -359,6 +405,7 @@ function savedComment(row: CommentRow): ForumComment {
     avatarUrl: null,
     body: row.body,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -410,34 +457,58 @@ export async function updateForumComment(
   postId: string,
   body: string,
   expectedUserId: string,
+  revision?: string,
 ): Promise<ForumComment> {
   const userId = await currentUserId(expectedUserId);
+  if (!revision) throw new ForumConflictError();
   const { data, error } = await db
     .from("forum_comments")
     .update({ body: commentBody(body) })
     .eq("id", id)
     .eq("post_id", postId)
     .eq("user_id", userId)
+    .eq("updated_at", revision)
     .select(commentFields)
-    .single();
+    .maybeSingle();
   if (error) throw error;
+  await currentUserId(userId);
+  if (!data) {
+    const current = await db
+      .from("forum_comments")
+      .select(commentFields)
+      .eq("id", id)
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (current.error) throw current.error;
+    if (current.data?.body === commentBody(body)) return savedComment(current.data);
+    throw new ForumConflictError();
+  }
   if (!data || data.id !== id || data.user_id !== userId || data.post_id !== postId)
     throw new Error("回应修改未确认 / Response edit not confirmed.");
   return savedComment(data);
 }
 
-export async function deleteForumComment(id: string, postId: string, expectedUserId: string) {
+export async function deleteForumComment(
+  id: string,
+  postId: string,
+  expectedUserId: string,
+  revision?: string,
+) {
   const userId = await currentUserId(expectedUserId);
+  if (!revision) throw new ForumConflictError();
   const { data, error } = await db
     .from("forum_comments")
     .delete()
     .eq("id", id)
     .eq("post_id", postId)
     .eq("user_id", userId)
+    .eq("updated_at", revision)
     .select("id")
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  if (data?.id !== id) throw new Error("回应删除未确认 / Response deletion not confirmed.");
+  await currentUserId(userId);
+  if (data?.id !== id) throw new ForumConflictError();
 }
 
 export type BlockedForumAuthor = { id: string; name: string };

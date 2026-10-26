@@ -48,6 +48,7 @@ const original = () => ({
   tank_count: 3,
   avatar_url: null,
 });
+class ProfileConflictError extends Error {}
 function nodes(tree, out = []) {
   if (Array.isArray(tree)) for (const value of tree) nodes(value, out);
   else if (tree && typeof tree === "object") {
@@ -160,6 +161,7 @@ function editor() {
     if (name === "@/lib/profile")
       return {
         CERT_LEVELS: ["OW 开放水域", "AOW 进阶开放水域"],
+        ProfileConflictError,
         updateMyProfile() {
           throw Error("Call API tests separately");
         },
@@ -270,6 +272,7 @@ e.render();
 assert.equal(e.mutations[0].count, 1);
 assert.equal(e.mutations[0].variables.values.display_name, "Unsaved name");
 assert.equal(e.mutations[0].variables.accountId, "local-account-a");
+assert.equal(e.mutations[0].variables.baseline.display_name, "Original", "Background refresh must not advance pinned baseline");
 e.change("name", "Forbidden pending edit");
 e.upload();
 e.render();
@@ -300,6 +303,13 @@ e.render();
 await e.complete(0, { ...e.profile, ...e.mutations[0].variables.values });
 assert.equal(e.profile.bio, "Retry this edit");
 console.log("PASS: failed save retains edits, releases lock and permits successful retry");
+const conflicting = editor(); conflicting.change("bio", "Keep stale draft"); conflicting.render(); conflicting.save();
+await conflicting.complete(0, null, new ProfileConflictError());
+assert.equal(conflicting.field("bio").props.value, "Keep stale draft");
+assert.equal(conflicting.find(n => n.props?.className === "do-profile-save").props.disabled, true);
+const priorCalls = conflicting.mutations[0].count; conflicting.save(); assert.equal(conflicting.mutations[0].count, priorCalls);
+assert(nodes(conflicting.tree).some(n => n.props?.role === "alert"));
+console.log("PASS: actual profile conflict keeps copyable draft, persistent guidance, and blocks stale save");
 const avatarFailure = editor();
 avatarFailure.change("name", "Keep text after upload failure");
 avatarFailure.render(); avatarFailure.upload(); avatarFailure.render();
@@ -362,7 +372,7 @@ const fakeClient = {
   from() {
     queries++;
     const chain = {};
-    for (const method of ["select", "eq", "update", "insert"]) chain[method] = () => chain;
+    for (const method of ["select", "eq", "is", "update", "insert"]) chain[method] = () => chain;
     for (const method of ["single", "maybeSingle"])
       chain[method] = async () => {
         assert.ok(queue.length, "Unexpected database call");
@@ -383,9 +393,9 @@ const api = load("src/lib/profile.ts", (name) => {
 });
 const input = { display_name: "Confirmed", cert_level: null, tank_count: 0, bio: null };
 queue = [{ data: null, error: { code: "PGRST116" } }];
-await assert.rejects(() => api.updateMyProfile(input, sessionId));
+await assert.rejects(() => api.updateMyProfile(input, sessionId, original()));
 queue = [{ data: { ...original(), ...input }, error: null }];
-assert.equal((await api.updateMyProfile(input, sessionId)).display_name, "Confirmed");
+assert.equal((await api.updateMyProfile(input, sessionId, original())).display_name, "Confirmed");
 const before = queries;
 sessionId = "local-account-b";
 await assert.rejects(() => api.updateMyProfile(input, "local-account-a"));
