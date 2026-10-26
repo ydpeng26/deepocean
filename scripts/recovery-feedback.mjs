@@ -179,7 +179,10 @@ export async function runFeedbackAcceptance() {
             if (state.failedRead) {
               state.failedRead = false;
               return route.fulfill({
-                status: 503,
+                // A non-retryable synthetic read error keeps the outcome
+                // uncertain until the user's explicit retry. 503 is retried
+                // by the SDK and can correctly confirm success immediately.
+                status: 400,
                 contentType: "application/json",
                 body: '{"message":"Synthetic read failure"}',
               });

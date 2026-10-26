@@ -326,6 +326,7 @@ const guarded = spawnSync(process.execPath, ["scripts/recovery-feedback.mjs"], {
 assert.equal(guarded.status, 1);
 assert(guarded.stdout.includes("github_cloud_only") && guarded.stdout.includes("complete=false"));
 const runner = read("scripts/recovery-feedback.mjs");
+assert.match(runner, /if \(state\.failedRead\)[\s\S]*?status: 400,/, "lost-reply probe must not be automatically retried by SDK");
 assert(
   runner.indexOf('check(process.env.GITHUB_ACTIONS === "true"') <
     runner.indexOf("admin = process.env.RECOVERY_SERVICE_ROLE_KEY"),
