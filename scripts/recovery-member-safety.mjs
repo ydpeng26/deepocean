@@ -89,7 +89,7 @@ export function validateFixtureWrite(raw, method, payload, owner, known) {
 }
 
 export async function runMemberSafety() {
-  const admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
+  let admin;
   let anon,
     browser,
     created = false,
@@ -607,7 +607,9 @@ export async function runMemberSafety() {
     );
   }
   try {
-    check(process.env.GITHUB_ACTIONS === "true" && !!admin, "github_cloud_only");
+    check(process.env.GITHUB_ACTIONS === "true", "github_cloud_only");
+    admin = process.env.RECOVERY_SERVICE_ROLE_KEY;
+    check(!!admin, "recovery_credential_required");
     anon = (await readFile(new URL("./recovery-browser.mjs", import.meta.url), "utf8")).match(
       /const anon = '([^']+)'/,
     )[1];
@@ -678,7 +680,7 @@ export async function runMemberSafety() {
     await req("/storage/v1/object/marine-photos/" + imagePath, {
       method: "POST",
       raw: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=",
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgaDjxHwAEFAJIjGIHSwAAAABJRU5ErkJggg==",
         "base64",
       ),
     });

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
+import { inflateSync } from "node:zlib";
 import {
   fixtureReadUrl,
   validateFixtureWrite,
@@ -80,6 +81,32 @@ assert(
   local.stdout.includes("github_cloud_only") && local.stdout.includes("no_temporary_owner_created"),
 );
 const source = fs.readFileSync(new URL("./recovery-member-safety.mjs", import.meta.url), "utf8");
+assert(
+  source.indexOf('check(process.env.GITHUB_ACTIONS === "true"') <
+    source.indexOf("admin = process.env.RECOVERY_SERVICE_ROLE_KEY"),
+);
+const png = Buffer.from(source.match(/"(iVBOR[^"\s]+)"/)[1], "base64");
+assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+let offset = 8,
+  inflated;
+for (; offset < png.length;) {
+  const length = png.readUInt32BE(offset),
+    chunk = png.subarray(offset + 4, offset + 8 + length);
+  let crc = 0xffffffff;
+  for (const byte of chunk) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+  }
+  assert.equal(
+    (crc ^ 0xffffffff) >>> 0,
+    png.readUInt32BE(offset + 8 + length),
+    "Generated image chunk checksum",
+  );
+  if (chunk.subarray(0, 4).toString() === "IDAT") inflated = inflateSync(chunk.subarray(4));
+  offset += length + 12;
+}
+assert.equal(inflated.length, 5);
+assert.equal(offset, png.length);
 assert(
   source.indexOf('check(process.env.GITHUB_ACTIONS === "true"') < source.indexOf("await readFile("),
 );
