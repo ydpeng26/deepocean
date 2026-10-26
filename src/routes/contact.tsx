@@ -187,8 +187,8 @@ export function GuestContactPage() {
             </div>
             <small id="contact-draft">
               {en
-                ? "Basic anti-spam limits apply. This browser can submit at most once per minute and five times per 24 hours; shared networks may have additional limits. An anonymous browser identifier and hashed network identifier are used for these checks. Unsent text is lost when you leave or refresh."
-                : "为防止垃圾留言，本浏览器每分钟最多提交一次、24 小时最多五次，共享网络可能另有限制。限频使用匿名浏览器标识及网络地址的不可逆摘要。离开或刷新页面不会保留未提交的文字。"}
+                ? "Basic anti-spam limits apply. This browser can submit at most once per minute and five times per 24 hours; shared networks may have additional limits. Unsent text is lost when you leave or refresh."
+                : "为防止垃圾留言，本浏览器每分钟最多提交一次、24 小时最多五次，共享网络可能另有限制。离开或刷新页面不会保留未提交的文字。"}
             </small>
             <button type="submit" disabled={busy || !body.trim()}>
               <Send aria-hidden="true" />
