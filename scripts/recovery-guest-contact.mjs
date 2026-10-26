@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { gearBrowserDiagnostic } from "./lib/gear-browser-diagnostic.mjs";
 import { initializeGearLanguage, isGearFontStylesheet } from "./lib/gear-browser-setup.mjs";
 const site = "https://supdiver-recovery-test.vercel.app",
   api = "https://esovqvampbrhuhamkfcs.supabase.co";
@@ -177,10 +178,13 @@ export async function runGuestAcceptance() {
         );
       }
       await page.goto(site + "/auth", { waitUntil: "domcontentloaded" });
+      if (en) await page.getByRole("alert").filter({ hasText: "Browser session storage is unavailable" }).waitFor();
       await page.getByRole("link", { name, exact: true }).click();
       await page.waitForURL("**/contact");
       const body = page.locator("#contact-body"),
         email = page.locator("#contact-email");
+      // Root storage warnings legitimately coexist with a failed form alert.
+      const form = page.locator(".do-feedback-form");
       const submit = page.getByRole("button", {
         name: en ? "Send message" : "发送留言",
         exact: true,
@@ -194,7 +198,7 @@ export async function runGuestAcceptance() {
         el.click();
         el.click();
       });
-      await page.getByRole("alert").waitFor();
+      await form.getByRole("alert").waitFor();
       check(
         state.posts === 1 &&
           (await body.inputValue()) === text &&
@@ -203,7 +207,7 @@ export async function runGuestAcceptance() {
       );
       state.mode = "lost";
       await submit.click();
-      await page.getByRole("alert").waitFor();
+      await form.getByRole("alert").waitFor();
       const original = state.payload;
       const saved = await rows(original.id);
       check(
@@ -213,7 +217,7 @@ export async function runGuestAcceptance() {
         "guest_real_saved_without_auth_optional_email",
       );
       await submit.click();
-      await page
+      await form
         .getByRole("status")
         .filter({ hasText: en ? "Message received" : "留言已收到" })
         .waitFor();
@@ -288,6 +292,7 @@ export async function runGuestAcceptance() {
     pass("real_guest_concurrent_same_browser_cap_allows_exactly_one_new_row");
     complete = true;
   } catch (error) {
+    console.log("DIAGNOSTIC: " + JSON.stringify(gearBrowserDiagnostic(error)));
     console.log(
       "INCOMPLETE: guest_contact stage=" +
         stage +

@@ -307,6 +307,7 @@ const local = spawnSync(process.execPath, ["scripts/recovery-guest-contact.mjs"]
 assert.equal(local.status, 1);
 assert(local.stdout.includes("github_cloud_only"));
 assert(!read("scripts/recovery-guest-contact.mjs").includes("JSON.stringify(states)"));
+assert(read("scripts/recovery-guest-contact.mjs").includes('form.getByRole("alert")'), "Guest form alerts must be scoped separately from global storage warnings");
 console.log(
   "PASS: cloud guest runner rejects local invocation before credentials/network and forwards only fixed synthetic requests; diagnostics never contain message payloads",
 );
