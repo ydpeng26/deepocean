@@ -171,8 +171,14 @@ function authHarness() {
   return h;
 }
 const auth = authHarness(); auth.key('signin', 'ArrowRight'); assert.equal(auth.tab('signup').props['aria-selected'], true);
+const passwordHint = auth.render().find(n => n.props.id === 'signup-password-requirements');
+assert(passwordHint && /至少 6.*最多 72/.test(passwordHint.props.children));
+assert.equal(auth.render().find(n => n.props.id === 'password').props['aria-describedby'], passwordHint.props.id);
+assert.equal(auth.render().find(n => n.props.id === 'password').props.minLength, 6);
 assert.equal(auth.tab('signin').props.tabIndex, -1); assert.equal(auth.tab('signup').props.tabIndex, 0);
 auth.key('signup', 'Home'); assert.equal(auth.tab('signin').props['aria-selected'], true);
+assert(!auth.render().some(n => n.props.id === 'signup-password-requirements'));
+assert.equal(auth.render().find(n => n.props.id === 'password').props['aria-describedby'], undefined);
 auth.key('signin', 'End'); assert.equal(auth.tab('signup').props['aria-selected'], true);
 auth.key('signup', 'ArrowLeft'); assert.equal(auth.tab('signin').props['aria-selected'], true);
 auth.key('signin', 'ArrowRight', true); assert.equal(auth.tab('signin').props['aria-selected'], true);

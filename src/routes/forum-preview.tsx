@@ -645,14 +645,6 @@ export function ForumPage({ preview = false }: { preview?: boolean }) {
             </h1>
             <p>{c.intro}</p>
           </div>
-          <div className="do-forum-hero-orbit" aria-hidden="true">
-            <span>
-              <Users />
-            </span>
-            <i />
-            <b>{sourcePosts.length}</b>
-            <small>OCEAN STORIES</small>
-          </div>
         </section>
         <section className="do-forum-compose-strip">
           <Avatar>

@@ -33,6 +33,7 @@ import { Route as SavedPreviewRouteImport } from './routes/saved-preview'
 import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
 import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
+import { Route as AuthenticatedFeedbackRouteImport } from './routes/_authenticated/feedback'
 import { Route as AuthenticatedForumRouteImport } from './routes/_authenticated/forum'
 import { Route as AuthenticatedGearRouteImport } from './routes/_authenticated/gear'
 import { Route as AuthenticatedMarineRouteImport } from './routes/_authenticated/marine'
@@ -163,6 +164,11 @@ const AuthenticatedCertificatesRoute =
     path: '/certificates',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFeedbackRoute = AuthenticatedFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedForumRoute = AuthenticatedForumRouteImport.update({
   id: '/forum',
   path: '/forum',
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
+  '/feedback': typeof AuthenticatedFeedbackRoute
   '/forum': typeof AuthenticatedForumRoute
   '/gear': typeof AuthenticatedGearRoute
   '/marine': typeof AuthenticatedMarineRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByTo {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
+  '/feedback': typeof AuthenticatedFeedbackRoute
   '/forum': typeof AuthenticatedForumRoute
   '/gear': typeof AuthenticatedGearRoute
   '/marine': typeof AuthenticatedMarineRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
   '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
+  '/_authenticated/feedback': typeof AuthenticatedFeedbackRoute
   '/_authenticated/forum': typeof AuthenticatedForumRoute
   '/_authenticated/gear': typeof AuthenticatedGearRoute
   '/_authenticated/marine': typeof AuthenticatedMarineRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/certificates'
+    | '/feedback'
     | '/forum'
     | '/gear'
     | '/marine'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/certificates'
+    | '/feedback'
     | '/forum'
     | '/gear'
     | '/marine'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/settings-preview'
     | '/share-card-preview'
     | '/_authenticated/certificates'
+    | '/_authenticated/feedback'
     | '/_authenticated/forum'
     | '/_authenticated/gear'
     | '/_authenticated/marine'
@@ -615,6 +627,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCertificatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/feedback': {
+      id: '/_authenticated/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AuthenticatedFeedbackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/forum': {
       id: '/_authenticated/forum'
       path: '/forum'
@@ -683,6 +702,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
+  AuthenticatedFeedbackRoute: typeof AuthenticatedFeedbackRoute
   AuthenticatedForumRoute: typeof AuthenticatedForumRoute
   AuthenticatedGearRoute: typeof AuthenticatedGearRoute
   AuthenticatedMarineRoute: typeof AuthenticatedMarineRoute
@@ -696,6 +716,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
+  AuthenticatedFeedbackRoute: AuthenticatedFeedbackRoute,
   AuthenticatedForumRoute: AuthenticatedForumRoute,
   AuthenticatedGearRoute: AuthenticatedGearRoute,
   AuthenticatedMarineRoute: AuthenticatedMarineRoute,

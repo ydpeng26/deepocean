@@ -26,6 +26,8 @@ const authCopy = {
     password: "密码",
     passwordPlaceholder: "请输入密码",
     passwordNewPlaceholder: "设置至少 6 位密码",
+    passwordRequirements:
+      "密码要求：至少 6 个字符，最多 72 个字符。建议使用较长且不与其他网站重复的密码。",
     processing: "处理中…",
     continueGoogle: "使用 Google 继续",
     or: "或者",
@@ -51,6 +53,8 @@ const authCopy = {
     password: "Password",
     passwordPlaceholder: "Enter your password",
     passwordNewPlaceholder: "Set a password of at least 6 characters",
+    passwordRequirements:
+      "Password requirements: 6–72 characters. Use a longer password that you do not reuse on other websites.",
     processing: "Working…",
     continueGoogle: "Continue with Google",
     or: "or",
@@ -413,6 +417,7 @@ function AuthPage() {
                 type="password"
                 disabled={busy}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                aria-describedby={mode === "signup" ? "signup-password-requirements" : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={
@@ -422,6 +427,11 @@ function AuthPage() {
                 minLength={6}
                 required
               />
+              {mode === "signup" && (
+                <p id="signup-password-requirements" className="do-auth-password-requirements">
+                  {copy.passwordRequirements}
+                </p>
+              )}
               <button type="submit" disabled={busy} className="do-auth-submit">
                 {loading ? copy.processing : mode === "signin" ? copy.signin : copy.signup}
                 <ArrowRight />

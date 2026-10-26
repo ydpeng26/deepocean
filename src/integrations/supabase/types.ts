@@ -14,6 +14,23 @@ export type Database = {
   }
   public: {
     Tables: {
+      website_feedback: {
+        Row: {
+          id: string
+          user_id: string
+          category: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id: string
+          user_id: string
+          category: string
+          body: string
+        }
+        Update: never
+        Relationships: []
+      }
       diver_certificates: {
         Row: {
           id: string

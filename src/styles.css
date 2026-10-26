@@ -955,6 +955,7 @@
   .do-auth-form { display: flex; flex-direction: column; }.do-auth-form label { margin: 0 0 9px; color: rgba(255,255,255,.88); font-size: 12px; font-weight: 600; }
   .do-auth-form input { width: 100%; height: 47px; margin-bottom: 16px; padding: 0 15px; outline: 0; border: 1px solid rgba(180,215,248,.23); border-radius: 10px; background: rgba(0,15,35,.5); color: #fff; font-size: 14px; transition: border-color .2s ease, box-shadow .2s ease; }
   .do-auth-form input::placeholder { color: rgba(220,237,252,.4); }.do-auth-form input:focus { border-color: #69bdff; box-shadow: 0 0 0 3px rgba(53,159,245,.16); }
+  .do-auth-password-requirements { margin: -4px 0 20px; color: #c5dced; font-size: 12px; line-height: 1.7; }
   .do-auth-submit { position: relative; width: 100%; min-height: 47px; margin-top: 5px; border-radius: 999px; background: #fff; color: #071b33; font-size: 14px; font-weight: 750; transition: transform .2s ease, background .2s ease; }
   .do-auth-submit:hover:not(:disabled) { transform: translateY(-2px); background: #e6f4ff; }.do-auth-submit:disabled { opacity: .66; cursor: wait; }.do-auth-submit svg { position: absolute; top: 50%; right: 18px; width: 17px; height: 17px; transform: translateY(-50%); }
   .do-auth-forgot { display: flex; align-items: center; justify-content: center; width: fit-content; margin: 14px auto 0; color: rgba(255,255,255,.85); font-size: 13px; transition: color .2s ease; }
@@ -1659,6 +1660,34 @@
 .do-member-header > .do-brand { flex: none; }
 .do-member-header > nav.do-main-navigation { flex: 1; justify-content: center; margin: 0; gap: clamp(12px, 1.7vw, 26px); }
 .do-member-header > .do-passport-header-actions { flex: none; }
+/* Six bilingual entries wrap before they can collide with account controls. */
+@media (max-width: 1360px) {
+  .do-member-header { flex-wrap: wrap; height: auto !important; padding-top: 14px; gap: 8px 18px; }
+  .do-member-header > nav.do-main-navigation { order: 3; flex: 0 0 100%; width: 100%; height: auto; min-height: 44px; justify-content: flex-start; overflow-x: auto; padding-bottom: 3px; }
+  .do-member-header > .do-passport-header-actions { margin-left: auto; }
+}
+.do-feedback-page { min-height: calc(100vh - 82px); padding: 48px 24px 80px; background: radial-gradient(ellipse at top right, #0c435a66, transparent 65%), #031326; color: #e6f3fc; }
+.do-feedback-intro, .do-feedback-form { width: min(760px, 100%); margin-inline: auto; }
+.do-feedback-kicker { display: inline-flex; align-items: center; gap: 10px; color: #75d5ed; font-size: 11px; letter-spacing: .16em; }
+.do-feedback-kicker svg { width: 18px; }
+.do-feedback-intro h1 { margin: 18px 0 14px; font-size: clamp(27px, 4vw, 38px); font-weight: 700; line-height: 1.3; }
+.do-feedback-intro > p { color: #b2cbdc; line-height: 1.8; }
+.do-feedback-form { margin-top: 32px; padding: clamp(20px, 4vw, 36px); border: 1px solid #5d9bbe50; border-radius: 22px; background: #0b2439b8; }
+.do-feedback-form h2 { font-size: 21px; font-weight: 650; margin-bottom: 12px; }
+.do-feedback-form > p, .do-feedback-form small { line-height: 1.8; font-size: 13px; color: #b2cbdc; overflow-wrap: anywhere; }
+.do-feedback-form fieldset { display: grid; gap: 12px; min-width: 0; margin-top: 26px; }
+.do-feedback-form label { font-size: 14px; font-weight: 600; }
+.do-feedback-form select, .do-feedback-form textarea { width: 100%; min-width: 0; padding: 13px 15px; border: 1px solid #729dbb80; border-radius: 10px; color: #e6f3fc; background: #04182a; font: inherit; }
+.do-feedback-form textarea { resize: vertical; min-height: 210px; line-height: 1.8; }
+.do-feedback-form textarea::placeholder { color: #9ab5c9; }
+.do-feedback-form select { margin-bottom: 10px; }
+.do-feedback-form :focus-visible { outline: 2px solid #72d4ef; outline-offset: 3px; }
+.do-feedback-count { justify-self: end; color: #a1bdcf; font-size: 12px; }
+.do-feedback-form button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; justify-self: start; min-height: 46px; margin-top: 10px; padding: 12px 24px; border: 1px solid #6ac7f3; border-radius: 10px; background: #1583b6; color: white; font-weight: 600; cursor: pointer; }
+.do-feedback-form button svg { width: 17px; }
+.do-feedback-form button:disabled, .do-feedback-form fieldset:disabled { opacity: .65; cursor: not-allowed; }
+.do-feedback-form > .do-feedback-error { color: #ffb8b8; margin-top: 20px; }
+.do-feedback-form > .do-feedback-success { color: #94ecd0; margin-top: 20px; }
 .do-forum-standalone-search { width: min(1320px, calc(100% - 48px)); margin: 0 auto; padding-top: 20px; }
 .do-forum-standalone-search .do-forum-search { display: flex; max-width: 420px; }
 @media (min-width: 1151px) { .do-member-header > nav.do-main-navigation { height: 82px; } }
