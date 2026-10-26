@@ -1,5 +1,13 @@
 # Remaining member safety checks — 2026-10-26
 
+## Latest follow-up checkpoint — dedicated run 1 passed
+
+[Recovery member safety run 1](https://github.com/ydpeng26/deepocean/actions/runs/40277477561), job `121423187842`, source `c01037f8a4931f0a4ce1c2b75c9b94ff4cb500b9`, completed successfully. It was dispatched through the existing authenticated Chrome UI with the isolated branch explicitly selected. Safe job logs independently confirm all five follow-up groups passed in both Chinese and English: avatar stale replacement/draft retention/confirmed reload/fresh replacement; mutation-time stale certificate archive; stale marine deletion with actual generated-photo retention; stale forum post deletion; and stale comment deletion. Each deletion race committed A's real UI update before forwarding B's captured conditional mutation, required a zero-row response, checked conflict feedback and independently read back the retained newer row.
+
+All four contexts reported zero page errors and zero blocked requests, with seven isolated font-CSS stubs each. Exact temporary-user session revocation, tracked rows and generated marine image removal, tracked avatar removal and owner-prefix avatar absence, auth/profile/row absence, and browser closure are enforced before `complete=true`. Cleanup passed. Only generated recovery fixtures were created/removed; these are test-only records, not recoverable user data. No production records, credentials or configuration changed, and no local data exports were created.
+
+Together with the observed Safari logout/history checkpoint below, this closes the two specifically authorized follow-up checks. It does not newly certify every browser/BFCache path, VoiceOver, real camera codecs, old already-loaded clients, profile/marine ABA changes or the separately deferred backup restore. The production application is unchanged from released `b53dc10c9f27cb194fed1e806ca170143df47a0e`; this scripts/docs-only batch requires no site promotion. Historical pending language below describes preparation before this accepted run.
+
 ## Native Safari checkpoint and follow-up acceptance preparation
 
 Native Safari private browsing was inspected on the recovery origin after the user logged in. The personal profile loaded, sign-out returned to auth, actual toolbar Back and Forward retained auth, and direct navigation to `/profile` redirected to auth. The user separately confirmed no old avatar/profile flash was observed during the transitions. No profile was edited or saved. The initially selected formal-site tab was left untouched. This accepts the observed native logout/history cases with human first-paint observation, not every BFCache path, Safari version, VoiceOver or browser.
