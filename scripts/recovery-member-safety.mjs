@@ -13,6 +13,7 @@ export const readOwners = {
   gear_items: "user_id",
   diver_certificates: "user_id",
   marine_encounters: "user_id",
+  marine_suggestions: "user_id",
   forum_posts: "user_id",
   forum_comments: "user_id",
   forum_likes: "user_id",
@@ -31,6 +32,25 @@ export function fixtureReadUrl(raw, owner) {
   if (existing && existing !== "eq." + owner) throw Error("read_other_owner");
   u.searchParams.set(key, "eq." + owner);
   return u.href;
+}
+export async function requireUniqueGearControl(control, check) {
+  // Navigation's DOMContentLoaded is not the protected route's hydration boundary.
+  await control.waitFor({ state: "visible" });
+  check((await control.count()) === 1, "unique_accessible_gear_control");
+}
+export function memberBoundaryReason(error) {
+  const code = error?.auditCode || error?.message;
+  return [
+    "read_origin",
+    "read_table",
+    "read_other_owner",
+    "fixture_login_only",
+    "fixture_image_sign_only",
+    "fixture_conditional_write_only",
+    "lost_reply_commit",
+  ].includes(code)
+    ? code
+    : "request_boundary";
 }
 export function validateFixtureWrite(raw, method, payload, owner, known) {
   const u = new URL(raw),
@@ -311,7 +331,7 @@ export async function runMemberSafety() {
         }
         return route.continue();
       } catch (error) {
-        return block(error.auditCode || "request_boundary");
+        return block(memberBoundaryReason(error));
       }
     });
     const page = await context.newPage();
@@ -422,13 +442,11 @@ export async function runMemberSafety() {
     await btn(A.page, en ? "Add certificate" : "新增证书").click();
     const level = A.page.getByLabel(en ? "Certification" : "证书等级", { exact: true });
     await level.fill("kept invalid-image draft");
-    await A.page
-      .locator("input[type=file]")
-      .setInputFiles({
-        name: "generated-invalid.png",
-        mimeType: "image/png",
-        buffer: Buffer.from([1, 2, 3]),
-      });
+    await A.page.locator("input[type=file]").setInputFiles({
+      name: "generated-invalid.png",
+      mimeType: "image/png",
+      buffer: Buffer.from([1, 2, 3]),
+    });
     const before = A.stats.patches;
     await save(A.page).click();
     await A.page
@@ -588,8 +606,7 @@ export async function runMemberSafety() {
       ? ["Category", "Brand", "Model", "Purchase date", "Next service date", "Dive count", "Notes"]
       : ["装备类型", "品牌", "型号", "购入日期", "下次保养日期", "累计使用次数", "备注"]) {
       const control = A.page.getByLabel(name, { exact: true });
-      check((await control.count()) === 1, "unique_accessible_gear_control");
-      await control.waitFor();
+      await requireUniqueGearControl(control, check);
     }
     const hidden = await A.page.evaluate(() => {
       const root = document.querySelector("[data-private-member-root]");

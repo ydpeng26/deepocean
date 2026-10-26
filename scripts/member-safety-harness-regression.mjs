@@ -8,6 +8,8 @@ import {
   validateFixtureWrite,
   recoveryOrigin,
   readOwners,
+  requireUniqueGearControl,
+  memberBoundaryReason,
 } from "./recovery-member-safety.mjs";
 const owner = "synthetic-owner",
   known = Object.fromEntries(
@@ -25,6 +27,69 @@ for (const [table, key] of Object.entries(readOwners)) {
     fixtureReadUrl(recoveryOrigin + "/rest/v1/" + table + "?" + key + "=eq.other", owner),
   );
 }
+const suggestions = new URL(
+  fixtureReadUrl(
+    recoveryOrigin + "/rest/v1/marine_suggestions?encounter_id=eq.fixture&select=*",
+    owner,
+  ),
+);
+assert.equal(suggestions.searchParams.get("user_id"), "eq." + owner);
+assert.equal(suggestions.searchParams.get("encounter_id"), "eq.fixture");
+assert(!validateFixtureWrite(suggestions.href, "PATCH", {}, owner, known));
+const check = (value, code) => {
+  if (!value) throw Error(code);
+};
+let hydrated = false,
+  waited = false;
+await requireUniqueGearControl(
+  {
+    async waitFor(options) {
+      assert.equal(options.state, "visible");
+      waited = true;
+      hydrated = true;
+    },
+    async count() {
+      assert(waited, "Do not count before hydration");
+      return hydrated ? 1 : 0;
+    },
+  },
+  check,
+);
+await assert.rejects(
+  requireUniqueGearControl(
+    {
+      async waitFor() {},
+      async count() {
+        return 2;
+      },
+    },
+    check,
+  ),
+  /unique_accessible_gear_control/,
+);
+await assert.rejects(
+  requireUniqueGearControl(
+    {
+      async waitFor() {
+        throw Error("Missing control timeout");
+      },
+      async count() {
+        throw Error("Not reached");
+      },
+    },
+    check,
+  ),
+  /Missing control timeout/,
+);
+for (const code of ["read_origin", "read_table", "read_other_owner"])
+  assert.equal(memberBoundaryReason(Error(code)), code);
+assert.equal(
+  memberBoundaryReason(Error("private URL, token and arbitrary message")),
+  "request_boundary",
+);
+console.log(
+  "PASS: real label helper waits for visible hydrated control before uniqueness check; missing/duplicate still fail; own-fixture suggestions read is narrowed, never writable; boundary reasons remain allowlisted",
+);
 for (const url of [
   "https://www.supdiver.com/rest/v1/profiles",
   "https://zmhtlhpeulhhcvlnjdrb.supabase.co/rest/v1/profiles",
