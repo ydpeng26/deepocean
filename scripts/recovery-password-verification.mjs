@@ -10,7 +10,7 @@ const temporaryKeys = [ownKey, ownKey + "-user", ownKey + "-code-verifier"];
 const hash = "synthetic-password-recovery-hash",
   code = "synthetic-password-recovery-code",
   verifier = "synthetic-password-recovery-verifier",
-  password = "Synthetic-recovery-only-726";
+  password = "SynthOnly726";
 function session(suffix) {
   const id = "00000000-0000-4000-8000-0000000007" + suffix,
     expires = Math.floor(Date.now() / 1000) + 3600;
