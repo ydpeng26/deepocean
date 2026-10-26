@@ -1,8 +1,11 @@
 // Public by design: login failures must not prevent contacting administrators.
-// This recovery-only endpoint never accepts caller credentials, arbitrary table
+// Each deployment is pinned to its own project's explicit website allowlist.
+// This endpoint never accepts caller credentials, arbitrary table
 // names or user IDs, and never returns message/email rows.
 export const projectUrl = "https://esovqvampbrhuhamkfcs.supabase.co";
 export const siteOrigin = "https://supdiver-recovery-test.vercel.app";
+export const formalProjectUrl = "https://zmhtlhpeulhhcvlnjdrb.supabase.co";
+export const formalOrigins = ["https://www.supdiver.com", "https://supdiver.com"];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const encoder = new TextEncoder();
 export function validInput(value: unknown): value is {
@@ -36,15 +39,19 @@ export function createHandler(
   env: (key: string) => string | undefined,
   transport: typeof fetch = fetch,
 ) {
+  const backendUrl = env("SUPABASE_URL");
+  const allowedOrigins =
+    backendUrl === projectUrl ? [siteOrigin] : backendUrl === formalProjectUrl ? formalOrigins : [];
   return async (req: Request): Promise<Response> => {
     const origin = req.headers.get("origin");
+    const allowed = origin !== null && allowedOrigins.includes(origin);
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
       Vary: "Origin",
-      ...(origin === siteOrigin
+      ...(allowed
         ? {
-            "Access-Control-Allow-Origin": siteOrigin,
+            "Access-Control-Allow-Origin": origin!,
             "Access-Control-Allow-Methods": "POST, OPTIONS",
             "Access-Control-Allow-Headers": "content-type",
           }
@@ -53,13 +60,14 @@ export function createHandler(
     const reply = (status: number, code: string, id?: string) =>
       new Response(JSON.stringify(id ? { code, id } : { code }), { status, headers });
     // Origin is a browser boundary, not a substitute for authentication/rate limiting.
-    if (origin !== siteOrigin) return reply(403, "denied");
+    if (!allowedOrigins.length) return reply(503, "unavailable");
+    if (!allowed) return reply(403, "denied");
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (req.method !== "POST") return reply(405, "method");
     if (req.headers.get("content-type")?.split(";")[0].trim() !== "application/json")
       return reply(415, "invalid");
     const secret = env("SUPABASE_SERVICE_ROLE_KEY");
-    if (env("SUPABASE_URL") !== projectUrl || !secret) return reply(503, "unavailable");
+    if (!secret) return reply(503, "unavailable");
     try {
       // Bound bytes even without Content-Length, and never log submitted data.
       const reader = req.body?.getReader();
@@ -139,7 +147,7 @@ export function createHandler(
         "request",
         JSON.stringify([input.id.toLowerCase(), browserHash, input.category, body, email]),
       );
-      const response = await transport(projectUrl + "/rest/v1/rpc/submit_guest_contact", {
+      const response = await transport(backendUrl + "/rest/v1/rpc/submit_guest_contact", {
         method: "POST",
         redirect: "error",
         signal: AbortSignal.timeout(15000),

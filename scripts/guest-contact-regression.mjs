@@ -131,6 +131,38 @@ for (const [value, status, code] of [
   assert.deepEqual(await r.json(), { code });
 }
 assert.equal((await edge.createHandler(() => undefined)(request())).status, 503);
+let formalCalls = [];
+const formalHandler = edge.createHandler(
+  (key) =>
+    ({ SUPABASE_URL: edge.formalProjectUrl, SUPABASE_SERVICE_ROLE_KEY: "synthetic-formal-secret" })[
+      key
+    ],
+  async (url, options) => {
+    formalCalls.push(url);
+    assert.equal(url, edge.formalProjectUrl + "/rest/v1/rpc/submit_guest_contact");
+    assert.equal(options.headers.apikey, "synthetic-formal-secret");
+    return Response.json(id);
+  },
+);
+for (const origin of edge.formalOrigins) {
+  const response = await formalHandler(request(payload, { headers: { Origin: origin } }));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), origin);
+}
+assert.equal(
+  (await formalHandler(request())).status,
+  403,
+  "Recovery origin cannot invoke formal deployment",
+);
+assert.equal(formalCalls.length, 2);
+assert.equal(
+  (
+    await edge.createHandler((key) =>
+      key === "SUPABASE_URL" ? "https://foreign.invalid" : "synthetic",
+    )(request())
+  ).status,
+  503,
+);
 console.log(
   "PASS: actual public Edge handler bounds methods/origins/fields/bytes; honeypot rejects; forwards only fixed RPC; HMAC hides browser/network; exact receipts and safe errors; no user auth dependency",
 );
@@ -307,7 +339,10 @@ const local = spawnSync(process.execPath, ["scripts/recovery-guest-contact.mjs"]
 assert.equal(local.status, 1);
 assert(local.stdout.includes("github_cloud_only"));
 assert(!read("scripts/recovery-guest-contact.mjs").includes("JSON.stringify(states)"));
-assert(read("scripts/recovery-guest-contact.mjs").includes('form.getByRole("alert")'), "Guest form alerts must be scoped separately from global storage warnings");
+assert(
+  read("scripts/recovery-guest-contact.mjs").includes('form.getByRole("alert")'),
+  "Guest form alerts must be scoped separately from global storage warnings",
+);
 console.log(
   "PASS: cloud guest runner rejects local invocation before credentials/network and forwards only fixed synthetic requests; diagnostics never contain message payloads",
 );
