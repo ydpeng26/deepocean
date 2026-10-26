@@ -1,5 +1,17 @@
 # Remaining member safety checks — 2026-10-26
 
+## Latest checkpoint — run 48 recovery acceptance passed
+
+[Run 48](https://github.com/ydpeng26/deepocean/actions/runs/40272669211), job `121408674149`, source `b269ae145168777233ae3037063b337ce9eab8a9`, completed successfully. Independently read safe logs confirm all seven groups passed in both Chinese and English: profile stale edit/draft/reload/fresh save/double submit; certificate stale edit/private draft; undecodable generated-image rejection without upload/save and with draft retention; marine stale edit/photo retention; forum stale edit and lost-reply retry without rewriting; comment stale edit and remote-deletion copyable draft; all seven accessible gear labels plus synchronous pagehide hiding and synthetic pageshow revalidation.
+
+All four isolated contexts reported zero page errors and zero blocked requests. The exact known external font CSS was stubbed locally (10/7/10/7 requests), not forwarded; this does not certify font appearance. The formerly missing generated-owner-only marine suggestion reads no longer cause blocked requests in this run.
+
+The runner verified exact temporary auth user/profile/all fixture rows/generated PNG absence, revoked temporary sessions and closed the browser. Final marker: `complete=true; recovery_only; synthetic_text_and_tiny_generated_png; no_mail_existing_user_reads_edits_or_local_exports; native_bfcache_camera_codec_coverage_not_claimed`.
+
+The borrowed registered dive-log workflow is restored byte-for-byte to formal baseline `3dbf600ce0f021d8cc8f80ce5bdf0efffaa103cb`; the dedicated member-safety workflow remains manual-only and branch-restricted. Application src/public remain identical to the accepted run. Formal release requires separate approval and has not occurred for this batch. Earlier incomplete sections below are historical.
+
+This accepts the specified desktop Chromium fixture cases only. Real Safari BFCache first-paint/VoiceOver, Edge, real camera HEVC/other codecs, immediate revocation of already issued/cached links and full browser/visual coverage are not newly accepted. Stale-delete and mutation-time race cases outside this runner retain their explicit local-model evidence, not a new live-browser pass.
+
 ## Scope and release boundary
 
 The user requested inspection/repair of the remaining items except large-forum pagination/performance. This batch does not include the separately deferred full backup restore, mobile, preview-only features, maintenance type errors or Node action upgrades. Baseline is formally released `3dbf600ce0f021d8cc8f80ce5bdf0efffaa103cb` (gear run 46 acceptance). This is local implementation and verification only, not recovery or formal acceptance. No deployment, user rows, photos, credentials, schema, RLS or login configuration have been changed by this batch.
