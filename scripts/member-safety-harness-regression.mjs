@@ -10,6 +10,7 @@ import {
   readOwners,
   requireUniqueGearControl,
   memberBoundaryReason,
+  fixtureAvatarUpload,
 } from "./recovery-member-safety.mjs";
 const owner = "synthetic-owner",
   known = Object.fromEntries(
@@ -125,6 +126,44 @@ const profile =
 assert(validateFixtureWrite(profile, "PATCH", { bio: "Synthetic" }, owner, known));
 assert(!validateFixtureWrite(profile, "PATCH", { avatar_url: "other/photo.jpg" }, owner, known));
 assert(!validateFixtureWrite(profile.replace("&bio=is.null", ""), "PATCH", {}, owner, known));
+const avatarPath = owner + "/12345678-1234-1234-1234-123456789012.jpg";
+const avatarRequest = recoveryOrigin + "/storage/v1/object/avatars/" + avatarPath;
+assert.equal(fixtureAvatarUpload(avatarRequest, "POST", owner, 1000), avatarPath);
+for (const [url, method, bytes] of [
+  [avatarRequest, "PUT", 1000],
+  [avatarRequest, "POST", 100001],
+  [avatarRequest, "POST", 0],
+  [avatarRequest.replace(owner, "other"), "POST", 1000],
+  [avatarRequest.replace("avatars/", "marine-photos/"), "POST", 1000],
+  [avatarRequest.replace(".jpg", "/extra.jpg"), "POST", 1000],
+  [avatarRequest.replace(recoveryOrigin, "https://www.supdiver.com"), "POST", 1000],
+])
+  assert.equal(fixtureAvatarUpload(url, method, owner, bytes), null);
+const avatarPatch = recoveryOrigin + "/rest/v1/profiles?id=eq." + owner + "&avatar_url=is.null";
+const avatars = new Set([avatarPath]);
+assert(
+  validateFixtureWrite(avatarPatch, "PATCH", { avatar_url: avatarPath }, owner, known, avatars),
+);
+assert(
+  validateFixtureWrite(
+    avatarPatch.replace("is.null", "eq." + avatarPath),
+    "PATCH",
+    { avatar_url: avatarPath },
+    owner,
+    known,
+    avatars,
+  ),
+);
+for (const [url, payload] of [
+  [avatarPatch, { avatar_url: "other/photo.jpg" }],
+  [avatarPatch.replace("&avatar_url=is.null", ""), { avatar_url: avatarPath }],
+  [avatarPatch.replace("is.null", "eq.other/photo.jpg"), { avatar_url: avatarPath }],
+  [avatarPatch, { avatar_url: avatarPath, bio: "must not overwrite text" }],
+])
+  assert(!validateFixtureWrite(url, "PATCH", payload, owner, known, avatars));
+console.log(
+  "PASS: avatar boundary permits only bounded generated-owner JPEG paths and tracked-path conditional avatar-only patches; missing/foreign baseline and text overwrite rejected",
+);
 const marine =
   recoveryOrigin +
   "/rest/v1/marine_encounters?id=eq.fixture&user_id=eq." +

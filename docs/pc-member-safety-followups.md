@@ -1,5 +1,15 @@
 # Remaining member safety checks — 2026-10-26
 
+## Native Safari checkpoint and follow-up acceptance preparation
+
+Native Safari private browsing was inspected on the recovery origin after the user logged in. The personal profile loaded, sign-out returned to auth, actual toolbar Back and Forward retained auth, and direct navigation to `/profile` redirected to auth. The user separately confirmed no old avatar/profile flash was observed during the transitions. No profile was edited or saved. The initially selected formal-site tab was left untouched. This accepts the observed native logout/history cases with human first-paint observation, not every BFCache path, Safari version, VoiceOver or browser.
+
+The dedicated manual-only recovery member-safety workflow now selects a focused follow-up mode. It adds two-context avatar replacement (stale replacement rejected, winning generated image retained, unsaved text retained, confirmed reload and fresh replacement) and certificate archive/marine delete/forum post delete/comment delete races in both languages. B's actual browser mutation is held after its original conditional URL is captured; A saves through the actual UI and the runner independently reads back A's commit before forwarding B. Each stale mutation must return zero rows and preserve A's current record. The marine case independently checks that the generated photo still exists.
+
+Browser avatar uploads are limited to new bounded JPEG paths under the generated owner's avatar prefix. Profile avatar patches can touch only avatar_url with a null or tracked-path baseline; text overwrites, foreign paths and missing baselines fail closed. Only tracked avatar paths are removed, and owner-prefix image absence is verified before the temporary auth account is removed. Existing owner-only browser read boundaries and exact fixture cleanup remain in place. Temporary credentials stay in cloud memory; no real email, existing-user writes or local data exports are authorized.
+
+This change is acceptance scripts/workflow/documentation only, with no application, schema, credentials, production configuration or formal deployment changes. All 35 local regression suites pass, including the actual request-boundary helper tests and API models. The follow-up runner additionally waits for visible conflict feedback after each rejected stale deletion. Live follow-up acceptance is still pending and must not be inferred from local tests or the earlier run 48.
+
 ## Authorized formal release verified
 
 After run 48 acceptance, the user explicitly approved this batch's formal release. Main was fast-forwarded with an expected-head guard from `3dbf600ce0f021d8cc8f80ce5bdf0efffaa103cb` to `b53dc10c9f27cb194fed1e806ca170143df47a0e`, without rewriting history. The release guard verified exact run/job success, application equality to accepted `b269ae145168777233ae3037063b337ce9eab8a9`, original workflow restoration, and the new dedicated workflow's manual-only isolated-branch boundary. All 35 local regression suites passed again.

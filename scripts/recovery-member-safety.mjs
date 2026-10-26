@@ -52,7 +52,16 @@ export function memberBoundaryReason(error) {
     ? code
     : "request_boundary";
 }
-export function validateFixtureWrite(raw, method, payload, owner, known) {
+export function fixtureAvatarUpload(raw, method, owner, bytes) {
+  const u = new URL(raw);
+  const prefix = "/storage/v1/object/avatars/" + owner + "/";
+  if (u.origin !== recoveryOrigin || method !== "POST" || !u.pathname.startsWith(prefix))
+    return null;
+  const name = u.pathname.slice(prefix.length);
+  if (!/^[0-9a-f-]{36}\.jpg$/.test(name) || !bytes || bytes > 100000) return null;
+  return owner + "/" + name;
+}
+export function validateFixtureWrite(raw, method, payload, owner, known, avatars = new Set()) {
   const u = new URL(raw),
     table = u.pathname.match(/^\/rest\/v1\/([a-z_]+)$/)?.[1];
   if (u.origin !== recoveryOrigin || !["PATCH", "DELETE"].includes(method)) return false;
@@ -70,6 +79,12 @@ export function validateFixtureWrite(raw, method, payload, owner, known) {
   const id = u.searchParams.get("id");
   if (table === "profiles") {
     if (method !== "PATCH" || id !== "eq." + owner) return false;
+    if (payload && Object.keys(payload).length === 1 && avatars.has(payload.avatar_url)) {
+      const baseline = u.searchParams.get("avatar_url");
+      return (
+        baseline === "is.null" || (baseline?.startsWith("eq.") && avatars.has(baseline.slice(3)))
+      );
+    }
     if (!["display_name", "cert_level", "tank_count", "bio"].every((k) => u.searchParams.has(k)))
       return false;
     if (
@@ -130,6 +145,7 @@ export async function runMemberSafety() {
     ),
   );
   const sessions = new Set(),
+    avatars = new Set(),
     contexts = [],
     mainAbort = new AbortController();
   const check = (ok, code) => {
@@ -215,6 +231,7 @@ export async function runMemberSafety() {
     await action();
     const result = await response;
     check(result.ok(), "browser_mutation_http");
+    return result;
   }
   async function open(page, path) {
     await page.goto(recoverySite + path, { waitUntil: "domcontentloaded" });
@@ -295,6 +312,8 @@ export async function runMemberSafety() {
           if (["/auth/v1/user", "/auth/v1/settings"].includes(u.pathname)) return route.continue();
           if (u.pathname === "/storage/v1/object/sign/marine-photos/" + imagePath)
             return route.continue();
+          if ([...avatars].some((p) => u.pathname === "/storage/v1/object/sign/avatars/" + p))
+            return route.continue();
           return block("read_path");
         }
         if (method === "OPTIONS") return route.continue();
@@ -304,6 +323,22 @@ export async function runMemberSafety() {
           return route.continue();
         }
         if (u.pathname === "/auth/v1/logout" && method === "POST") return route.continue();
+        const avatar = fixtureAvatarUpload(
+          request.url(),
+          method,
+          owner,
+          request.postDataBuffer()?.length,
+        );
+        if (avatar) {
+          check(!avatars.has(avatar), "fixture_conditional_write_only");
+          avatars.add(avatar);
+          return route.continue();
+        }
+        if (
+          method === "POST" &&
+          [...avatars].some((p) => u.pathname === "/storage/v1/object/sign/avatars/" + p)
+        )
+          return route.continue();
         if (u.pathname === "/storage/v1/object/sign/marine-photos" && method === "POST") {
           const paths = request.postDataJSON()?.paths;
           check(
@@ -314,10 +349,17 @@ export async function runMemberSafety() {
         }
         const payload = method === "PATCH" ? request.postDataJSON() : null;
         check(
-          validateFixtureWrite(request.url(), method, payload, owner, known),
+          validateFixtureWrite(request.url(), method, payload, owner, known, avatars),
           "fixture_conditional_write_only",
         );
         if (method === "PATCH") stats.patches++;
+        // Hold the real B mutation at the network boundary while A commits through UI.
+        // B's original revision predicates must then be rejected by the real database.
+        if (stats.beforeWrite) {
+          const beforeWrite = stats.beforeWrite;
+          stats.beforeWrite = null;
+          await beforeWrite(u, method);
+        }
         const mode = stats.mode;
         stats.mode = null;
         if (mode === "lost") {
@@ -599,6 +641,271 @@ export async function runMemberSafety() {
     );
     await req(scope("forum_posts", id), { method: "DELETE" });
   }
+  async function avatarSuite(A, B, en) {
+    advance((en ? "en" : "zh") + "_avatar_replacement");
+    await req(scope("profiles", owner), {
+      method: "PATCH",
+      body: { avatar_url: null, bio: "avatar base" },
+    });
+    const bio = (p) => p.locator(".do-profile-fields textarea");
+    for (const p of [A.page, B.page]) {
+      await open(p, "/profile");
+      await expectValue(bio(p), "avatar base");
+    }
+    const image = {
+      name: "generated-avatar.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgaDjxHwAEFAJIjGIHSwAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    };
+    await bio(B.page).fill("retained avatar draft");
+    await mutate(A.page, "profiles", () => A.page.locator("input[type=file]").setInputFiles(image));
+    await A.page.getByText(en ? "Photo updated" : "头像已更新", { exact: true }).waitFor();
+    const winner = await row("profiles", owner);
+    check(avatars.has(winner.avatar_url), "avatar_first_commit");
+    await mutate(B.page, "profiles", () => B.page.locator("input[type=file]").setInputFiles(image));
+    await B.page
+      .getByRole("alert")
+      .filter({ hasText: en ? "Profile changed elsewhere" : "资料已在其他页面修改" })
+      .waitFor();
+    check(
+      (await bio(B.page).inputValue()) === "retained avatar draft",
+      "avatar_text_draft_retained",
+    );
+    const retained = await row("profiles", owner);
+    check(
+      retained.avatar_url === winner.avatar_url && retained.bio === "avatar base",
+      "avatar_stale_cannot_replace_or_save_text",
+    );
+    const objects = await req("/storage/v1/object/list/avatars", {
+      method: "POST",
+      body: { prefix: owner + "/", limit: 100 },
+    });
+    check(
+      objects.some((o) => owner + "/" + o.name === winner.avatar_url),
+      "winning_avatar_not_deleted",
+    );
+    B.page.once("dialog", (d) => d.accept());
+    await btn(B.page, en ? "Reload profile" : "重新加载").click();
+    await expectValue(bio(B.page), "avatar base");
+    await mutate(B.page, "profiles", () => B.page.locator("input[type=file]").setInputFiles(image));
+    await B.page.getByText(en ? "Photo updated" : "头像已更新", { exact: true }).waitFor();
+    const fresh = await row("profiles", owner);
+    check(
+      fresh.avatar_url !== winner.avatar_url &&
+        avatars.has(fresh.avatar_url) &&
+        fresh.bio === "avatar base",
+      "avatar_fresh_replacement",
+    );
+    pass(
+      (en ? "en" : "zh") +
+        "_avatar_two_context_stale_replacement_rejected_winner_and_text_retained_confirmed_reload_fresh_replacement",
+    );
+  }
+  async function staleDeleteSuite(A, B, en) {
+    const prefix = en ? "en" : "zh";
+    async function race(table, method, update, action, verify) {
+      let committed = false;
+      B.stats.beforeWrite = async (u, actualMethod) => {
+        check(
+          u.pathname === "/rest/v1/" + table && actualMethod === method,
+          "expected_race_boundary",
+        );
+        await update();
+        committed = true;
+      };
+      const response = await mutate(B.page, table, action);
+      check(
+        committed && JSON.stringify(await response.json()) === "[]",
+        "stale_delete_zero_rows_after_real_commit",
+      );
+      await verify();
+    }
+    advance(prefix + "_certificate_archive_race");
+    const cert = await seed("diver_certificates", {
+      agency: "PADI",
+      level: marker,
+      is_public: false,
+    });
+    for (const p of [A.page, B.page]) {
+      await open(p, "/certificates");
+      await btn(p, en ? "Remove certificate" : "移除此证书").waitFor();
+    }
+    await btn(A.page, en ? "Edit certificate" : "编辑证书").click();
+    await A.page
+      .getByLabel(en ? "Certificate number (private)" : "证书编号（仅本人可见）", { exact: true })
+      .fill("race newer certificate");
+    B.page.once("dialog", (d) => d.accept());
+    await race(
+      "diver_certificates",
+      "PATCH",
+      async () => {
+        await mutate(A.page, "diver_certificates", () =>
+          btn(A.page, en ? "Save certificate" : "保存证书").click(),
+        );
+        check(
+          (await row("diver_certificates", cert)).certificate_number === "race newer certificate",
+          "certificate_race_commit",
+        );
+      },
+      () => btn(B.page, en ? "Remove certificate" : "移除此证书").click(),
+      async () => {
+        const current = await row("diver_certificates", cert);
+        check(
+          current.deleted_at === null && current.certificate_number === "race newer certificate",
+          "stale_archive_keeps_newer_certificate",
+        );
+        await B.page
+          .getByText(/Certificate changed or was removed elsewhere/)
+          .first()
+          .waitFor();
+      },
+    );
+    pass(prefix + "_certificate_archive_mutation_time_race_rejected_newer_row_unarchived");
+    await req(scope("diver_certificates", cert), { method: "DELETE" });
+
+    advance(prefix + "_marine_delete_race");
+    const encounter = await seed("marine_encounters", {
+      species_name: marker,
+      encountered_on: "2026-10-01",
+      location: "race base",
+      photo_path: imagePath,
+      needs_help: false,
+    });
+    for (const p of [A.page, B.page]) {
+      await open(p, "/marine");
+      await p.locator(".do-marine-card").filter({ hasText: marker }).click();
+    }
+    await btn(A.page, en ? "Edit encounter / turn off help" : "编辑名称与记录 / 关闭求助").click();
+    await A.page
+      .getByLabel(en ? "Location" : "相遇地点", { exact: true })
+      .fill("race newer location");
+    B.page.once("dialog", (d) => d.accept());
+    await race(
+      "marine_encounters",
+      "DELETE",
+      async () => {
+        await mutate(A.page, "marine_encounters", () =>
+          btn(A.page, en ? "Save encounter" : "保存相遇").click(),
+        );
+        check(
+          (await row("marine_encounters", encounter)).location === "race newer location",
+          "marine_race_commit",
+        );
+      },
+      () => btn(B.page, en ? "Delete record" : "删除记录").click(),
+      async () => {
+        const current = await row("marine_encounters", encounter);
+        check(
+          current.location === "race newer location" && current.photo_path === imagePath,
+          "stale_delete_keeps_encounter",
+        );
+        const objects = await req("/storage/v1/object/list/marine-photos", {
+          method: "POST",
+          body: { prefix: owner + "/", limit: 10 },
+        });
+        check(
+          objects.some((o) => o.name === imageName),
+          "stale_delete_keeps_actual_photo",
+        );
+        await B.page
+          .getByText(/Encounter changed or was deleted elsewhere/)
+          .first()
+          .waitFor();
+      },
+    );
+    pass(prefix + "_marine_delete_mutation_time_race_rejected_newer_row_and_photo_kept");
+    await req(scope("marine_encounters", encounter), { method: "DELETE" });
+
+    advance(prefix + "_forum_delete_race");
+    const post = await seed("forum_posts", { title: marker, body: "race base", topic: "stories" });
+    for (const p of [A.page, B.page]) {
+      await open(p, "/forum");
+      await p
+        .locator("article")
+        .filter({ hasText: marker })
+        .locator(".do-forum-more-trigger")
+        .click();
+    }
+    await A.page
+      .getByRole("menuitem", { name: en ? "Edit post" : "编辑帖子", exact: true })
+      .click();
+    await A.page.getByRole("dialog").locator("textarea").fill("race newer post");
+    await B.page
+      .getByRole("menuitem", { name: en ? "Delete post" : "删除帖子", exact: true })
+      .click();
+    await race(
+      "forum_posts",
+      "DELETE",
+      async () => {
+        await mutate(A.page, "forum_posts", () =>
+          A.page
+            .getByRole("dialog")
+            .getByRole("button", { name: en ? "Save changes" : "保存修改", exact: true })
+            .click(),
+        );
+        check((await row("forum_posts", post)).body === "race newer post", "post_race_commit");
+      },
+      () =>
+        B.page
+          .locator(".do-forum-more-confirm")
+          .getByRole("button", { name: en ? "Delete" : "确认删除", exact: true })
+          .click(),
+      async () => {
+        check(
+          (await row("forum_posts", post)).body === "race newer post",
+          "stale_delete_keeps_post",
+        );
+        await B.page
+          .getByText(/Content changed or was deleted elsewhere/)
+          .first()
+          .waitFor();
+      },
+    );
+    pass(prefix + "_forum_post_delete_mutation_time_race_rejected_newer_row_kept");
+
+    advance(prefix + "_comment_delete_race");
+    const comment = await seed("forum_comments", { post_id: post, body: "race base comment" });
+    for (const p of [A.page, B.page]) {
+      await open(p, "/forum");
+      await p.locator("article").filter({ hasText: marker }).locator(".do-forum-read").click();
+    }
+    await btn(A.page, en ? "Edit response" : "编辑回应").click();
+    await A.page
+      .getByLabel(en ? "Edit response text" : "编辑回应内容", { exact: true })
+      .fill("race newer comment");
+    await btn(B.page, en ? "Delete response" : "删除回应").click();
+    await race(
+      "forum_comments",
+      "DELETE",
+      async () => {
+        await mutate(A.page, "forum_comments", () =>
+          btn(A.page, en ? "Save response changes" : "保存回应修改").click(),
+        );
+        check(
+          (await row("forum_comments", comment)).body === "race newer comment",
+          "comment_race_commit",
+        );
+      },
+      () => btn(B.page, en ? "Confirm response deletion" : "确认删除回应").click(),
+      async () => {
+        check(
+          (await row("forum_comments", comment)).body === "race newer comment",
+          "stale_delete_keeps_comment",
+        );
+        await B.page
+          .getByRole("dialog")
+          .getByRole("alert")
+          .filter({ hasText: /Content changed or was deleted elsewhere/ })
+          .waitFor();
+      },
+    );
+    pass(prefix + "_comment_delete_mutation_time_race_rejected_newer_row_kept");
+    await req(scope("forum_comments", comment), { method: "DELETE" });
+    await req(scope("forum_posts", post), { method: "DELETE" });
+  }
   async function labelsAndPrivacy(A, en) {
     advance((en ? "en" : "zh") + "_labels_pagehide");
     await open(A.page, "/gear");
@@ -710,11 +1017,16 @@ export async function runMemberSafety() {
         B = await makeContext(language);
       await login(A.page, language);
       await login(B.page, language);
-      await profileSuite(A, B, en);
-      await certificateSuite(A, B, en);
-      await marineSuite(A, B, en);
-      await forumSuite(A, B, en);
-      await labelsAndPrivacy(A, en);
+      if (process.env.RECOVERY_MEMBER_FOLLOWUPS === "true") {
+        await avatarSuite(A, B, en);
+        await staleDeleteSuite(A, B, en);
+      } else {
+        await profileSuite(A, B, en);
+        await certificateSuite(A, B, en);
+        await marineSuite(A, B, en);
+        await forumSuite(A, B, en);
+        await labelsAndPrivacy(A, en);
+      }
       await A.context.close();
       await B.context.close();
     }
@@ -792,6 +1104,21 @@ export async function runMemberSafety() {
             cleanup: true,
           });
           check(Array.isArray(objects) && objects.length === 0, "generated_image_absence");
+          if (avatars.size)
+            await req("/storage/v1/object/avatars", {
+              method: "DELETE",
+              body: { prefixes: [...avatars] },
+              cleanup: true,
+            });
+          const avatarObjects = await req("/storage/v1/object/list/avatars", {
+            method: "POST",
+            body: { prefix: owner + "/", limit: 100 },
+            cleanup: true,
+          });
+          check(
+            Array.isArray(avatarObjects) && avatarObjects.length === 0,
+            "generated_avatar_absence",
+          );
           await req("/auth/v1/admin/users/" + owner, { method: "DELETE", cleanup: true });
         }
         check(
