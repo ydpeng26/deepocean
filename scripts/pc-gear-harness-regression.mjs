@@ -178,9 +178,50 @@ assert.deepEqual(diagnostic, {
   category: "ambiguous_locator",
   positions: [{ line: 212, column: 17 }],
   locatorMatches: 2,
+  actionability: {
+    resolvedControl: false,
+    disabled: false,
+    hidden: false,
+    notEditable: false,
+    detached: false,
+  },
 });
 assert(!JSON.stringify(diagnostic).includes("SECRET_SENTINEL"));
 assert(!JSON.stringify(diagnostic).includes("@"));
+const fieldDeclaration = source.slice(
+  source.indexOf("const field ="),
+  source.indexOf("const button ="),
+);
+for (const label of ["备注", "Notes"]) {
+  const selected = vm.runInNewContext(fieldDeclaration + ";field(page,label)", {
+    label,
+    page: {
+      locator(selector) {
+        return selector;
+      },
+      getByLabel() {
+        throw Error("Notes must use unique real textarea");
+      },
+    },
+  });
+  assert.equal(selected, "fieldset textarea");
+}
+assert.equal(
+  vm.runInNewContext(fieldDeclaration + ';field(page,"Brand")', {
+    page: {
+      getByLabel(name) {
+        return name;
+      },
+    },
+  }),
+  "Brand",
+);
+const disabledDiagnostic = gearBrowserDiagnostic({
+  message: "locator resolved to <textarea> element is not enabled SECRET_SENTINEL",
+});
+assert(disabledDiagnostic.actionability.resolvedControl);
+assert(disabledDiagnostic.actionability.disabled);
+assert(!JSON.stringify(disabledDiagnostic).includes("SECRET_SENTINEL"));
 for (const [message, category] of [
   ["Timeout exceeded", "timeout"],
   ["Target page closed", "closed_target"],

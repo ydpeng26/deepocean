@@ -207,7 +207,12 @@ async function context(language, id) {
   });
   return { context: c, stats };
 }
-const field = (page, name) => page.getByLabel(name, { exact: true });
+// Gear has exactly one textarea. Scope notes to that actual control rather than
+// depending on implicit accessible-label resolution through nested label markup.
+const field = (page, name) =>
+  ["备注", "Notes"].includes(name)
+    ? page.locator("fieldset textarea")
+    : page.getByLabel(name, { exact: true });
 const button = (page, name) => page.getByRole("button", { name, exact: true });
 async function login(page, language, editor = "retry") {
   const copy = copies[language];
@@ -280,7 +285,28 @@ async function suite(language) {
     advance(language + "_B_fill_stale_model");
     await field(b, copy.model).fill("stale B draft");
     advance(language + "_A_fill_new_notes");
+    await a.bringToFront();
+    console.log(
+      "DIAGNOSTIC: " +
+        JSON.stringify({
+          atGear: new URL(a.url()).pathname === "/gear",
+          notesLabelMatches: await a.getByLabel(copy.notes, { exact: true }).count(),
+          notesControls: await field(a, copy.notes).count(),
+          notesLabelVisible:
+            (await a.locator("fieldset").getByText(copy.notes, { exact: true }).count()) > 0,
+        }),
+    );
+    await field(a, copy.notes).waitFor();
+    check((await field(a, copy.notes).count()) === 1, "exact_one_gear_notes_control");
+    check(
+      (await a.locator("fieldset").getByText(copy.notes, { exact: true }).count()) > 0,
+      "gear_notes_copy_present",
+    );
     await field(a, copy.notes).fill("newer A notes");
+    check(
+      (await field(a, copy.notes).inputValue()) === "newer A notes",
+      "actual_notes_input_filled",
+    );
     advance(language + "_A_save_newer_record");
     await save(a, copy);
     advance(language + "_independent_read_newer_record");

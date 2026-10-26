@@ -19,5 +19,16 @@ export function gearBrowserDiagnostic(error) {
     .slice(0, 4)
     .map((match) => ({ line: Number(match[1]), column: Number(match[2]) }));
   const count = message.match(/resolved to (\d{1,5}) elements/);
-  return { category, positions, ...(count ? { locatorMatches: Number(count[1]) } : {}) };
+  return {
+    category,
+    positions,
+    ...(count ? { locatorMatches: Number(count[1]) } : {}),
+    actionability: {
+      resolvedControl: /locator resolved to|element is visible/i.test(message),
+      disabled: /element is not enabled|element is disabled/i.test(message),
+      hidden: /element is not visible/i.test(message),
+      notEditable: /element is not editable|not an <input>|not an <textarea>/i.test(message),
+      detached: /detached|not attached/i.test(message),
+    },
+  };
 }
