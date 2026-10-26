@@ -24,3 +24,23 @@ Advisor comparison added no findings for this feature. Existing unrelated adviso
 ## Release boundary
 
 Formal deployment/schema changes are not part of this implementation step. Recovery browser acceptance must be verified separately; local models and role tests are not browser end-to-end acceptance. Before eventual formal publication, apply this exact migration to formal before serving code requesting visibility or stats. Do not drop data-bearing columns/tables as a website rollback.
+
+## Recovery deployment / browser handoff
+
+Source `f3a5d67b2bd29d2e83fe300e1f9d233f3e30626f` was non-force published only to `codex/pc-layout-keyboard-audit`. Vercel recovery preview `F6DeRukYY4aaEs4DfTFiF744Cp3G` was Ready, then rebuilt using recovery Production environment as `3vZ1nZV6CFDLztrPNUohiEwneFtd`, Ready and bound to `supdiver-recovery-test.vercel.app`; generated host `supdiver-recovery-test-kxoyu4ys1-ydpeng26s-projects.vercel.app`. The promotion dialog explicitly named only the recovery domain. Formal main/site was not changed.
+
+Read-only online verification read 66 public JS assets and confirmed recovery-only client backend, bilingual visibility control, My posts tab, real stats RPC, saved route bundle and permission-aware saved copy. All 38 local regression suites and production build/offline asset generation pass. Targeted new-component/page lint passes; whole-project type debt remains as above.
+
+Opening recovery `/forum` in a new Chrome tab redirected to `/auth`; no login was attempted, no password entered, and no existing form/tab was closed. Browser displayed a waiting service-worker update. User handoff requested saving any recovery drafts, reopening recovery tabs to activate the new version, then signing into their test account. Full browser acceptance and live cancellation/deletion linkage remain pending that handoff. Final fixture absence query again returned users=0, posts=0, objects=0.
+
+## Subsequent authorized native Chrome acceptance
+
+The user logged into recovery and separately authorized creating and cleaning one disposable test post under that test account. Only that synthetic content was changed; existing profile, dives, gear and any pre-existing forum relations were untouched. No password was read/entered/saved, no account was created and no email was sent.
+
+- Native UI confirmed the new statistics guidance, My posts tab and dedicated `/saved` entry. One post titled `临时验收 VIS-20261027-0115` was created with Only me selected. Receipt ID was `9c9e3323-b8f8-45e5-a575-9aeba21aa070`, identified by exact synthetic title/body and the author shown in the UI. It appeared in My posts with Only me badge and Share disabled; editing retained its visibility.
+- Saving it changed passport saved count from 0 to 1, produced its real card, and the card opened `/saved#post-<receipt>` containing that exact post. Unsaving removed it and returned the passport count to 0.
+- Editing private to public persisted in a metadata query and reopening the editor; Share became enabled. Like count went 0 to 1, then cancelling the like returned it to 0. Saving/liking again left exactly one own bookmark and one own like on the fixture, independently confirmed by a receipt-restricted metadata query.
+- Switching public back to private persisted and restored the Only me badge/disabled Share. The author still saw their own saved private post (correct owner access). Passport community totals remained 0, excluding self-interactions. English labels/guidance/cards rendered correctly; original Chinese was restored.
+- The fixture alone was deleted via its native post menu and explicit confirmation. An independent database query restricted to its receipt confirmed posts=0, likes=0 and bookmarks=0. Passport saved count returned to 0 and its card disappeared. This completes actual browser save/unsave, like/unlike, visibility editing and delete-cascade linkage rather than relying on the previously failed extended SQL transaction.
+
+Cross-account privacy and positive other-user totals are covered by the earlier rolled-back database role tests, not by a two-account browser session in this turn. Unfollow in the extended SQL script remains not executed successfully; no existing follow relation was changed. No real photo was attached, so no new signed-image delivery/expiry browser claim is made. Formal backend/site remain unchanged and require a separate release approval.
