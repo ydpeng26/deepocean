@@ -1,5 +1,15 @@
 # Gear concurrent editing — 2026-10-26
 
+## Latest checkpoint — run 46 recovery acceptance passed
+
+[Run 46](https://github.com/ydpeng26/deepocean/actions/runs/40267868689), job `121394102612`, source `f6ba1d84a4be7520bb48832e40fbe4328bcb3713`, completed successfully. Safe logs independently confirm both Chinese and English passed stale-edit rejection with retained draft, confirmed reload and fresh-revision save, stale-delete rejection, a real PostgreSQL conditional-write race, deleted-record non-resurrection, and immediate double-submit plus committed/lost-reply retry without rewriting followed by another successful edit.
+
+All six isolated browser contexts reported zero page errors and zero blocked requests. The exact known external font stylesheet was locally stubbed (4/5/2 requests per language), never forwarded; font appearance and other browser families are not accepted by this concurrency run. Notes had one textarea and visible localized copy but zero accessible-label matches, leaving that separate accessibility finding open.
+
+Exact disposable auth user/profile/gear absence and browser closure were verified. The final audit marker is `complete=true; recovery_only; synthetic_text; no_mail_media_existing_user_edits_or_local_exports`. No production data, existing users, mail or photos were changed or exported.
+
+After acceptance, the temporarily borrowed `recovery-dive-log-audit.yml` is restored byte-for-byte to formal baseline `340f3460599b7c8b385bafc24d54142bb10fe693`. Future gear checks have their dedicated manual-only workflow. Application src/public remain identical to the accepted source. Recovery acceptance is complete; formal release still requires separate user approval. Earlier incomplete checkpoints below are historical, not the current result.
+
 ## Scope and diagnosis
 
 After the user deferred a new isolated full-restore drill, remaining PC coverage was reconciled against later acceptance/release records. Previously accepted Safari zoom route checks, human authentication/mail flows, offline updates and dive-log concurrency are not repeated here. This is a distinct gear-module finding.
