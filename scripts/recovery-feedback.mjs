@@ -362,6 +362,10 @@ export async function runFeedbackAcceptance() {
       "feedback_nav_on_forum",
     );
     pass(language + "_forum_hero_number_presentation_removed");
+    // Hero markup renders before the owner-scoped forum requests settle.
+    // Finish those reads before closing; otherwise route.fetch cancellation
+    // would be misreported as a boundary block by the request guard.
+    await page.waitForLoadState("networkidle");
     await context.close();
   }
   async function permissionSuite(account, outsider) {
