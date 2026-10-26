@@ -241,11 +241,11 @@ function harness(options = {}) {
       owner = value;
       if (emit) callback?.(value ? "SIGNED_IN" : "SIGNED_OUT", session());
     },
-    fill() {
+    fill(value = "LocalOnly123") {
       for (const id of ["new-password", "confirm-password"])
         h.render()
           .find((n) => n.props?.id === id)
-          .props.onChange({ target: { value: "Synthetic-local-only" } });
+          .props.onChange({ target: { value } });
     },
     submit() {
       events.push("submit");
@@ -280,6 +280,24 @@ for (const options of [{ search: "" }, { expired: true }, { serverError: true }]
   assert.equal(h.updates.length, 0);
 }
 const normal = await ready();
+for (const value of ["12345678", "abcdefghijkl"]) {
+  const boundary = await ready();
+  boundary.fill(value);
+  await boundary.submit();
+  assert.equal(boundary.updates.length, 1, "Reset accepts eight through twelve without forced character mix");
+}
+for (const value of ["1234567", "1234567890123"]) {
+  normal.fill(value);
+  await normal.submit();
+  assert.equal(normal.updates.length, 0, "Reset length boundaries block auth mutation");
+  assert(normal.render().some(n => n.props.role === "alert"));
+}
+for (const id of ["new-password", "confirm-password"]) {
+  const field = normal.render().find(n => n.props.id === id);
+  assert.equal(field.props.minLength, 8);
+  assert.equal(field.props.maxLength, 12);
+  assert.equal(field.props["aria-describedby"], "reset-password-requirements");
+}
 normal.fill();
 await normal.submit();
 assert.equal(normal.updates[0].id, "A");

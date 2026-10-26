@@ -225,7 +225,7 @@ assert(h.render().some((n) => n.props.role === "alert"));
 assert(!JSON.stringify(h.render()).includes("sensitive service details"));
 h.language = "en";
 h.render();
-assert.equal(h.title, "Feedback · SupDiver");
+assert.equal(h.title, "Contact us · SupDiver");
 assert.equal(h.field("feedback-body").props.value, "Keep this unsaved text");
 const retry = h.submit();
 assert.equal(h.calls[0].request, h.calls[1].request);
@@ -257,7 +257,7 @@ for (const language of ["zh-CN", "en"]) {
     return { useLanguage: () => ({ language }) };
   }).MainNavigation;
   const link = nodes(nav()).find((n) => n.props.to === "/feedback");
-  assert.equal(link.props.children, language === "en" ? "Feedback" : "意见反馈");
+  assert.equal(link.props.children, language === "en" ? "Contact us" : "联系我们");
   assert.equal(link.props["aria-current"], "page");
 }
 assert(!read("src/routes/forum-preview.tsx").includes('className="do-forum-hero-orbit"'));

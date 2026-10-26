@@ -37,3 +37,13 @@ Production schema and release remain a later separately approved step. No origin
 - Real database calls passed owner/outsider/anonymous isolation, forged-owner rejection, member UPDATE/DELETE rejection, client timestamp rejection, minute limit, rolling 24-hour cap after twenty exact generated rows, and two concurrent authenticated requests allowing exactly one new row. Only generated rows were backdated to exercise daily limits; no rule or existing record was changed.
 - Both browser contexts reported zero page errors and zero boundary blocks. `AUDIT: complete=true`. Exact generated feedback/auth/profile absence and session revocation were verified; cloud browsers closed. No mail, photos, existing-user data exports or formal-site writes occurred.
 - Formal `main` independently remains `b53dc10c9f27cb194fed1e806ca170143df47a0e`. Formal deployment and migration still require separate approval.
+
+## Follow-up: Contact us and password entry limits
+
+The user requested renaming the entry/page to 联系我们 / Contact us and reducing the new-password maximum to twelve characters. The existing `/feedback` URL, private storage, submission type selector and suggestion workflow remain compatible. No email address, public post or new delivery channel is invented.
+
+Current source inspection shows signup minimum six and reset minimum eight with no composition regex/pattern. Read-only recovery dashboard inspection of Email provider shows minimum six and the default no-required-characters option; Save remained disabled and no setting was changed. Formal backend configuration was not independently inspected in this follow-up. Official password-security documentation was checked; the changelog Markdown endpoint again rejected its content type.
+
+Signup now accepts 6–12 and reset accepts 8–12 in website forms, with both HTML limits and submission-handler checks. Both explain that no letter/digit/symbol combination is mandatory, and recommend letters plus digits and avoiding reuse. Existing lower bounds remain unchanged. Sign-in keeps the prior 72-character input maximum and does not impose the new twelve-character check, so existing longer passwords are not truncated or rejected. These are website entry limits, not a new Supabase server-wide maximum; direct Auth API policies are unchanged. No user password or backend policy was modified.
+
+All 36 local regression suites pass after the follow-up, including actual signup handler rejection of five/thirteen characters, acceptance of numeric-only, letters-only and mixed 6–12-character inputs, longer legacy sign-in, and actual reset handler rejection outside 8–12. The earlier cloud run above covers the prior wording/version; follow-up live deployment/acceptance must be recorded separately.

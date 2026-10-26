@@ -6,7 +6,7 @@ import { FeedbackError, submitFeedback, type FeedbackCategory } from "@/lib/feed
 
 export const Route = createFileRoute("/_authenticated/feedback")({
   head: () => ({
-    meta: [{ title: "意见反馈 · SupDiver" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "联系我们 · SupDiver" }, { name: "robots", content: "noindex" }],
   }),
   component: FeedbackPage,
 });
@@ -30,7 +30,7 @@ export function FeedbackPage() {
     };
   }, []);
   useEffect(() => {
-    document.title = en ? "Feedback · SupDiver" : "意见反馈 · SupDiver";
+    document.title = en ? "Contact us · SupDiver" : "联系我们 · SupDiver";
   }, [en]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,9 +79,9 @@ export function FeedbackPage() {
     <main className="do-feedback-page">
       <section className="do-feedback-intro">
         <span className="do-feedback-kicker">
-          <MessageSquare aria-hidden="true" /> SUPDIVER / FEEDBACK
+          <MessageSquare aria-hidden="true" /> SUPDIVER / CONTACT US
         </span>
-        <h1>{en ? "Help us make SupDiver better" : "让 SupDiver 变得更好"}</h1>
+        <h1>{en ? "Contact us" : "联系我们"}</h1>
         <p>
           {en
             ? "Tell us what you would improve, what went wrong, or what you hope to see next."
@@ -89,7 +89,7 @@ export function FeedbackPage() {
         </p>
       </section>
       <form className="do-feedback-form" onSubmit={submit} aria-busy={busy}>
-        <h2>{en ? "Your feedback" : "意见反馈"}</h2>
+        <h2>{en ? "Suggestions and comments" : "建议与意见"}</h2>
         <p id="feedback-privacy">
           {en
             ? "Your feedback is not posted to the forum. It is available only to you and website administrators. Do not include passwords, verification codes or other sensitive information."

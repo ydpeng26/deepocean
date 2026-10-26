@@ -32,8 +32,8 @@ export function MainNavigation() {
     },
     {
       to: "/feedback",
-      zh: "意见反馈",
-      en: "Feedback",
+      zh: "联系我们",
+      en: "Contact us",
       active: pathname === "/feedback" || pathname === "/feedback/",
     },
   ] as const;

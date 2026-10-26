@@ -25,13 +25,14 @@ const authCopy = {
     emailPlaceholder: "请输入邮箱地址",
     password: "密码",
     passwordPlaceholder: "请输入密码",
-    passwordNewPlaceholder: "设置至少 6 位密码",
+    passwordNewPlaceholder: "设置 6–12 个字符的密码",
     passwordRequirements:
-      "密码要求：至少 6 个字符，最多 72 个字符。建议使用较长且不与其他网站重复的密码。",
+      "密码要求：6–12 个字符，不强制字母、数字或特殊符号组合。建议混合字母和数字，且不要与其他网站重复使用。",
     processing: "处理中…",
     continueGoogle: "使用 Google 继续",
     or: "或者",
     emailError: "请填写邮箱，密码至少 6 位",
+    signupError: "请填写邮箱，密码须为 6–12 个字符",
     verifyEmail: "请查收邮箱完成验证后再登录",
     resendConfirmation: "重新发送确认邮件",
     resending: "正在重新发送…",
@@ -52,13 +53,14 @@ const authCopy = {
     emailPlaceholder: "Enter your email address",
     password: "Password",
     passwordPlaceholder: "Enter your password",
-    passwordNewPlaceholder: "Set a password of at least 6 characters",
+    passwordNewPlaceholder: "Set a password of 6–12 characters",
     passwordRequirements:
-      "Password requirements: 6–72 characters. Use a longer password that you do not reuse on other websites.",
+      "Password requirements: 6–12 characters. No required combination of letters, digits or symbols. Use letters and digits, and avoid reusing passwords on other websites.",
     processing: "Working…",
     continueGoogle: "Continue with Google",
     or: "or",
     emailError: "Enter an email and a password of at least 6 characters",
+    signupError: "Enter an email and a password of 6–12 characters",
     verifyEmail: "Check your email to confirm your account, then sign in",
     resendConfirmation: "Resend confirmation email",
     resending: "Resending…",
@@ -193,8 +195,8 @@ function AuthPage() {
     if (!ticket) return;
     try {
       toast.dismiss();
-      if (!email.trim() || password.length < 6) {
-        toast.error(copy.emailError);
+      if (!email.trim() || password.length < 6 || (mode === "signup" && password.length > 12)) {
+        toast.error(mode === "signup" ? copy.signupError : copy.emailError);
         return;
       }
       if (mode === "signup") {
@@ -423,7 +425,7 @@ function AuthPage() {
                 placeholder={
                   mode === "signin" ? copy.passwordPlaceholder : copy.passwordNewPlaceholder
                 }
-                maxLength={72}
+                maxLength={mode === "signup" ? 12 : 72}
                 minLength={6}
                 required
               />

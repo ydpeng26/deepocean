@@ -255,8 +255,9 @@ export async function runFeedbackAcceptance() {
     await page.getByRole("tab", { name: en ? "Sign up" : "注册", exact: true }).click();
     const hint = page.locator("#signup-password-requirements");
     await hint.waitFor();
-    check((await hint.innerText()).includes(en ? "6–72" : "至少 6"), "persistent_signup_hint");
-    await page.locator("#password").fill(account.password);
+    check((await hint.innerText()).includes("6–12"), "persistent_signup_hint");
+    check((await page.locator("#password").getAttribute("maxlength")) === "12", "signup_password_maximum");
+    await page.locator("#password").fill("Synthetic12");
     check(await hint.isVisible(), "hint_survives_typing");
     check(
       (await page.locator("#password").getAttribute("aria-describedby")) ===
@@ -279,7 +280,7 @@ export async function runFeedbackAcceptance() {
     await open(page, "/feedback");
     await page.locator("#feedback-body").waitFor();
     const nav = page.getByRole("navigation", { name: en ? "Main navigation" : "主要导航" });
-    const feedback = nav.getByRole("link", { name: en ? "Feedback" : "意见反馈", exact: true });
+    const feedback = nav.getByRole("link", { name: en ? "Contact us" : "联系我们", exact: true });
     check((await feedback.getAttribute("aria-current")) === "page", "active_feedback_navigation");
     for (const width of [1440, 1200, 900]) {
       await page.setViewportSize({ width, height: 1000 });
@@ -357,7 +358,7 @@ export async function runFeedbackAcceptance() {
     check(
       (await page
         .getByRole("navigation")
-        .getByRole("link", { name: en ? "Feedback" : "意见反馈", exact: true })
+        .getByRole("link", { name: en ? "Contact us" : "联系我们", exact: true })
         .count()) === 1,
       "feedback_nav_on_forum",
     );

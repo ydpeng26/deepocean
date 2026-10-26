@@ -240,7 +240,7 @@ function harness(language = "en", enabled = true) {
     render,
     field,
     tab,
-    fill(email = "synthetic@example.invalid", password = "Synthetic-only-password") {
+    fill(email = "synthetic@example.invalid", password = "LocalOnly123") {
       field("email").props.onChange({ target: { value: email } });
       field("password").props.onChange({ target: { value: password } });
     },
@@ -292,7 +292,7 @@ function harness(language = "en", enabled = true) {
       assert.equal(field("email").props.disabled, expected);
       assert.equal(field("password").props.disabled, expected);
       assert.equal(field("email").props.value, "synthetic@example.invalid");
-      assert.equal(field("password").props.value, "Synthetic-only-password");
+      assert.equal(field("password").props.value, "LocalOnly123");
     },
     async signupReady() {
       tab("signup").props.onClick();
@@ -306,6 +306,24 @@ function harness(language = "en", enabled = true) {
   return h;
 }
 for (const language of ["zh-CN", "en"]) {
+  for (const password of ["12345", "1234567890123"]) {
+    const h = harness(language);
+    h.tab("signup").props.onClick();
+    h.fill("synthetic@example.invalid", password);
+    await h.handlers().submit();
+    assert.equal(h.calls.length, 0, "Invalid signup lengths cannot reach auth API");
+  }
+  for (const password of ["123456", "abcdefghijkl", "Abcdef123!45"]) {
+    const h = harness(language);
+    h.tab("signup").props.onClick();
+    h.fill("synthetic@example.invalid", password);
+    await h.handlers().submit();
+    assert.equal(h.calls.length, 1, "6 through 12 characters accepted without forced character mix");
+  }
+  const legacy = harness(language);
+  legacy.fill("synthetic@example.invalid", "Existing-longer-password");
+  await legacy.handlers().submit();
+  assert.equal(legacy.calls.length, 1, "Legacy longer sign-in passwords remain accepted");
   for (const view of ["signin", "signup"])
     for (const owner of ["submit", "aux"])
       for (const result of ["returned", "normal", "throw"]) {

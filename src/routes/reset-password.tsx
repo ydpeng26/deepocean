@@ -113,11 +113,11 @@ function ResetPassword() {
     const verified = binding.current;
     const isCurrent = () => mounted.current && !cancelled.current && binding.current === verified;
     if (state !== "ready" || submitting.current || !verified || !isCurrent()) return;
-    if (password.length < 8 || password.length > 72 || password !== confirm) {
+    if (password.length < 8 || password.length > 12 || password !== confirm) {
       setError(
         zh
-          ? "密码至少 8 位，两次输入必须一致。"
-          : "Use at least 8 characters and matching passwords.",
+          ? "密码须为 8–12 个字符，两次输入必须一致。"
+          : "Use 8–12 characters and matching passwords.",
       );
       return;
     }
@@ -217,11 +217,17 @@ function ResetPassword() {
                 autoComplete="new-password"
                 required
                 minLength={8}
-                maxLength={72}
+                maxLength={12}
+                aria-describedby="reset-password-requirements"
                 disabled={busy}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <p id="reset-password-requirements" className="do-auth-password-requirements">
+                {zh
+                  ? "密码要求：8–12 个字符，不强制字母、数字或特殊符号组合。建议混合字母和数字，且不要与其他网站重复使用。"
+                  : "Password requirements: 8–12 characters. No required combination of letters, digits or symbols. Use letters and digits, and avoid reusing passwords on other websites."}
+              </p>
               <label htmlFor="confirm-password">{zh ? "确认新密码" : "Confirm password"}</label>
               <input
                 id="confirm-password"
@@ -229,7 +235,8 @@ function ResetPassword() {
                 autoComplete="new-password"
                 required
                 minLength={8}
-                maxLength={72}
+                maxLength={12}
+                aria-describedby="reset-password-requirements"
                 disabled={busy}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
