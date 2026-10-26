@@ -18,6 +18,16 @@ Formal metadata confirms both tables have RLS; anon cannot SELECT or INSERT eith
 
 This deployment mapping is the only functional server-source change beyond the accepted recovery implementation. The browser app and all database/abuse checks are unchanged. Changelog Markdown fetching again rejected its content type; current Supabase function configuration docs and skill security checklist were consulted.
 
-## Release acceptance
+## Released and read-only verified
 
-Pending final main fast-forward, deployment readiness and formal public-page/guest submission smoke checks. Do not count recovery acceptance as a live formal submission check. Any synthetic formal message must be tracked by exact generated ID and body, then removed and verified absent without querying or deleting existing messages. No real accounts, password changes or emails are needed for these checks.
+- Main was non-force fast-forwarded from the known baseline to `7107a7ca5050d990604aaa431b32aee5ed5365d4`, after rechecking unchanged main, exact source/migration equality to the accepted app, byte-identical formal workflows, and the successful recovery run/job metadata. No published history was rewritten; screenlog.0 was excluded.
+- Vercel `deepocean` deployment `8D2SgWS5SJuYa3y6vcvLc4qs5mXL` is Ready / Production / Current, source `7107a7c`, bound to www.supdiver.com. Native Vercel UI verified both old rollback baseline and the new current deployment.
+- Read-only public HTTP checks passed homepage/login Contact us links, public contact body/email form with no-login guidance, removed technical footer, preserved quota/draft warning, bilingual Contact us copy and 6–12 signup guidance. Sixty-five current public JS assets were read in memory; the formal client contains only the formal backend and no recovery backend URL. No private rows or key exports were involved.
+- Strictly invalid empty JSON requests (which return before any RPC/INSERT) returned 400/invalid from canonical and apex formal Origins; recovery Origin returned 403/denied. This verifies ingress/configuration isolation, not successful message persistence.
+- Formal metadata independently confirms member-feedback policies compare auth.uid() to user_id for both SELECT and INSERT. Guest RPC EXECUTE is denied to anon and authenticated roles. Post-change security advisor has no website_feedback finding; guest inbox RLS-with-no-policy INFO is the intentional service-only deny-all design ([advisory explanation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)). No global security-clean claim or unrelated advisor remediation is made.
+
+## Remaining formal-write smoke boundary
+
+Automatic safety review rejected the attempted formal synthetic-message probe BEFORE its process ran, because the child script did not embed its promised cleanup and release permission was not taken as permission to leave production test data. No synthetic formal message, profile, account or email was created; there is nothing from that rejected probe to clean up. The blocked script was not rerun or bypassed through another tool. Unaffected read-only checks above were completed instead.
+
+Actual formal message persistence/retry/rate-limit smoke remains unverified. Recovery's complete write/cleanup acceptance and local models are evidence, not a substitute for this formal check. Request explicit user approval for one unique disposable formal message and an orchestrated exact-ID-plus-original-body cleanup with absence verification; do not run the write probe until that authority is resolved. Existing real messages must never be read or removed during that check. No real account/password changes or email are needed.
