@@ -1677,7 +1677,7 @@
 .do-feedback-form > p, .do-feedback-form small { line-height: 1.8; font-size: 13px; color: #b2cbdc; overflow-wrap: anywhere; }
 .do-feedback-form fieldset { display: grid; gap: 12px; min-width: 0; margin-top: 26px; }
 .do-feedback-form label { font-size: 14px; font-weight: 600; }
-.do-feedback-form select, .do-feedback-form textarea { width: 100%; min-width: 0; padding: 13px 15px; border: 1px solid #729dbb80; border-radius: 10px; color: #e6f3fc; background: #04182a; font: inherit; }
+.do-feedback-form select, .do-feedback-form textarea, .do-feedback-form input { width: 100%; min-width: 0; padding: 13px 15px; border: 1px solid #729dbb80; border-radius: 10px; color: #e6f3fc; background: #04182a; font: inherit; }
 .do-feedback-form textarea { resize: vertical; min-height: 210px; line-height: 1.8; }
 .do-feedback-form textarea::placeholder { color: #9ab5c9; }
 .do-feedback-form select { margin-bottom: 10px; }
@@ -1688,6 +1688,19 @@
 .do-feedback-form button:disabled, .do-feedback-form fieldset:disabled { opacity: .65; cursor: not-allowed; }
 .do-feedback-form > .do-feedback-error { color: #ffb8b8; margin-top: 20px; }
 .do-feedback-form > .do-feedback-success { color: #94ecd0; margin-top: 20px; }
+.do-contact-entry, .do-contact-home { display: inline-flex; align-items: center; gap: 6px; padding: 9px 13px; color: #e6f3fc; border: 1px solid #729dbb80; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.do-contact-entry:focus-visible, .do-contact-home:focus-visible { outline: 2px solid #72d4ef; outline-offset: 3px; }
+.do-contact-home svg { width: 16px; height: 16px; }
+.do-header-actions:has(.do-contact-entry), .do-contact-public .do-header-actions { gap: 10px; }
+.do-contact-public { min-height: 100vh; background: #031326; color: #e6f3fc; }
+.do-contact-public > .do-header { position: relative; margin-inline: auto; }
+.do-contact-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 640px) {
+  .do-contact-entry, .do-contact-home { padding: 7px 9px; font-size: 12px; }
+  .do-contact-public .do-brand b { font-size: 19px; }
+  .do-auth-header:has(.do-contact-entry) { height: auto; min-height: 68px; padding-block: 10px; flex-wrap: wrap; gap: 10px; }
+  .do-auth-header:has(.do-contact-entry) .do-auth-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
 .do-forum-standalone-search { width: min(1320px, calc(100% - 48px)); margin: 0 auto; padding-top: 20px; }
 .do-forum-standalone-search .do-forum-search { display: flex; max-width: 420px; }
 @media (min-width: 1151px) { .do-member-header > nav.do-main-navigation { height: 82px; } }

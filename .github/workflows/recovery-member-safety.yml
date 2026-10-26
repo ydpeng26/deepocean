@@ -30,4 +30,6 @@ jobs:
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
-        run: node scripts/recovery-feedback.mjs
+        run: |
+          node scripts/recovery-feedback.mjs
+          node scripts/recovery-guest-contact.mjs

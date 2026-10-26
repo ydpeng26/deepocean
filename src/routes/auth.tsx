@@ -329,6 +329,9 @@ function AuthPage() {
             <CloudOff />
             <span>{copy.offline}</span>
           </Link>
+          <Link to="/contact" className="do-contact-entry">
+            {language === "zh-CN" ? "联系我们" : "Contact us"}
+          </Link>
           <button
             type="button"
             className="do-language"

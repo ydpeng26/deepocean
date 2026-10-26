@@ -30,6 +30,7 @@ function Landing() {
       <header className="do-header">
         <Brand />
         <div className="do-header-actions">
+          <Link to="/contact" className="do-contact-entry">{language === "zh-CN" ? "联系我们" : "Contact us"}</Link>
           <button className="do-language" onClick={toggleLanguage} aria-label={copy.languageLabel}><Languages /><span>{language === "zh-CN" ? "EN" : "中文"}</span></button>
         </div>
       </header>
