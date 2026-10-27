@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { prepareWebImage } from "@/lib/images";
+import { assertSupportedWebImage } from "@/lib/images";
 
 const GEAR_PHOTO_BUCKET = "gear-photos";
 
@@ -39,26 +39,42 @@ async function userId(expectedId?: string) {
   return id;
 }
 
-export async function uploadGearPhoto(file: File): Promise<string> {
-  const id = await userId();
-  const image = await prepareWebImage(file, { maxEdge: 1600, quality: 0.84 });
-  const path = `${id}/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(GEAR_PHOTO_BUCKET).upload(path, image, {
-    cacheControl: "31536000",
-    contentType: "image/jpeg",
+export async function uploadGearPhoto(
+  file: File,
+  expectedOwner?: string,
+  requestId = crypto.randomUUID(),
+): Promise<string> {
+  const id = await userId(expectedOwner);
+  assertSupportedWebImage(file);
+  if (file.type !== "image/png" || !file.size || file.size > 10 * 1024 * 1024)
+    throw new Error("请先预览有效的 PNG 装备图片 / Preview a valid PNG equipment image first.");
+  const hash = Array.from(
+    new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer())),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
+  const path = `${id}/${requestId}-${hash}.png`;
+  await userId(id);
+  const { error } = await supabase.storage.from(GEAR_PHOTO_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    contentType: "image/png",
     upsert: false,
   });
-  if (error) throw error;
+  if (error && String((error as { statusCode?: string }).statusCode) !== "409") throw error;
+  await userId(id);
   return path;
 }
 
-export async function signedGearPhotoUrls(paths: string[]) {
+export async function signedGearPhotoUrls(paths: string[], expectedOwner?: string) {
   if (!paths.length) return new Map<string, string>();
+  const owner = await userId(expectedOwner);
   const unique = Array.from(new Set(paths));
+  if (unique.some((path) => !path.startsWith(owner + "/")))
+    throw new Error("装备图片不属于当前账号 / Equipment image owner mismatch.");
   const { data, error } = await supabase.storage
     .from(GEAR_PHOTO_BUCKET)
     .createSignedUrls(unique, 60 * 60);
   if (error) throw error;
+  await userId(owner);
   return new Map(
     (data ?? []).flatMap((item) => (item.signedUrl ? [[item.path, item.signedUrl] as const] : [])),
   );

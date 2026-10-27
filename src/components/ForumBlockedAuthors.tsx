@@ -5,9 +5,11 @@ import { listBlockedForumAuthors, unblockForumAuthor } from "@/lib/forum";
 export function ForumBlockedAuthors({
   ownerId,
   language,
+  compact = false,
 }: {
   ownerId: string;
   language: "zh-CN" | "en";
+  compact?: boolean;
 }) {
   const client = useQueryClient(),
     lock = useRef(false),
@@ -57,13 +59,19 @@ export function ForumBlockedAuthors({
   }
   return (
     <section
-      className="do-forum-side-panel do-forum-blocks"
+      className={
+        compact ? "do-forum-blocks do-forum-blocks-compact" : "do-forum-side-panel do-forum-blocks"
+      }
       aria-label={t("屏蔽管理", "Blocked divers")}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && !lock.current) setOpen(false);
+      }}
     >
       <button
         type="button"
         disabled={busy}
         aria-expanded={open}
+        aria-controls={`forum-block-list-${ownerId}`}
         onClick={() => {
           if (!lock.current) setOpen((value) => !value);
         }}
@@ -71,7 +79,10 @@ export function ForumBlockedAuthors({
         {t("管理已屏蔽用户", "Manage blocked divers")}
       </button>
       {open && (
-        <div>
+        <div
+          id={`forum-block-list-${ownerId}`}
+          className={compact ? "do-forum-block-list" : undefined}
+        >
           {error && <p role="alert">{error}</p>}
           {query.isError ? (
             <div role="alert">

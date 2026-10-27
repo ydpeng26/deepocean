@@ -334,6 +334,7 @@ function gearEditor(readError = false) {
         };
       if (name === "sonner") return { toast: { error() {}, success() {} } };
       if (name === "@/i18n/liveCopy") return { useLiveCopy: () => (x) => x };
+      if (name === "@/i18n/LanguageProvider") return { useLanguage: () => ({ language: "zh-CN" }) };
       if (name === "@/hooks/useModalFocus") return { useModalFocus() {} };
       return new Proxy({}, { get: (_, key) => key });
     },

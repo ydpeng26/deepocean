@@ -42,13 +42,6 @@ export function PassportCommunityStats({
           <small>{en ? "Followers" : "粉丝"}</small>
         </span>
       </div>
-      {!preview && (
-        <small>
-          {en
-            ? "Interactions from others on member-visible posts; your own likes and saves are excluded."
-            : "统计公开帖收到的他人互动，不含自己的点赞和收藏。"}
-        </small>
-      )}
       {!preview && query.isError && (
         <p role="alert">
           {en ? "Community stats unavailable." : "社区统计暂时无法读取。"}{" "}

@@ -73,3 +73,62 @@ export async function prepareWebImage(file: File, options: WebImageOptions): Pro
     if (objectUrl) URL.revokeObjectURL(objectUrl);
   }
 }
+
+// Dedicated PNG path for equipment: JPEG conversion would destroy cutout alpha.
+export async function prepareGearPhoto(file: File) {
+  assertSupportedWebImage(file);
+  if (!file.size || file.size > 10 * 1024 * 1024)
+    throw new Error("请选择不超过 10MB 的装备图片 / Choose an image up to 10MB.");
+  let bitmap: ImageBitmap | null = null,
+    objectUrl: string | null = null;
+  try {
+    let source: CanvasImageSource, width: number, height: number;
+    try {
+      bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+      source = bitmap;
+      width = bitmap.width;
+      height = bitmap.height;
+    } catch {
+      objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.src = objectUrl;
+      await image.decode();
+      source = image;
+      width = image.naturalWidth;
+      height = image.naturalHeight;
+    }
+    if (!width || !height || width * height > 40_000_000) throw new Error("Image too large");
+    const scale = Math.min(1, 1600 / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Canvas unavailable");
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const encode = async (suffix: string) => {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob || blob.size > 10 * 1024 * 1024) throw new Error("PNG too large");
+      return new File([blob], `gear${suffix}.png`, {
+        type: "image/png",
+        lastModified: file.lastModified,
+      });
+    };
+    const original = await encode("-original");
+    const { removeLightBackground } = await import("./gear-background");
+    const data = context.getImageData(0, 0, canvas.width, canvas.height);
+    const result = removeLightBackground(data.data, canvas.width, canvas.height);
+    if (result.status === "removed") {
+      data.data.set(result.pixels);
+      context.putImageData(data, 0, 0);
+      return { original, cutout: await encode("-cutout"), status: result.status };
+    }
+    return { original, cutout: null, status: result.status };
+  } catch {
+    throw new Error(
+      "无法处理该图片，请使用不超过 10MB 的 JPG、PNG 或 WebP / Use a JPG, PNG or WebP image up to 10MB.",
+    );
+  } finally {
+    bitmap?.close();
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
+}

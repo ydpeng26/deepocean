@@ -129,19 +129,21 @@ function DivePhoto({
             : `linear-gradient(180deg, rgba(0,8,22,.03), rgba(0,10,27,.34)), url('${fallback}')`,
       }}
     >
-      <DiveMedia
-        ownerId={ownerId}
-        path={path}
-        url={photo}
-        version={version}
-        pending={pending}
-        error={!!path && error}
-        reload={reload}
-        cover
-        videoOnly={videoOnly}
-        label="潜水日志封面"
-        className="absolute inset-0"
-      />
+      <div className="absolute inset-0">
+        <DiveMedia
+          ownerId={ownerId}
+          path={path}
+          url={photo}
+          version={version}
+          pending={pending}
+          error={!!path && error}
+          reload={reload}
+          cover
+          videoOnly={videoOnly}
+          label="潜水日志封面"
+          className="h-full w-full"
+        />
+      </div>
       <span>#{String(index + 1).padStart(3, "0")}</span>
     </div>
   );

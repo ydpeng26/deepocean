@@ -46,6 +46,7 @@ function editorHarness(file, exported) {
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name === '@/i18n/liveCopy') return { useLiveCopy: () => text => copy.liveText(h.language, text) };
+    if (name === '@/i18n/LanguageProvider') return { useLanguage: () => ({ language: h.language }) };
     if (name === '@/hooks/useModalFocus') return { useModalFocus() {} };
     if (name === '@/hooks/useProfile') return { useProfile: () => ({ profile: { id: 'synthetic-owner' } }) };
     if (name === '@tanstack/react-router') return { createFileRoute: () => options => options, useNavigate: () => () => {}, Link: 'Link' };

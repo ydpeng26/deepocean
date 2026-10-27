@@ -12,7 +12,6 @@ import {
   CloudOff,
   Compass,
   Fish,
-  Flame,
   ImagePlus,
   Languages,
   MapPin,
@@ -23,7 +22,6 @@ import {
   Share2,
   ShieldCheck,
   Sparkles,
-  Users,
   Waves,
   X,
 } from "lucide-react";
@@ -42,7 +40,6 @@ import {
   listForumPosts,
   reportForumPost,
   toggleForumBookmark,
-  toggleForumFollow,
   toggleForumLike,
   updateForumPost,
   type ForumTopic,
@@ -488,13 +485,6 @@ export function ForumPage({
       preview,
     ],
   );
-  const recommendedPeople = Array.from(
-    new Map(
-      sourcePosts
-        .filter((post) => post.userId !== profile?.id)
-        .map((post) => [post.userId ?? post.author, post]),
-    ).values(),
-  ).slice(0, 3);
 
   function toggleList(setter: Dispatch<SetStateAction<string[]>>, value: string) {
     setter((items) =>
@@ -753,6 +743,14 @@ export function ForumPage({
                   </button>
                 ))
               )}
+              {!preview && profile?.id && (
+                <ForumBlockedAuthors
+                  key={profile.id}
+                  ownerId={profile.id}
+                  language={language}
+                  compact
+                />
+              )}
             </div>
             {!preview && forumQuery.isPending && <div className="do-forum-empty">{c.loading}</div>}
             {!preview && forumQuery.isError && (
@@ -935,91 +933,6 @@ export function ForumPage({
               </button>
             )}
           </section>
-          <aside className="do-forum-right">
-            <section className="do-forum-side-panel">
-              <div className="do-forum-panel-heading">
-                <div>
-                  <span>02 / TRENDING</span>
-                  <h2>{c.topics}</h2>
-                  <p>{c.topicHint}</p>
-                </div>
-                <Flame />
-              </div>
-              <ol className="do-forum-topic-list">
-                {topicOptions.slice(1, 4).map(([value, label], index) => (
-                  <li key={value}>
-                    <span>0{index + 1}</span>
-                    <div>
-                      <strong># {label}</strong>
-                      <small>
-                        {sourcePosts.filter((post) => post.topic === value).length} POSTS
-                      </small>
-                    </div>
-                    <ChevronRight />
-                  </li>
-                ))}
-              </ol>
-            </section>
-            <section className="do-forum-side-panel">
-              <div className="do-forum-panel-heading">
-                <div>
-                  <span>03 / PEOPLE</span>
-                  <h2>{c.divers}</h2>
-                </div>
-                <Users />
-              </div>
-              <div className="do-forum-people">
-                {recommendedPeople.map((person) => {
-                  const active = preview
-                    ? followed.includes(person.author)
-                    : Boolean(person.following);
-                  return (
-                    <article key={person.userId ?? person.author}>
-                      {person.userId && !preview ? (
-                        <Link to="/divers/$id" params={{ id: person.userId }}>
-                          <Avatar>
-                            <AvatarImage src={person.avatar ?? undefined} alt={person.author} />
-                            <AvatarFallback>{person.author[0]}</AvatarFallback>
-                          </Avatar>
-                        </Link>
-                      ) : (
-                        <Avatar>
-                          <AvatarImage src={person.avatar ?? undefined} alt={person.author} />
-                          <AvatarFallback>{person.author[0]}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div>
-                        {person.userId && !preview ? (
-                          <Link to="/divers/$id" params={{ id: person.userId }}>
-                            <strong>{person.author}</strong>
-                          </Link>
-                        ) : (
-                          <strong>{person.author}</strong>
-                        )}
-                        <small>{person.badge}</small>
-                      </div>
-                      <button
-                        type="button"
-                        data-followed={active}
-                        disabled={!preview && interactionBusy}
-                        onClick={() =>
-                          preview
-                            ? toggleList(setFollowed, person.author)
-                            : person.userId &&
-                              void run(() => toggleForumFollow(person.userId!, active, profile?.id))
-                        }
-                      >
-                        {active ? c.followed : c.follow}
-                      </button>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-            {!preview && profile?.id && (
-              <ForumBlockedAuthors key={profile.id} ownerId={profile.id} language={language} />
-            )}
-          </aside>
         </div>
       </main>
       <footer className="do-passport-footer">
