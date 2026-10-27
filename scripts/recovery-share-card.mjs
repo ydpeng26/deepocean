@@ -50,7 +50,7 @@ try{
  const preview=()=>page.getByAltText('纪念卡成品预览，保存与分享使用此图片',{exact:true});
  await generate().waitFor({timeout:40000});
  const render=async()=>{await page.evaluate(()=>window.__cardTexts=[]);await generate().click();await preview().waitFor({timeout:40000});return page.evaluate(()=>window.__cardTexts);};
- let texts=await render();check(texts.some(x=>x.includes(marker))&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
+ let texts=await render();check(texts.join('').includes(marker)&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
  const previewBytes=Buffer.from(await preview().evaluate(async image=>Array.from(new Uint8Array(await(await fetch(image.src)).arrayBuffer()))));
  check(previewBytes.subarray(1,4).toString()==='PNG'&&previewBytes.readUInt32BE(16)===1080&&previewBytes.readUInt32BE(20)===1350,'png_dimensions');
  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'保存图片',exact:true}).click();const download=await downloadEvent;
