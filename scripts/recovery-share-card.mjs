@@ -9,7 +9,8 @@ const owner='97277c3f-3d5a-432d-b1e6-c3505215108b',id=randomUUID(),missing=rando
 const path=owner+'/'+marker+'.png',admin=process.env.RECOVERY_SERVICE_ROLE_KEY;
 if(!admin)throw Error('Missing recovery credential');
 const anon=(await readFile(new URL('./recovery-browser.mjs',import.meta.url),'utf8')).match(/const anon = '([^']+)'/)[1];
-let token,session,browser,stage='preflight',failed=false,blocked=0;
+let token,session,browser,page,stage='preflight',failed=false,blocked=0;
+const deniedPaths=new Set();
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const pass=name=>{stage=name;console.log('PASS: '+name);};
 async function req(endpoint,{method='GET',body,member=false,binary=false}={}){
@@ -24,6 +25,10 @@ try{
  const hash=link.hashed_token??link.properties?.hashed_token;check(hash,'fixture_login_hash');
  const verified=await fetch(api+'/auth/v1/verify',{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({type:'magiclink',token_hash:hash}),signal:AbortSignal.timeout(30000)});
  check(verified.ok,'fixture_login');session=await verified.json();check(session.user?.id===owner&&session.access_token,'owner_session');token=session.access_token;
+ // REST verification returns expires_in; persisted SDK sessions also require expires_at.
+ const claims=JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString());
+ check(claims.sub===owner&&Number.isFinite(claims.exp),'session_expiry');
+ session.expires_at=claims.exp;
  browser=await chromium.launch({channel:process.env.RECOVERY_BROWSER_CHANNEL||undefined});
  const context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true,locale:'zh-CN'});
  await context.addInitScript(({session,site})=>{
@@ -31,7 +36,7 @@ try{
   window.__cardTexts=[];const original=CanvasRenderingContext2D.prototype.fillText;
   CanvasRenderingContext2D.prototype.fillText=function(text,...args){window.__cardTexts.push(String(text));return original.call(this,text,...args);};
  },{session,site});
- const page=await context.newPage();
+ page=await context.newPage();
  const png=Buffer.from(await page.evaluate(async()=>{const c=document.createElement('canvas');c.width=1200;c.height=800;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,1200,800);g.addColorStop(0,'#23c6dc');g.addColorStop(1,'#07397d');x.fillStyle=g;x.fillRect(0,0,1200,800);x.fillStyle='#ffb25e';x.beginPath();x.ellipse(700,290,150,90,0,0,Math.PI*2);x.fill();x.fillStyle='white';x.font='40px sans-serif';x.fillText('SYNTHETIC TEST PHOTO',50,80);return Array.from(new Uint8Array(await(await new Promise(resolve=>c.toBlob(resolve,'image/png'))).arrayBuffer()));}));
  await req('/storage/v1/object/dive-photos/'+path,{method:'POST',member:true,binary:true,body:png});
  await req('/rest/v1/dives',{method:'POST',member:true,body:{id,user_id:owner,country:'Indonesia',region:'SYNTHETIC-REGION',site_name:marker,dive_date:'2026-10-20',max_depth:28,duration_min:48,water_temp:21,photo_urls:[path],photo_thumbnail_urls:[],notes:'SYNTHETIC-PRIVATE-NOTE'}});
@@ -43,7 +48,8 @@ try{
   if(u.pathname==='/rest/v1/dives'&&request.method()==='GET'&&u.searchParams.get('user_id')==='eq.'+owner&&['eq.'+id,'eq.'+missing].includes(u.searchParams.get('id')))return route.continue();
   if(u.pathname==='/storage/v1/object/authenticated/dive-photos/'+path&&request.method()==='GET')return route.continue();
   if(u.pathname==='/auth/v1/user'&&request.method()==='GET')return route.continue();
-  blocked++;return route.abort();
+  if(u.pathname==='/auth/v1/token'&&u.searchParams.get('grant_type')==='refresh_token'&&request.method()==='POST'&&request.postDataJSON()?.refresh_token===session.refresh_token)return route.continue();
+  blocked++;deniedPaths.add(u.pathname.replace(/[0-9a-f-]{36}/gi,'[id]'));return route.abort();
  });
  await page.goto(site+'/share-card?dive='+id,{waitUntil:'domcontentloaded',timeout:60000});
  const generate=()=>page.getByRole('button',{name:'生成 / 更新预览',exact:true});
@@ -70,7 +76,9 @@ try{
  const [row]=await req('/rest/v1/dives?id=eq.'+id+'&user_id=eq.'+owner+'&select=notes,photo_urls');check(row.notes==='SYNTHETIC-PRIVATE-NOTE'&&row.photo_urls[0]===path,'source_log_unmodified');
  await page.goto(site+'/share-card?dive='+missing,{waitUntil:'domcontentloaded'});await page.getByText('无法读取这篇日志，可能已删除或无权访问。',{exact:true}).waitFor({timeout:30000});check(!await page.getByRole('button',{name:'保存图片',exact:true}).isEnabled(),'missing_log_no_export');
  check(blocked===0,'unexpected_private_or_formal_traffic');pass('no_source_log_mutation_missing_record_fails_closed_and_no_formal_or_unrelated_private_requests');
-}catch(error){failed=true;console.error('INCOMPLETE: share-card stage='+stage+' reason='+error.message.slice(0,120).replace(/https?:\/\/\S+/g,'[url]'));}
+}catch(error){failed=true;console.error('INCOMPLETE: share-card stage='+stage+' reason='+error.message.slice(0,120).replace(/https?:\/\/\S+/g,'[url]'));
+ if(page)try{console.log('SAFE_CARD_DIAGNOSTIC: '+JSON.stringify({pathname:new URL(page.url()).pathname,blocked,deniedPaths:[...deniedPaths],state:await page.evaluate(owner=>{let session;try{session=JSON.parse(sessionStorage.getItem('sb-esovqvampbrhuhamkfcs-auth-token')||'null');}catch{}return{sessionPresent:!!session,ownerMatches:session?.user?.id===owner,hasExpiry:!!session?.expires_at,generateVisible:[...document.querySelectorAll('button')].some(b=>b.textContent.includes('生成 / 更新预览')),bodyClass:document.body.textContent.includes('正在核对登录状态')?'session-check':document.body.textContent.includes('无法读取这篇日志')?'record-error':document.querySelector('input[type=email]')?'auth':'other'};},owner)}));}catch{}
+}
 finally{
  await browser?.close();
  try{
