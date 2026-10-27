@@ -56,7 +56,7 @@ try{
  const preview=()=>page.getByAltText('纪念卡成品预览，保存与分享使用此图片',{exact:true});
  await generate().waitFor({timeout:40000});
  const render=async()=>{await page.evaluate(()=>window.__cardTexts=[]);await generate().click();await preview().waitFor({timeout:40000});return page.evaluate(()=>window.__cardTexts);};
- stage='synthetic_photo_render';let texts=await render();check(texts.join('').includes(marker)&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
+ stage='synthetic_photo_render';let texts=await render();check(texts.join('').includes('CARD-ACCEPTANCE')&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
  const previewBytes=Buffer.from(await preview().evaluate(async image=>Array.from(new Uint8Array(await(await fetch(image.src)).arrayBuffer()))));
  check(previewBytes.subarray(1,4).toString()==='PNG'&&previewBytes.readUInt32BE(16)===1080&&previewBytes.readUInt32BE(20)===1350,'png_dimensions');
  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'保存图片',exact:true}).click();const download=await downloadEvent;
@@ -77,7 +77,7 @@ try{
  await page.goto(site+'/share-card?dive='+missing,{waitUntil:'domcontentloaded'});await page.getByText('无法读取这篇日志，可能已删除或无权访问。',{exact:true}).waitFor({timeout:30000});check(!await page.getByRole('button',{name:'保存图片',exact:true}).isEnabled(),'missing_log_no_export');
  check(blocked===0,'unexpected_private_or_formal_traffic');pass('no_source_log_mutation_missing_record_fails_closed_and_no_formal_or_unrelated_private_requests');
 }catch(error){failed=true;console.error('INCOMPLETE: share-card stage='+stage+' reason='+error.message.slice(0,120).replace(/https?:\/\/\S+/g,'[url]'));
- if(page)try{console.log('SAFE_CARD_DIAGNOSTIC: '+JSON.stringify({pathname:new URL(page.url()).pathname,blocked,deniedPaths:[...deniedPaths],state:await page.evaluate(owner=>{let session;try{session=JSON.parse(sessionStorage.getItem('sb-esovqvampbrhuhamkfcs-auth-token')||'null');}catch{}return{sessionPresent:!!session,ownerMatches:session?.user?.id===owner,hasExpiry:!!session?.expires_at,generateVisible:[...document.querySelectorAll('button')].some(b=>b.textContent.includes('生成 / 更新预览')),bodyClass:document.body.textContent.includes('正在核对登录状态')?'session-check':document.body.textContent.includes('无法读取这篇日志')?'record-error':document.querySelector('input[type=email]')?'auth':'other'};},owner)}));}catch{}
+ if(page)try{console.log('SAFE_CARD_DIAGNOSTIC: '+JSON.stringify({pathname:new URL(page.url()).pathname,blocked,deniedPaths:[...deniedPaths],state:await page.evaluate(owner=>{let session;try{session=JSON.parse(sessionStorage.getItem('sb-esovqvampbrhuhamkfcs-auth-token')||'null');}catch{}return{sessionPresent:!!session,ownerMatches:session?.user?.id===owner,hasExpiry:!!session?.expires_at,generateVisible:[...document.querySelectorAll('button')].some(b=>b.textContent.includes('生成 / 更新预览')),drawCount:window.__cardTexts?.length??0,titleCaptured:window.__cardTexts?.join('').includes('CARD-ACCEPTANCE'),noteCaptured:window.__cardTexts?.join('').includes('SYNTHETIC-PRIVATE-NOTE'),signatureCaptured:window.__cardTexts?.join('').includes('SYNTHETIC-DIVER'),bodyClass:document.body.textContent.includes('正在核对登录状态')?'session-check':document.body.textContent.includes('无法读取这篇日志')?'record-error':document.querySelector('input[type=email]')?'auth':'other'};},owner)}));}catch{}
 }
 finally{
  await browser?.close();
