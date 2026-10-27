@@ -1,0 +1,364 @@
+{
+  "run_id": 40511175687,
+  "job_id": 122213185220,
+  "source": "3288b19c5811fd80d010c2850de847bf970648ea",
+  "run_url": "https://github.com/ydpeng26/deepocean/actions/runs/40511175687",
+  "stages": [
+    {
+      "label": "ramp_5",
+      "concurrent_sessions": 5,
+      "elapsed_s": 122.8,
+      "cycles": 16,
+      "minimum_cycles_per_session": 3,
+      "cycle_overruns": 0,
+      "http_requests": 214,
+      "average_http_rps": 1.74,
+      "http_errors": 0,
+      "transport_errors": 0,
+      "summary": {
+        "forum": {
+          "samples": 16,
+          "errors": 0,
+          "p50_ms": 686,
+          "p95_ms": 1303,
+          "p99_ms": 1303
+        },
+        "dives": {
+          "samples": 16,
+          "errors": 0,
+          "p50_ms": 170,
+          "p95_ms": 530,
+          "p99_ms": 530
+        },
+        "profile": {
+          "samples": 16,
+          "errors": 0,
+          "p50_ms": 164,
+          "p95_ms": 573,
+          "p99_ms": 573
+        },
+        "stats": {
+          "samples": 16,
+          "errors": 0,
+          "p50_ms": 166,
+          "p95_ms": 337,
+          "p99_ms": 337
+        },
+        "save": {
+          "samples": 10,
+          "errors": 0,
+          "p50_ms": 335,
+          "p95_ms": 642,
+          "p99_ms": 642
+        },
+        "image": {
+          "samples": 41,
+          "errors": 0,
+          "p50_ms": 803,
+          "p95_ms": 1043,
+          "p99_ms": 1236
+        }
+      },
+      "error_rate": 0,
+      "sufficient": true,
+      "pass": true,
+      "tester": {
+        "event_loop_p95_ms": 20,
+        "cpu_core_equivalents": 0.01,
+        "free_ram_mb": 15004,
+        "available_cpus": 4,
+        "rss_mb": 155
+      },
+      "stopped": false
+    },
+    {
+      "label": "ramp_10",
+      "concurrent_sessions": 10,
+      "elapsed_s": 122.9,
+      "cycles": 31,
+      "minimum_cycles_per_session": 3,
+      "cycle_overruns": 0,
+      "http_requests": 399,
+      "average_http_rps": 3.25,
+      "http_errors": 0,
+      "transport_errors": 0,
+      "summary": {
+        "forum": {
+          "samples": 31,
+          "errors": 0,
+          "p50_ms": 441,
+          "p95_ms": 908,
+          "p99_ms": 909
+        },
+        "dives": {
+          "samples": 31,
+          "errors": 0,
+          "p50_ms": 169,
+          "p95_ms": 370,
+          "p99_ms": 599
+        },
+        "profile": {
+          "samples": 31,
+          "errors": 0,
+          "p50_ms": 161,
+          "p95_ms": 419,
+          "p99_ms": 443
+        },
+        "stats": {
+          "samples": 31,
+          "errors": 0,
+          "p50_ms": 163,
+          "p95_ms": 178,
+          "p99_ms": 183
+        },
+        "save": {
+          "samples": 20,
+          "errors": 0,
+          "p50_ms": 330,
+          "p95_ms": 356,
+          "p99_ms": 373
+        },
+        "image": {
+          "samples": 71,
+          "errors": 0,
+          "p50_ms": 691,
+          "p95_ms": 982,
+          "p99_ms": 992
+        }
+      },
+      "error_rate": 0,
+      "sufficient": true,
+      "pass": true,
+      "tester": {
+        "event_loop_p95_ms": 21,
+        "cpu_core_equivalents": 0.012,
+        "free_ram_mb": 14992,
+        "available_cpus": 4,
+        "rss_mb": 161
+      },
+      "stopped": false
+    },
+    {
+      "label": "ramp_20",
+      "concurrent_sessions": 20,
+      "elapsed_s": 122.8,
+      "cycles": 61,
+      "minimum_cycles_per_session": 3,
+      "cycle_overruns": 0,
+      "http_requests": 769,
+      "average_http_rps": 6.26,
+      "http_errors": 0,
+      "transport_errors": 0,
+      "summary": {
+        "forum": {
+          "samples": 61,
+          "errors": 0,
+          "p50_ms": 360,
+          "p95_ms": 742,
+          "p99_ms": 1082
+        },
+        "dives": {
+          "samples": 61,
+          "errors": 0,
+          "p50_ms": 161,
+          "p95_ms": 179,
+          "p99_ms": 521
+        },
+        "profile": {
+          "samples": 61,
+          "errors": 0,
+          "p50_ms": 156,
+          "p95_ms": 172,
+          "p99_ms": 394
+        },
+        "stats": {
+          "samples": 61,
+          "errors": 0,
+          "p50_ms": 157,
+          "p95_ms": 180,
+          "p99_ms": 413
+        },
+        "save": {
+          "samples": 40,
+          "errors": 0,
+          "p50_ms": 327,
+          "p95_ms": 434,
+          "p99_ms": 570
+        },
+        "image": {
+          "samples": 131,
+          "errors": 0,
+          "p50_ms": 676,
+          "p95_ms": 931,
+          "p99_ms": 978
+        }
+      },
+      "error_rate": 0,
+      "sufficient": true,
+      "pass": true,
+      "tester": {
+        "event_loop_p95_ms": 21,
+        "cpu_core_equivalents": 0.021,
+        "free_ram_mb": 14997,
+        "available_cpus": 4,
+        "rss_mb": 167
+      },
+      "stopped": false
+    },
+    {
+      "label": "ramp_30",
+      "concurrent_sessions": 30,
+      "elapsed_s": 126.2,
+      "cycles": 91,
+      "minimum_cycles_per_session": 3,
+      "cycle_overruns": 0,
+      "http_requests": 1139,
+      "average_http_rps": 9.03,
+      "http_errors": 0,
+      "transport_errors": 0,
+      "summary": {
+        "forum": {
+          "samples": 91,
+          "errors": 0,
+          "p50_ms": 360,
+          "p95_ms": 728,
+          "p99_ms": 2617
+        },
+        "dives": {
+          "samples": 91,
+          "errors": 0,
+          "p50_ms": 159,
+          "p95_ms": 185,
+          "p99_ms": 422
+        },
+        "profile": {
+          "samples": 91,
+          "errors": 0,
+          "p50_ms": 158,
+          "p95_ms": 177,
+          "p99_ms": 787
+        },
+        "stats": {
+          "samples": 91,
+          "errors": 0,
+          "p50_ms": 158,
+          "p95_ms": 177,
+          "p99_ms": 706
+        },
+        "save": {
+          "samples": 60,
+          "errors": 0,
+          "p50_ms": 326,
+          "p95_ms": 592,
+          "p99_ms": 1038
+        },
+        "image": {
+          "samples": 191,
+          "errors": 0,
+          "p50_ms": 679,
+          "p95_ms": 900,
+          "p99_ms": 968
+        }
+      },
+      "error_rate": 0,
+      "sufficient": true,
+      "pass": true,
+      "tester": {
+        "event_loop_p95_ms": 21,
+        "cpu_core_equivalents": 0.029,
+        "free_ram_mb": 15000,
+        "available_cpus": 4,
+        "rss_mb": 155
+      },
+      "stopped": false
+    },
+    {
+      "label": "confirm_30",
+      "concurrent_sessions": 30,
+      "elapsed_s": 183.6,
+      "cycles": 121,
+      "minimum_cycles_per_session": 4,
+      "cycle_overruns": 0,
+      "http_requests": 1477,
+      "average_http_rps": 8.05,
+      "http_errors": 0,
+      "transport_errors": 0,
+      "summary": {
+        "forum": {
+          "samples": 121,
+          "errors": 0,
+          "p50_ms": 359,
+          "p95_ms": 778,
+          "p99_ms": 1129
+        },
+        "dives": {
+          "samples": 121,
+          "errors": 0,
+          "p50_ms": 160,
+          "p95_ms": 191,
+          "p99_ms": 446
+        },
+        "profile": {
+          "samples": 121,
+          "errors": 0,
+          "p50_ms": 158,
+          "p95_ms": 306,
+          "p99_ms": 647
+        },
+        "stats": {
+          "samples": 121,
+          "errors": 0,
+          "p50_ms": 158,
+          "p95_ms": 191,
+          "p99_ms": 589
+        },
+        "save": {
+          "samples": 61,
+          "errors": 0,
+          "p50_ms": 328,
+          "p95_ms": 538,
+          "p99_ms": 549
+        },
+        "image": {
+          "samples": 254,
+          "errors": 0,
+          "p50_ms": 679,
+          "p95_ms": 895,
+          "p99_ms": 1051
+        }
+      },
+      "error_rate": 0,
+      "sufficient": true,
+      "pass": true,
+      "tester": {
+        "event_loop_p95_ms": 21,
+        "cpu_core_equivalents": 0.027,
+        "free_ram_mb": 14973,
+        "available_cpus": 4,
+        "rss_mb": 184
+      },
+      "stopped": false
+    }
+  ],
+  "outcome": {
+    "complete": true,
+    "highest_stage_passed": 30,
+    "confirmed_30": true,
+    "total_requests_including_setup_cleanup": 4613,
+    "body_mb": 82.96,
+    "failure_kinds": {},
+    "backend_only": true,
+    "source_scope_filter_added_to_forum": true,
+    "no_login_upload_video_browser_render_or_Vercel_capacity_claim": true
+  },
+  "independent_cleanup": {
+    "users": 0,
+    "profiles": 0,
+    "dives": 0,
+    "posts": 0,
+    "images": 0,
+    "preserved_profiles": 4,
+    "preserved_dives": 3,
+    "preserved_gear": 2
+  }
+}

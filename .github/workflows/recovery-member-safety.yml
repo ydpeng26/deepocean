@@ -16,7 +16,7 @@ jobs:
   member-safety:
     if: github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: ${{ inputs.check == 'backend-capacity' && 20 || 12 }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

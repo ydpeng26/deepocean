@@ -58,4 +58,49 @@ Only a backend workload lower bound can be reported. If all 30 pass, state
 Vercel SSR/CDN, browser rendering/interaction, domestic access, real photo throughput,
 registration/login bursts, larger data volumes and hour-long stability.
 
-Status: preparation only; no live run or capacity result yet.
+## Completed live backend test
+
+Run https://github.com/ydpeng26/deepocean/actions/runs/40511175687, job 122213185220,
+source 3288b19c5811fd80d010c2850de847bf970648ea. Full safe job logs fetched through
+the GitHub connector and parsed, not inferred from a green workflow status. All
+five measured stages meet the predeclared pass gate. All 42 local regression
+scripts and scoped ESLint pass. Application src/public/supabase diff from the
+formal release 01fa917 is empty; formal main was not advanced for this test.
+
+| Active sessions | Measured seconds | Forum p95 ms | Dive list p95 ms | Save p95 ms | Image p95 ms | HTTP errors |
+| --- | --- | --- | --- | --- | --- | --- |
+| 5 | 122.8 | 1303 | 530 | 642 | 1043 | 0 |
+| 10 | 122.9 | 908 | 370 | 356 | 982 | 0 |
+| 20 | 122.8 | 742 | 179 | 434 | 931 | 0 |
+| 30 | 126.2 | 728 | 185 | 592 | 900 | 0 |
+| 30 confirmation | 183.6 | 778 | 191 | 538 | 895 | 0 |
+
+320 complete user cycles; 191 verified saves; 3,998 measured HTTP requests across
+the stages; no HTTP/transport/operation errors, cycle overruns or interrupted
+stages. Peak stage-average throughput was 9.03 HTTP requests/second, not 30 RPS.
+30-user forum p99 was 2617ms in the first stage and 1129ms in confirmation: tail
+latency exists even with no errors. Connection/cache warm-up can explain the
+slower 5-user stage; this is not proof more users improve performance. Three-minute
+confirmation is not an hour-long soak or a stress test to resource exhaustion.
+
+Tester had 4 available CPUs, event-loop p95 20-21ms, CPU usage <=0.029 core
+equivalents, memory RSS <=184MiB and free RAM >=14973MiB. No evidence the test
+generator was saturated. These are generator measurements, not database CPU/RAM.
+Source is a GitHub-hosted cloud runner, not a mainland China residential browser.
+Six PNGs were 49,363 bytes each. Setup/test/cleanup total: 4,613 requests, 82.96MiB
+response bodies. This excludes request-body bytes, TLS overhead and platform's
+own billing measurement; no exact cost or billed-egress claim.
+
+Cleanup marker reports exact generated accounts/rows/images removed and temporary
+sessions revoked. Independent recovery SQL afterward confirms capacity users,
+profiles, posts, dives and Storage images all zero; existing profiles 4, dives 3,
+gear 2 and forum posts 0. No real records were edited. Temporary data was permanently
+removed as explicitly approved; no recovery of the disposable fixtures is needed.
+
+Conclusion: **30 distinct active authenticated backend sessions passed this exact
+small-data paced workload.** Maximum capacity was not reached or tested. A cautious
+PC pilot can target ~20 concurrent active users as a planning margin, not a tested
+production guarantee. Reassess before sustained 30+ activity, larger histories,
+heavier images/video or promotion spikes. Full-site/browser/domestic-network
+capacity remains unverified because no Vercel load test was performed.
+Machine-readable aggregate evidence: backend-capacity-results-2026-10-27.json.
