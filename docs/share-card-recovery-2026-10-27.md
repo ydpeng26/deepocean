@@ -34,3 +34,44 @@ human profile/name/avatar. Browser cannot write records or fetch unrelated photo
 synthetic fixture creation/cleanup stays in bounded cloud test calls. No database,
 image or credential artifacts are downloaded to this workstation or uploaded as CI
 artifacts. Formal origins are blocked. No account creation or deletion is performed.
+
+Published implementation bfaba7809af2db36c6f668a6d2c28ca40a84029d to isolated branch;
+Ready preview F9XAD6AJbk4SqNTotTHSK6hNfxjg. Test-only title wrapping fix 914adfa
+does not change app source. User explicitly approved recovery project's Promote to
+Production (not formal deepocean). Modal listed only supdiver-recovery-test.vercel.app.
+Vercel email reauthentication is pending; user asked to complete it directly. Live
+fixture suite has not been dispatched and no temporary dive/photo has been created.
+
+## Completed acceptance
+
+User completed Vercel email verification. Recovery Production rebuild
+F3g3fS7j1Jp6YWCFPv6UAPNb7QBV is Ready, stable alias
+supdiver-recovery-test.vercel.app, app source bfaba7809af2db36c6f668a6d2c28ca40a84029d.
+Later commits through e7dd2f11822898a79db2567623ffcf7e51065ed4 only corrected
+acceptance fixture/session setup, exact download endpoint allowlist and test locators;
+git diff against bfaba78 for src/public/supabase is empty.
+
+Cloud run 40491138453 / job 122145083004 succeeded (34s job, 27s acceptance step).
+Read the actual expanded step output in Chrome, not just the green status:
+- Real private synthetic photo generated PNG 1080x1350. Downloaded bytes exactly
+  matched the reviewed preview. Filename generic, with no private link/ID.
+- Opt-in excerpt/name rendered; hidden location/date/metrics/note/name did not
+  appear in actual canvas text calls. Changing controls invalidated old export.
+- Unsupported system-file-share fallback and simulated native AbortError worked;
+  payload was files/title only. No external recipient delivery was attempted.
+- Explicit no-photo background and 390px viewport without overflow passed.
+- Source log note/photo references stayed unchanged; missing record failed closed.
+- Browser made no formal or unrelated private requests. Exact temporary row/photo
+  removal and local-scope fixture session logout completed.
+
+Earlier runs 40487540623, 40488847893, 40489716847 and 40490503355 stopped on test
+setup/assertions and verified exact cleanup each time. Independent SQL between runs
+confirmed no CARD-ACCEPTANCE rows/photos remained. The first two isolated-browser
+attempts blocked the SDK's alternate exact photo download endpoint; their timeout
+did not establish a production-feature defect. Long fixture title wrapping and a
+textbox locator were then corrected without changing app rendering. GitHub log
+download endpoint returned 401; logs were instead read through the existing browser.
+
+Native Chrome also confirmed real list entry buttons and real owned-record editor
+load, without exporting existing private photos. Formal www.supdiver.com and main
+were not updated for this feature. Await user acceptance/formal release approval.
