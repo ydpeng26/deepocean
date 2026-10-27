@@ -63,7 +63,7 @@ try{
  check(download.suggestedFilename()==='SupDiver-memory.png','generic_filename');const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);check(Buffer.concat(chunks).equals(previewBytes),'exact_preview_export');
  pass('real_photo_canvas_png_1080x1350_and_download_matches_reviewed_preview_exactly');
  await page.getByRole('checkbox',{name:'随笔摘录',exact:true}).check();check(await preview().count()===0&&!await page.getByRole('button',{name:'保存图片',exact:true}).isEnabled(),'stale_preview_invalidated');
- await page.getByLabel('摘录（仅用于图片，不修改日志）',{exact:true}).fill('SYNTHETIC-EXCERPT');await page.getByRole('checkbox',{name:'用户署名',exact:true}).check();texts=await render();check(texts.some(x=>x.includes('SYNTHETIC-EXCERPT'))&&texts.some(x=>x.includes('SYNTHETIC-DIVER')),'opt_in_private_fields');
+ await page.getByRole('textbox',{name:/^摘录（仅用于图片，不修改日志）/}).fill('SYNTHETIC-EXCERPT');await page.getByRole('checkbox',{name:'用户署名',exact:true}).check();texts=await render();check(texts.some(x=>x.includes('SYNTHETIC-EXCERPT'))&&texts.some(x=>x.includes('SYNTHETIC-DIVER')),'opt_in_private_fields');
  for(const label of ['地点与潜点名称','日期','潜水数据','随笔摘录','用户署名'])await page.getByRole('checkbox',{name:label,exact:true}).uncheck();
  texts=await render();check(texts.includes('OCEAN MEMORY')&&!texts.some(x=>x.includes('SYNTHETIC')||x.includes(marker)||x.includes('2026-10-20')||x.includes('28 m')),'hidden_fields_absent');
  pass('privacy_controls_remove_actual_rendered_location_date_metrics_note_and_signature_and_invalidate_old_export');
