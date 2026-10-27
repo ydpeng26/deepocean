@@ -40,6 +40,7 @@ import { Route as AuthenticatedGearRouteImport } from './routes/_authenticated/g
 import { Route as AuthenticatedMarineRouteImport } from './routes/_authenticated/marine'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDiversIdRouteImport } from './routes/_authenticated/divers/$id'
 import { Route as AuthenticatedDivesIndexRouteImport } from './routes/_authenticated/dives/index'
 import { Route as AuthenticatedDivesIdRouteImport } from './routes/_authenticated/dives/$id'
@@ -201,6 +202,11 @@ const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDiversIdRoute = AuthenticatedDiversIdRouteImport.update({
   id: '/divers/$id',
   path: '/divers/$id',
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/marine': typeof AuthenticatedMarineRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/marine': typeof AuthenticatedMarineRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/divers/$id': typeof AuthenticatedDiversIdRoute
   '/dives/$id': typeof AuthenticatedDivesIdRoute
   '/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -334,6 +342,7 @@ export interface FileRoutesById {
   '/_authenticated/marine': typeof AuthenticatedMarineRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/divers/$id': typeof AuthenticatedDiversIdRoute
   '/_authenticated/dives/$id': typeof AuthenticatedDivesIdRoute
   '/_authenticated/dives/logs': typeof AuthenticatedDivesLogsRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/marine'
     | '/profile'
     | '/saved'
+    | '/settings'
     | '/divers/$id'
     | '/dives/$id'
     | '/dives/logs'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/marine'
     | '/profile'
     | '/saved'
+    | '/settings'
     | '/divers/$id'
     | '/dives/$id'
     | '/dives/logs'
@@ -448,6 +459,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marine'
     | '/_authenticated/profile'
     | '/_authenticated/saved'
+    | '/_authenticated/settings'
     | '/_authenticated/divers/$id'
     | '/_authenticated/dives/$id'
     | '/_authenticated/dives/logs'
@@ -701,6 +713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/divers/$id': {
       id: '/_authenticated/divers/$id'
       path: '/divers/$id'
@@ -747,6 +766,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarineRoute: typeof AuthenticatedMarineRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedDiversIdRoute: typeof AuthenticatedDiversIdRoute
   AuthenticatedDivesIdRoute: typeof AuthenticatedDivesIdRoute
   AuthenticatedDivesLogsRoute: typeof AuthenticatedDivesLogsRoute
@@ -762,6 +782,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarineRoute: AuthenticatedMarineRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedDiversIdRoute: AuthenticatedDiversIdRoute,
   AuthenticatedDivesIdRoute: AuthenticatedDivesIdRoute,
   AuthenticatedDivesLogsRoute: AuthenticatedDivesLogsRoute,

@@ -1,6 +1,12 @@
 name: Recovery member safety
 on:
   workflow_dispatch:
+    inputs:
+      check:
+        description: Recovery-only acceptance suite
+        type: choice
+        default: member-safety
+        options: [member-safety, account-deletion]
 permissions:
   contents: read
 concurrency:
@@ -19,6 +25,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install isolated cloud browser
+        if: inputs.check != 'account-deletion'
         run: |
           npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1
           if command -v google-chrome >/dev/null; then
@@ -27,7 +34,13 @@ jobs:
             node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
       - name: Verify synthetic member edits and exact fixture cleanup
+        if: inputs.check != 'account-deletion'
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
         run: node scripts/recovery-member-safety.mjs
+      - name: Verify one disposable account deletion and anonymous discussion retention
+        if: inputs.check == 'account-deletion'
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+        run: node scripts/recovery-account-deletion.mjs

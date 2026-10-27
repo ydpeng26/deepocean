@@ -169,7 +169,9 @@ export function ForumCommentsDialog({
                   <AvatarFallback>{comment.author[0]}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <strong>{comment.author}</strong>
+                  <strong>
+                    {comment.userId ? comment.author : t("已注销用户", "Deleted account")}
+                  </strong>
                   {editing?.id === comment.id ? (
                     <>
                       <textarea

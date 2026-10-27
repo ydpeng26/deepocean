@@ -8,7 +8,7 @@ export type ForumVisibility = "public" | "private";
 
 export type ForumPost = {
   id: string;
-  userId: string;
+  userId: string | null;
   author: string;
   badge: string;
   avatarUrl: string | null;
@@ -30,7 +30,7 @@ export type ForumPost = {
 
 export type ForumComment = {
   id: string;
-  userId: string;
+  userId: string | null;
   author: string;
   avatarUrl: string | null;
   body: string;
@@ -166,7 +166,7 @@ export async function listForumPosts(expectedUserId?: string): Promise<ForumPost
   return visible.map((row: any) => ({
     id: row.id,
     userId: row.user_id,
-    author: row.author_name || "Diver",
+    author: row.user_id ? row.author_name || "Diver" : "已注销用户",
     badge: row.author_badge || "DIVER",
     avatarUrl: null,
     imageUrl: imageUrls.get(row.image_path) ?? null,
@@ -400,7 +400,7 @@ export async function listForumComments(postId: string): Promise<ForumComment[]>
   return (rows ?? []).map((row: any) => ({
     id: row.id,
     userId: row.user_id,
-    author: row.author_name || "Diver",
+    author: row.user_id ? row.author_name || "Diver" : "已注销用户",
     avatarUrl: null,
     body: row.body,
     createdAt: row.created_at,

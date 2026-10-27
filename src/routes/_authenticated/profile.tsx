@@ -414,6 +414,9 @@ function ProfilePage() {
                 <ShieldCheck aria-hidden="true" />
                 {c.accountNote}
               </p>
+              <Link to="/settings" className="m-5 inline-block text-sm text-sky-400 underline">
+                {language === "zh-CN" ? "账号设置与注销" : "Account settings & deletion"}
+              </Link>
             </aside>
             <section className="do-profile-editor-panel">
               <div className="do-profile-section-heading">

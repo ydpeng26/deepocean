@@ -58,7 +58,7 @@ export const Route = createFileRoute("/forum-preview")({
 
 type Post = {
   id: string;
-  userId?: string;
+  userId?: string | null;
   author: string;
   badge: string;
   avatar: string | null;
@@ -421,7 +421,7 @@ export function ForumPage({
     (post, index) => ({
       id: post.id,
       userId: post.userId,
-      author: post.author,
+      author: post.userId ? post.author : language === "zh-CN" ? "已注销用户" : "Deleted account",
       badge: post.badge,
       avatar: post.avatarUrl,
       image: post.imageUrl,
@@ -829,12 +829,15 @@ export function ForumPage({
                             ? showNotice(c.reported)
                             : void run(() => reportForumPost(post.id), c.reported)
                         }
-                        onBlock={() =>
-                          preview
-                            ? (setBlockedAuthors((items) => [...items, post.author]),
-                              showNotice(c.blocked))
-                            : post.userId &&
-                              void run(() => blockForumAuthor(post.userId!), c.blocked)
+                        onBlock={
+                          !preview && !post.userId
+                            ? undefined
+                            : () =>
+                                preview
+                                  ? (setBlockedAuthors((items) => [...items, post.author]),
+                                    showNotice(c.blocked))
+                                  : post.userId &&
+                                    void run(() => blockForumAuthor(post.userId!), c.blocked)
                         }
                       />
                     </header>

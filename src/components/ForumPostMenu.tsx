@@ -21,7 +21,14 @@ type ForumPostMenuProps = {
   onDelete?: () => void;
 };
 
-export function ForumPostMenu({ isOwn, labels, onReport, onBlock, onEdit, onDelete }: ForumPostMenuProps) {
+export function ForumPostMenu({
+  isOwn,
+  labels,
+  onReport,
+  onBlock,
+  onEdit,
+  onDelete,
+}: ForumPostMenuProps) {
   const [open, setOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -31,11 +38,79 @@ export function ForumPostMenu({ isOwn, labels, onReport, onBlock, onEdit, onDele
     setConfirmingDelete(false);
   }
 
-  return <div className="do-forum-more-menu">
-    <button type="button" className="do-forum-more-trigger" aria-label={labels.more} aria-expanded={open} onClick={() => { setOpen((value) => !value); setConfirmingDelete(false); }}><MoreHorizontal /></button>
-    {open && <div className="do-forum-more-popover" role="menu">
-      <div className="do-forum-more-popover-head"><span>{labels.more}</span><button type="button" aria-label={labels.cancel} onClick={() => setOpen(false)}><X /></button></div>
-      {isOwn ? confirmingDelete ? <div className="do-forum-more-confirm"><p>{labels.confirmDelete}</p><div><button type="button" onClick={() => setConfirmingDelete(false)}>{labels.cancel}</button><button type="button" onClick={() => run(onDelete)}>{labels.confirm}</button></div></div> : <><button type="button" role="menuitem" onClick={() => run(onEdit)}><Pencil /><span>{labels.edit}</span></button><button type="button" role="menuitem" className="do-forum-more-danger" onClick={() => setConfirmingDelete(true)}><Trash2 /><span>{labels.delete}</span></button></> : <><button type="button" role="menuitem" onClick={() => run(onReport)}><Flag /><span>{labels.report}</span></button><button type="button" role="menuitem" className="do-forum-more-danger" onClick={() => run(onBlock)}><UserX /><span>{labels.block}</span></button></>}
-    </div>}
-  </div>;
+  return (
+    <div className="do-forum-more-menu">
+      <button
+        type="button"
+        className="do-forum-more-trigger"
+        aria-label={labels.more}
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((value) => !value);
+          setConfirmingDelete(false);
+        }}
+      >
+        <MoreHorizontal />
+      </button>
+      {open && (
+        <div className="do-forum-more-popover" role="menu">
+          <div className="do-forum-more-popover-head">
+            <span>{labels.more}</span>
+            <button type="button" aria-label={labels.cancel} onClick={() => setOpen(false)}>
+              <X />
+            </button>
+          </div>
+          {isOwn ? (
+            confirmingDelete ? (
+              <div className="do-forum-more-confirm">
+                <p>{labels.confirmDelete}</p>
+                <div>
+                  <button type="button" onClick={() => setConfirmingDelete(false)}>
+                    {labels.cancel}
+                  </button>
+                  <button type="button" onClick={() => run(onDelete)}>
+                    {labels.confirm}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button type="button" role="menuitem" onClick={() => run(onEdit)}>
+                  <Pencil />
+                  <span>{labels.edit}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="do-forum-more-danger"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 />
+                  <span>{labels.delete}</span>
+                </button>
+              </>
+            )
+          ) : (
+            <>
+              <button type="button" role="menuitem" onClick={() => run(onReport)}>
+                <Flag />
+                <span>{labels.report}</span>
+              </button>
+              {onBlock && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="do-forum-more-danger"
+                  onClick={() => run(onBlock)}
+                >
+                  <UserX />
+                  <span>{labels.block}</span>
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

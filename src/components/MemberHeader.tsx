@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CloudOff, Languages, LogOut } from "lucide-react";
+import { CloudOff, Languages, LogOut, Settings } from "lucide-react";
 import { MainNavigation } from "@/components/MainNavigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
@@ -46,6 +46,13 @@ export function MemberHeader() {
               <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
             </Avatar>
             <span>{name}</span>
+          </Link>
+          <Link
+            to="/settings"
+            className="do-passport-logout"
+            aria-label={english ? "Account settings" : "账号设置"}
+          >
+            <Settings aria-hidden="true" />
           </Link>
           <button
             type="button"
