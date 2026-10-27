@@ -6,7 +6,7 @@ on:
         description: Recovery-only acceptance suite
         type: choice
         default: member-safety
-        options: [member-safety, account-deletion, share-card]
+        options: [member-safety, account-deletion, share-card, backend-capacity]
 permissions:
   contents: read
 concurrency:
@@ -16,7 +16,7 @@ jobs:
   member-safety:
     if: github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install isolated cloud browser
-        if: inputs.check != 'account-deletion'
+        if: inputs.check != 'account-deletion' && inputs.check != 'backend-capacity'
         run: |
           npm install --prefix "$RUNNER_TEMP/dive-browser" --no-save --package-lock=false playwright@1.56.1
           if command -v google-chrome >/dev/null; then
@@ -50,3 +50,14 @@ jobs:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
         run: node scripts/recovery-share-card.mjs
+      - name: Install pinned backend benchmark dependencies
+        if: inputs.check == 'backend-capacity'
+        run: npm install --prefix "$RUNNER_TEMP/backend-capacity" --ignore-scripts --no-save --package-lock=false @supabase/supabase-js@2.110.9 typescript@5.8.3
+      - name: Measure bounded recovery backend sessions and clean exact fixtures
+        if: inputs.check == 'backend-capacity'
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          CAPACITY_FIXTURE_APPROVED: 30-users-100-posts-100-dives
+          CAPACITY_SDK_MODULE: ${{ runner.temp }}/backend-capacity/node_modules/@supabase/supabase-js
+          CAPACITY_TYPESCRIPT_MODULE: ${{ runner.temp }}/backend-capacity/node_modules/typescript
+        run: node scripts/recovery-backend-capacity.mjs
