@@ -75,3 +75,19 @@ download endpoint returned 401; logs were instead read through the existing brow
 Native Chrome also confirmed real list entry buttons and real owned-record editor
 load, without exporting existing private photos. Formal www.supdiver.com and main
 were not updated for this feature. Await user acceptance/formal release approval.
+
+## Requested white information panel layout
+
+Layout-only revision: keep the 1080x1350 export, use the upper 780px for the
+photo and a white lower panel for location, title, date, optional note and dive
+metrics. Signature is right-aligned as `— display name`, not an Auth user UUID.
+Photo cropping now follows the photo section's aspect ratio. Generation, save,
+file sharing and opt-in privacy controls are unchanged.
+
+Inspected actual renderer output in Chrome using a local synthetic ocean image,
+ordinary content and a two-line Chinese title with a three-line note. Corrected
+location/title spacing after the first visual pass; final examples have no
+overlap or overflow and signature remains inside the white panel. No existing
+account, dive or private photo was read or changed for this layout check.
+Regression assertions cover white panel bounds, text placement, crop geometry,
+dash signature and alignment, alongside existing privacy/export checks.

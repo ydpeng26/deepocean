@@ -17,7 +17,8 @@ export const defaultCardOptions: CardOptions = {
   signature: false,
 };
 export const CARD_WIDTH = 1080,
-  CARD_HEIGHT = 1350;
+  CARD_HEIGHT = 1350,
+  CARD_PHOTO_HEIGHT = 780;
 export function cardText(value: string | null | undefined, limit = 160) {
   // Strip control/bidi characters from user text before canvas layout.
   return Array.from((value ?? "").replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069]/gu, " ").trim())
@@ -58,7 +59,7 @@ export function cardLines(
   };
 }
 export function coverCrop(width: number, height: number, position: CardOptions["position"]) {
-  const ratio = CARD_WIDTH / CARD_HEIGHT;
+  const ratio = CARD_WIDTH / CARD_PHOTO_HEIGHT;
   const sw = Math.min(width, height * ratio),
     sh = Math.min(height, width / ratio);
   return [
@@ -135,24 +136,25 @@ export async function renderShareCard(
     if (!ctx) throw Error("canvas_unavailable");
     if (photoUrl) {
       const [sx, sy, sw, sh] = coverCrop(image.naturalWidth, image.naturalHeight, options.position);
-      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, CARD_WIDTH, CARD_HEIGHT);
+      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, CARD_WIDTH, CARD_PHOTO_HEIGHT);
     } else {
-      const ocean = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
+      const ocean = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_PHOTO_HEIGHT);
       ocean.addColorStop(0, "#08789c");
       ocean.addColorStop(0.5, "#043553");
       ocean.addColorStop(1, "#000e27");
       ctx.fillStyle = ocean;
-      ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+      ctx.fillRect(0, 0, CARD_WIDTH, CARD_PHOTO_HEIGHT);
     }
-    const shade = ctx.createLinearGradient(0, 0, 0, CARD_HEIGHT);
-    shade.addColorStop(0, "rgba(0,12,28,.4)");
-    shade.addColorStop(0.35, "rgba(0,12,28,.08)");
-    shade.addColorStop(0.6, "rgba(0,12,28,.72)");
-    shade.addColorStop(1, "rgba(0,8,22,.98)");
+    const shade = ctx.createLinearGradient(0, 0, 0, CARD_PHOTO_HEIGHT);
+    shade.addColorStop(0, "rgba(0,12,28,.38)");
+    shade.addColorStop(0.35, "rgba(0,12,28,.04)");
+    shade.addColorStop(1, "rgba(0,12,28,.12)");
     ctx.fillStyle = shade;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+    ctx.fillRect(0, 0, CARD_WIDTH, CARD_PHOTO_HEIGHT);
     ctx.strokeStyle = "rgba(180,230,255,.4)";
-    ctx.strokeRect(28, 28, CARD_WIDTH - 56, CARD_HEIGHT - 56);
+    ctx.strokeRect(28, 28, CARD_WIDTH - 56, CARD_PHOTO_HEIGHT - 56);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, CARD_PHOTO_HEIGHT, CARD_WIDTH, CARD_HEIGHT - CARD_PHOTO_HEIGHT);
     const font = 'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillStyle = "#f3faff";
     ctx.font = `700 30px ${font}`;
@@ -161,7 +163,7 @@ export async function renderShareCard(
     ctx.font = `18px ${font}`;
     ctx.fillText("YOUR OCEAN. YOUR STORY.", 70, 140);
     const lines = cardLines(dive, options, note, signature, en);
-    let y = 660;
+    let y = CARD_PHOTO_HEIGHT + 56;
     const draw = (
       text: string,
       size: number,
@@ -178,29 +180,36 @@ export async function renderShareCard(
         y += spacing;
       }
     };
-    draw(lines.location, 24, "#9ed9fa", 1, 38);
-    draw(lines.title, 54, "#ffffff", 2, 65, 700);
-    draw(lines.date, 24, "#bed8e8", 1, 48);
-    draw(lines.note, 27, "#e0eef6", 3, 42);
+    draw(lines.location, 22, "#487487", 1, 64);
+    draw(lines.title, 46, "#11374a", 2, 56, 700);
+    draw(lines.date, 23, "#617c8a", 1, 40);
+    draw(lines.note, 24, "#365562", 3, 34);
     if (lines.stats.length) {
-      y += 20;
-      ctx.strokeStyle = "#51728a";
+      y += 14;
+      ctx.strokeStyle = "#d6e3e9";
       ctx.beginPath();
       ctx.moveTo(70, y);
       ctx.lineTo(1010, y);
       ctx.stroke();
       lines.stats.forEach((stat, i) => {
         const x = 70 + i * 320;
-        ctx.fillStyle = "#f3faff";
-        ctx.font = `600 34px ${font}`;
-        ctx.fillText(stat.value, x, y + 53);
-        ctx.fillStyle = "#95bace";
+        ctx.fillStyle = "#143e52";
+        ctx.font = `600 32px ${font}`;
+        ctx.fillText(stat.value, x, y + 48);
+        ctx.fillStyle = "#648292";
         ctx.font = `20px ${font}`;
-        ctx.fillText(stat.label, x, y + 88);
+        ctx.fillText(stat.label, x, y + 80);
       });
-      y += 125;
+      y += 110;
     }
-    draw(lines.signature ? `DIVER · ${lines.signature}` : "", 22, "#a5c9dd", 1, 34);
+    if (lines.signature) {
+      ctx.font = `22px ${font}`;
+      ctx.fillStyle = "#365c70";
+      ctx.textAlign = "right";
+      const signatureLine = wrap(ctx, `— ${lines.signature}`, 940, 1)[0];
+      ctx.fillText(signatureLine, 1010, CARD_HEIGHT - 52);
+      ctx.textAlign = "left";
+    }
     if (signal.aborted) throw Error("aborted");
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
