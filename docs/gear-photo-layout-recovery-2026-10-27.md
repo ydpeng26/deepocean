@@ -24,6 +24,8 @@
 
 ## Pending acceptance
 
-- Recovery deployment and browser verification of actual log photos, the compact blocked-user button, and equipment original/cutout preview.
-- Persistent synthetic equipment/photo test requires explicit temporary-record creation and cleanup permission; no such record has been created.
+- Recovery source `39648ce056be16f492c17829bfb2f66aff81d325` published non-force to the isolated branch. Recovery Ready deployment `3DnwVJQbzuhuGTmTxGY5wscRJbEP` rebuilt with recovery Production environment and assigned only `supdiver-recovery-test.vercel.app`.
+- Read-only checks of 67 public JavaScript assets passed: recovery backend only, original/cutout toggle and local processing bundle, removed passport copy/gear panel, compact blocked-user manager and removed trending panel. An unused legacy translation entry remains in the shared dictionary; it is not the rendered equipment panel.
+- Browser verification of actual log photos, the compact blocked-user button, and equipment original/cutout preview is pending the user logging into the recovery site.
+- User explicitly authorized creation and cleanup of one synthetic temporary equipment record and generated test photo. No such remote record/object has yet been created; no cleanup is currently due.
 - Formal deployment is not authorized for this change set and has not been performed.
