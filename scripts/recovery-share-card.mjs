@@ -46,7 +46,7 @@ try{
   if(u.origin!==api){if(['www.supdiver.com','supdiver.com'].includes(u.hostname)||u.hostname.endsWith('.supabase.co'))blocked++;return route.abort();}
   if(u.pathname==='/rest/v1/profiles'&&request.method()==='GET'&&u.searchParams.get('id')==='eq.'+owner)return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:owner,display_name:'SYNTHETIC-DIVER',avatar_url:null,cert_level:null,tank_count:0,bio:null}])});
   if(u.pathname==='/rest/v1/dives'&&request.method()==='GET'&&u.searchParams.get('user_id')==='eq.'+owner&&['eq.'+id,'eq.'+missing].includes(u.searchParams.get('id')))return route.continue();
-  if(u.pathname==='/storage/v1/object/authenticated/dive-photos/'+path&&request.method()==='GET')return route.continue();
+  if(['/storage/v1/object/authenticated/dive-photos/'+path,'/storage/v1/object/dive-photos/'+path].includes(u.pathname)&&request.method()==='GET')return route.continue();
   if(u.pathname==='/auth/v1/user'&&request.method()==='GET')return route.continue();
   if(u.pathname==='/auth/v1/token'&&u.searchParams.get('grant_type')==='refresh_token'&&request.method()==='POST'&&request.postDataJSON()?.refresh_token===session.refresh_token)return route.continue();
   blocked++;deniedPaths.add(u.pathname.replace(/[0-9a-f-]{36}/gi,'[id]'));return route.abort();
@@ -56,7 +56,7 @@ try{
  const preview=()=>page.getByAltText('纪念卡成品预览，保存与分享使用此图片',{exact:true});
  await generate().waitFor({timeout:40000});
  const render=async()=>{await page.evaluate(()=>window.__cardTexts=[]);await generate().click();await preview().waitFor({timeout:40000});return page.evaluate(()=>window.__cardTexts);};
- let texts=await render();check(texts.join('').includes(marker)&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
+ stage='synthetic_photo_render';let texts=await render();check(texts.join('').includes(marker)&&!texts.some(x=>x.includes('SYNTHETIC-PRIVATE-NOTE'))&&!texts.some(x=>x.includes('SYNTHETIC-DIVER')),'private_defaults');
  const previewBytes=Buffer.from(await preview().evaluate(async image=>Array.from(new Uint8Array(await(await fetch(image.src)).arrayBuffer()))));
  check(previewBytes.subarray(1,4).toString()==='PNG'&&previewBytes.readUInt32BE(16)===1080&&previewBytes.readUInt32BE(20)===1350,'png_dimensions');
  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'保存图片',exact:true}).click();const download=await downloadEvent;
