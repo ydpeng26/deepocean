@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Pencil, Trash2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DiveForm } from "@/components/DiveForm";
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/dives/$id")({
 });
 
 function DiveDetail() {
+  const { language } = useLanguage();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -156,7 +158,13 @@ function DiveDetail() {
             {[dive.country, dive.region, formatDate(dive.dive_date)].filter(Boolean).join(" · ")}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="rounded-none" asChild>
+            <Link to="/share-card" search={{ dive: id }}>
+              <Camera className="mr-1 h-4 w-4" />
+              {language === "en" ? "Create a keepsake" : "制作纪念卡"}
+            </Link>
+          </Button>
           <Button variant="outline" className="rounded-none" onClick={() => setEditing(true)}>
             <Pencil className="mr-1 h-4 w-4" />
             编辑

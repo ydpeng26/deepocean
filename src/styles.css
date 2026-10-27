@@ -1154,6 +1154,25 @@
   .do-card-display-options input:focus-visible + i { outline: 2px solid #7bd5ff; outline-offset: 2px; }
   .do-card-stage { position: sticky; top: 100px; align-self: start; display: flex; min-height: 760px; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; border: 1px solid rgba(112, 185, 226, .09); border-radius: 12px; background: linear-gradient(150deg, rgba(5, 30, 55, .66), rgba(0, 8, 21, .84)); box-shadow: inset 0 1px rgba(255, 255, 255, .025), 0 35px 80px rgba(0, 3, 13, .32); }
   .do-card-stage-light { position: absolute; width: 520px; height: 520px; border-radius: 50%; background: rgba(17, 128, 184, .11); filter: blur(85px); }
+  .do-real-card .do-card-editor-main { grid-template-columns: minmax(250px, 360px) minmax(0, 1fr); padding-top: 32px; }
+  .do-real-card .do-card-stage { min-height: 650px; padding: 24px; }
+  .do-card-output { width: min(100%, 430px); aspect-ratio: 4 / 5; object-fit: contain; box-shadow: 0 20px 65px #0008; }
+  .do-card-empty { display: grid; place-items: center; gap: 18px; width: 100%; min-height: 400px; color: #b2d2e5; text-align: center; }
+  .do-card-empty > svg { width: 48px; height: 48px; color: #58c9f2; }
+  .do-real-card select, .do-real-card textarea { width: 100%; margin-top: 12px; padding: 12px; border: 1px solid #32617a; border-radius: 7px; background: #062238; color: #e7f6ff; font-size: 14px; }
+  .do-real-card h2, .do-card-note-label { font-size: 14px; }
+  .do-real-card .do-card-display-options label { font-size: 13px; min-height: 43px; }
+  .do-card-hint, .do-card-message { margin-top: 18px; color: #a5bfd1; font-size: 13px; line-height: 1.8; }
+  .do-card-message { max-width: 430px; min-height: 3em; }
+  .do-card-generate { width: 100%; min-height: 46px; border-radius: 8px; background: #35b7ec; color: #002238; font-weight: 700; }
+  .do-real-card button:disabled { cursor: not-allowed; opacity: .45; }
+  .do-card-note-label { display: block; margin-top: 16px; color: #c0dfed; }
+  @media (max-width: 800px) {
+    .do-real-card .do-card-editor-main { display: flex; width: calc(100% - 32px); flex-direction: column; gap: 16px; }
+    .do-real-card .do-card-editor-controls { width: 100%; }
+    .do-real-card .do-card-stage { position: static; width: 100%; min-height: 500px; padding: 18px; }
+    .do-log-footer { flex-wrap: wrap; gap: 12px; }
+  }
   .do-card-poster { position: relative; z-index: 1; width: min(410px, 42vw); aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid rgba(211, 239, 253, .24); border-radius: 5px; background-repeat: no-repeat; background-size: cover; box-shadow: 0 38px 85px rgba(0, 2, 10, .62); transition: background-position .35s ease, background-image .35s ease; }
   .do-card-poster-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 9, 25, .24) 0%, rgba(0, 8, 23, .03) 28%, rgba(0, 8, 24, .28) 53%, rgba(0, 7, 21, .97) 100%); }
   .do-card-poster-top { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; padding: 22px; color: rgba(237, 248, 253, .65); font-size: 6px; font-weight: 750; letter-spacing: .15em; }

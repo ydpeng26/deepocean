@@ -6,7 +6,7 @@ on:
         description: Recovery-only acceptance suite
         type: choice
         default: member-safety
-        options: [member-safety, account-deletion]
+        options: [member-safety, account-deletion, share-card]
 permissions:
   contents: read
 concurrency:
@@ -34,7 +34,7 @@ jobs:
             node "$RUNNER_TEMP/dive-browser/node_modules/playwright/cli.js" install --with-deps chromium
           fi
       - name: Verify synthetic member edits and exact fixture cleanup
-        if: inputs.check != 'account-deletion'
+        if: inputs.check == 'member-safety' || inputs.check == ''
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
           RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
@@ -44,3 +44,9 @@ jobs:
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
         run: node scripts/recovery-account-deletion.mjs
+      - name: Verify synthetic share card render download privacy and exact cleanup
+        if: inputs.check == 'share-card'
+        env:
+          RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
+          RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/dive-browser/node_modules/playwright/index.mjs
+        run: node scripts/recovery-share-card.mjs

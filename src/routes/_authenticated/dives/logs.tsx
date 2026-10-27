@@ -383,6 +383,9 @@ function DiveLogsPage() {
                         </p>
                       </div>
                       <div className="do-log-footer">
+                        <Link to="/share-card" search={{ dive: dive.id }}>
+                          {language === "en" ? "Create a keepsake" : "制作纪念卡"}
+                        </Link>
                         <span>
                           {c.guide} · {dive.buddy_name || "—"}
                         </span>
