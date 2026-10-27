@@ -91,3 +91,11 @@ overlap or overflow and signature remains inside the white panel. No existing
 account, dive or private photo was read or changed for this layout check.
 Regression assertions cover white panel bounds, text placement, crop geometry,
 dash signature and alignment, alongside existing privacy/export checks.
+
+After user completed email verification, Vercel recovery Production rebuild
+5DyWB4y8Da6WmwJ31gfVQVuoMP7R was verified Ready in the deployment UI, source
+01fa917306f94accfa239528abfff10e630ed7ff, stable domain
+supdiver-recovery-test.vercel.app (2026-10-27 19:18 GMT+8). This updates only
+the recovery project; formal deepocean/www.supdiver.com remains unchanged.
+User should save pending inputs before reopening the recovery site and generating
+a new preview; already-generated preview files are not retroactively changed.
