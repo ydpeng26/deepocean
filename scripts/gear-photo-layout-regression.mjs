@@ -76,3 +76,16 @@ assert.ok(!read('src/components/PassportCommunity.tsx').includes('统计公开�
 assert.ok(!read('src/routes/forum-preview.tsx').includes('<aside className="do-forum-right">'));
 assert.ok(read('src/routes/forum-preview.tsx').indexOf('<ForumBlockedAuthors')<read('src/routes/forum-preview.tsx').indexOf('!preview && forumQuery.isPending'));
 console.log('PASS: actual log cover has positioned full-height wrapper without conflicting positioning classes; requested copy/sidebar removed and compact manager moved into tabs');
+const gearUi=load('src/routes/_authenticated/gear.tsx',name=>{
+  if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};
+  if(name==='react')return{useState:()=>[null,()=>{}]};
+  if(name==='@tanstack/react-router')return{createFileRoute:()=>options=>options};
+  if(name==='@/i18n/liveCopy')return{useLiveCopy:()=>value=>value};
+  return new Proxy({},{get:(_,key)=>key});
+},{},'\nexport { GearVisual };');
+const visual=gearUi.GearVisual({category:'bcd',photo:'safe:test'});
+assert.ok(visual.props.className.includes('relative'));
+assert.ok(visual.props.className.includes('overflow-hidden'));
+assert.ok(visual.props.children.props.className.includes('absolute inset-0'));
+assert.ok(read('src/styles.css').includes('.do-forum-blocks-compact { position: relative; margin-left: 0;'));
+console.log('PASS: actual equipment visual contains positioned image inside fixed clipped box; blocked manager stays adjacent to My posts');

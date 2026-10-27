@@ -85,13 +85,13 @@ function GearVisual({
   const label = categories.find(([value]) => value === category)?.[1] ?? t("潜水装备");
   return (
     <span
-      className={`grid shrink-0 place-items-center bg-gradient-to-br from-sky-500/20 to-cyan-500/5 text-sky-400 ${compact ? "h-14 w-16" : "h-44 w-full"}`}
+      className={`relative grid shrink-0 place-items-center overflow-hidden bg-gradient-to-br from-sky-500/20 to-cyan-500/5 text-sky-400 ${compact ? "h-14 w-16" : "h-44 w-full"}`}
     >
       {photo && failedPhoto !== photo ? (
         <img
           src={photo}
           alt={t(label)}
-          className="h-full w-full object-contain p-2"
+          className="absolute inset-0 h-full w-full object-contain p-2"
           onError={() => setFailedPhoto(photo)}
         />
       ) : (
