@@ -102,7 +102,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     enabled: !preview,
     initialData: preview ? previewDives : undefined,
   });
-  const { profile: liveProfile, avatarUrl, backgroundUrl } = useProfile(!preview);
+  const { profile: liveProfile, avatarUrl } = useProfile(!preview);
   const { data: gearItems = [] } = useQuery({ queryKey: ["gear"], queryFn: listGear, enabled: !preview });
   const profile = preview ? { id: "preview-visitor", display_name: language === "zh-CN" ? "潜水员" : "Diver", avatar_url: null, cert_level: "AOW 进阶开放水域", tank_count: 18, bio: language === "zh-CN" ? "在蓝色星球上，认真记录每一次下潜。" : "Logging every descent on our blue planet." } : liveProfile;
   const latest = dives[0];
@@ -134,10 +134,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
     navigate({ to: "/auth" });
   }
 
-  return <div className="do-passport" style={!preview && backgroundUrl ? {
-    backgroundImage: `linear-gradient(rgba(0,12,30,.82), rgba(0,12,30,.94)), url(${JSON.stringify(backgroundUrl)})`,
-    backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed",
-  } : undefined}>
+  return <div className="do-passport">
 
     <main id="passport-overview" className="do-passport-main">
       {preview && <div className="do-passport-preview-note">{c.previewNote}</div>}

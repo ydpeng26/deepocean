@@ -74,6 +74,7 @@ function nodes(tree, out = []) {
 function editor() {
   const state = {
     profile: original(),
+    backgroundUrl: null,
     isError: false,
     isPending: false,
     cells: [],
@@ -165,6 +166,7 @@ function editor() {
         useProfile: () => ({
           profile: state.profile,
           avatarUrl: null,
+          backgroundUrl: state.backgroundUrl,
           isPending: state.isPending,
           isError: state.isError,
           refetch() {
@@ -361,6 +363,26 @@ await avatarFailure.complete(1, "local-account-a/retry.jpg");
 assert.equal(avatarFailure.profile.avatar_url, "local-account-a/retry.jpg");
 assert.equal(avatarFailure.field("name").props.value, "Keep text after upload failure");
 console.log("PASS: failed avatar upload keeps text, releases lock and permits retry");
+// A loaded image belongs to the cover only, never to a full-page wrapper.
+const coverScope = editor();
+coverScope.backgroundUrl = "https://example.invalid/synthetic-personal-cover.jpg";
+coverScope.render();
+assert.equal(coverScope.find(n => n.props?.className === "do-profile-page").props.style?.backgroundImage, undefined);
+for (const className of ["do-profile-cover-upload-photo", "do-profile-public-photo"])
+  assert(coverScope.find(n => n.props?.className === className).props.style.backgroundImage.includes(coverScope.backgroundUrl));
+const passportSource = readFileSync(new URL("../src/routes/_authenticated/dives/index.tsx", import.meta.url), "utf8");
+const passportAst = ts.createSourceFile("passport.tsx", passportSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+let passportWrappers = 0;
+function verifyPassportScope(node) {
+  if (ts.isJsxOpeningElement(node) && node.attributes.properties.some(p => ts.isJsxAttribute(p) && p.name.getText(passportAst) === "className" && p.initializer?.getText(passportAst) === '"do-passport"')) {
+    passportWrappers++;
+    assert(!node.attributes.properties.some(p => ts.isJsxAttribute(p) && p.name.getText(passportAst) === "style"), "Passport wrapper must keep its original site background");
+  }
+  ts.forEachChild(node, verifyPassportScope);
+}
+verifyPassportScope(passportAst);
+assert.equal(passportWrappers, 1);
+console.log("PASS: a loaded personal cover stays on cover previews, never the profile or passport page background");
 const backgroundEditor = editor();
 backgroundEditor.change("bio", "Unsaved background edit");
 backgroundEditor.render();

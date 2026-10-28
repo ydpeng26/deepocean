@@ -127,7 +127,11 @@ try {
   }
   await backgroundVisible(".do-profile-cover-upload-photo");
   await backgroundVisible(".do-profile-public-photo");
-  await backgroundVisible(".do-profile-page");
+  async function pageBackgroundUnchanged(selector) {
+    const background = await page.locator(selector).evaluate(el => getComputedStyle(el).backgroundImage);
+    check(!background.includes("/storage/v1/object/") && !background.includes("/background/"), "personal_cover_leaked_to_page_background");
+  }
+  await pageBackgroundUnchanged(".do-profile-page");
   pass("background_saved_separately_and_visible_without_saving_text");
   stage = "failed background";
   failBackground = true;
@@ -146,8 +150,8 @@ try {
   check((await profile()).background_url === stored.background_url &&
     (await profile()).avatar_url === avatar, "reload_changed_saved_images");
   await page.goto(site + "/dives", { waitUntil: "networkidle" });
-  await backgroundVisible(".do-passport");
-  pass("profile_reload_and_passport_display_saved_background");
+  await pageBackgroundUnchanged(".do-passport");
+  pass("profile_cover_persists_and_passport_keeps_site_background");
   await page.getByRole("button", { name: "退出", exact: true }).click();
   await page.waitForURL("**/auth");
   pass("temporary_user_signed_out");
