@@ -197,8 +197,8 @@ export async function uploadProfileBackground(
   } catch (cause) {
     // A lost response can follow a committed update. Check before cleanup;
     // unknown state must retain the image rather than break a saved reference.
-    const current = await supabase.from("profiles").select("background_url")
-      .eq("id", user.id).maybeSingle().catch(() => null);
+    const current = await Promise.resolve(supabase.from("profiles").select("background_url")
+      .eq("id", user.id).maybeSingle()).catch(() => null);
     if (current && !current.error && current.data?.background_url === path) return path;
     if (current && !current.error)
       await supabase.storage.from(AVATAR_BUCKET).remove([path]).catch(() => undefined);
