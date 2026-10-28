@@ -132,7 +132,9 @@ try {
   stage = "failed background";
   failBackground = true;
   await background.setInputFiles(image);
-  await page.getByText("背景图上传失败，原背景未更改", { exact: true }).waitFor();
+  // Current SDK errors may inherit Error and preserve the injected message;
+  // older plain-object errors use the app's localized fallback. Both are errors.
+  await page.getByText(/^(Synthetic background save failure|背景图上传失败，原背景未更改)$/).waitFor();
   check((await profile()).background_url === stored.background_url &&
     (await profile()).avatar_url === avatar &&
     await bio.inputValue() === "Unsaved synthetic biography", "failure_changed_prior_data");
