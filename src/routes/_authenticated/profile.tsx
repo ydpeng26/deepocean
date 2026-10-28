@@ -376,10 +376,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="do-profile-page" style={backgroundUrl ? {
-      backgroundImage: `linear-gradient(rgba(0,12,30,.82), rgba(0,12,30,.94)), url(${JSON.stringify(backgroundUrl)})`,
-      backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed",
-    } : undefined}>
+    <div className="do-profile-page">
       <main id="profile-editor" className="do-profile-main">
         <section className="do-profile-intro">
           <span>{c.eyebrow}</span>
