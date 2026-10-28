@@ -19,9 +19,20 @@ export function useProfile(enabled = true) {
     refetchOnWindowFocus: false,
     retry: 1,
   });
+  const backgroundPath = profileQuery.data?.background_url ?? null;
+  const backgroundQuery = useQuery({
+    queryKey: ["profile-background-url", backgroundPath],
+    queryFn: () => signedAvatarUrl(backgroundPath),
+    enabled: enabled && !!backgroundPath,
+    staleTime: 55 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
   return {
     profile: profileQuery.data ?? null,
     avatarUrl: avatarQuery.data ?? null,
+    backgroundUrl: backgroundQuery.data ?? null,
     isPending: profileQuery.isPending,
     isError: profileQuery.isError,
     refetch: profileQuery.refetch,

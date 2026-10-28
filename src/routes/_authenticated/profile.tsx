@@ -23,6 +23,7 @@ import {
   signedAvatarUrl,
   updateMyProfile,
   uploadAvatar,
+  uploadProfileBackground,
   ProfileConflictError,
   type Profile,
   type ProfileUpdate,
@@ -51,6 +52,8 @@ const copy = {
     userId: "用户 ID",
     accountNote: "用户 ID 是你的唯一身份，邮箱和登录安全信息不会公开显示。",
     changeAvatar: "更换头像",
+    changeBackground: "更换个人主页背景图",
+    backgroundHint: "支持 JPG、PNG、WebP，最大 10MB，建议使用横向图片。选择后自动保存，不会更改头像。",
     uploading: "上传中…",
     identity: "基础资料",
     diveProfile: "潜水资料",
@@ -88,6 +91,8 @@ const copy = {
     userId: "User ID",
     accountNote: "Your user ID is unique. Email and account security details are never public.",
     changeAvatar: "Change photo",
+    changeBackground: "Change homepage background",
+    backgroundHint: "JPG, PNG or WebP, up to 10MB. A landscape image works best. Saves automatically without changing your avatar.",
     uploading: "Uploading…",
     identity: "Basic profile",
     diveProfile: "Diving profile",
@@ -120,9 +125,10 @@ function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const backgroundFileRef = useRef<HTMLInputElement>(null);
   const { language, toggleLanguage } = useLanguage();
   const c = copy[language];
-  const { profile, avatarUrl, isPending, isError, refetch } = useProfile();
+  const { profile, avatarUrl, backgroundUrl, isPending, isError, refetch } = useProfile();
   const { data: dives = [] } = useQuery({ queryKey: ["dives"], queryFn: listDives });
   const [name, setName] = useState("");
   const [cert, setCert] = useState("");
@@ -238,7 +244,27 @@ function ProfilePage() {
       operationRef.current = null;
     },
   });
-  const busy = save.isPending || upload.isPending;
+  const backgroundUpload = useMutation({
+    mutationFn: ({ file, accountId, baseline }: {
+      file: File; accountId: string; baseline: string | null;
+    }) => uploadProfileBackground(file, accountId, baseline),
+    onSuccess: (path, { accountId }) => {
+      if (!mountedRef.current) return;
+      queryClient.setQueryData<Profile | null>(["profile"], (current) =>
+        current?.id === accountId ? { ...current, background_url: path } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["profile-background-url", path] });
+      toast.success(language === "zh-CN" ? "个人主页背景图已更新" : "Homepage background updated");
+    },
+    onError: (error) => {
+      if (!mountedRef.current) return;
+      if (error instanceof ProfileConflictError) setConflict(true);
+      toast.error(error instanceof Error ? error.message : language === "zh-CN"
+        ? "背景图上传失败，原背景未更改" : "Upload failed. Your previous background is unchanged.");
+    },
+    onSettled: () => { operationRef.current = null; },
+  });
+  const busy = save.isPending || upload.isPending || backgroundUpload.isPending;
   const displayedAvatar = avatarPreview ?? avatarUrl;
   const display = name.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const initials = display.slice(0, 1).toUpperCase();
@@ -326,7 +352,10 @@ function ProfilePage() {
   }
 
   return (
-    <div className="do-profile-page">
+    <div className="do-profile-page" style={backgroundUrl ? {
+      backgroundImage: `linear-gradient(rgba(0,12,30,.82), rgba(0,12,30,.94)), url(${JSON.stringify(backgroundUrl)})`,
+      backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed",
+    } : undefined}>
       <main id="profile-editor" className="do-profile-main">
         <section className="do-profile-intro">
           <span>{c.eyebrow}</span>
@@ -426,23 +455,41 @@ function ProfilePage() {
                 </div>
                 <UserRound aria-hidden="true" />
               </div>
+              <input
+                ref={backgroundFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                hidden
+                disabled={busy || conflict}
+                aria-label={c.changeBackground}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file && !operationRef.current && !conflict && profile && !isError) {
+                    operationRef.current = "upload";
+                    backgroundUpload.mutate({
+                      file, accountId: profile.id, baseline: profile.background_url ?? null,
+                    });
+                  }
+                  event.target.value = "";
+                }}
+              />
               <div className="do-profile-cover-upload">
                 <div
                   className="do-profile-cover-upload-photo"
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, rgba(0,16,38,.12), rgba(0,14,34,.5)), url('/images/user-cave-photo-hero-preview.jpg')",
+                      `linear-gradient(90deg, rgba(0,16,38,.12), rgba(0,14,34,.5)), url(${JSON.stringify(backgroundUrl ?? "/images/user-cave-photo-hero-preview.jpg")})`,
                   }}
                 >
                   <span>SUPDIVER</span>
                 </div>
                 <div>
-                  <strong>{c.changeAvatar}</strong>
-                  <p>{c.avatarHint}</p>
+                  <strong>{c.changeBackground}</strong>
+                  <p>{c.backgroundHint}</p>
                 </div>
-                <button type="button" disabled={busy} onClick={() => fileRef.current?.click()}>
+                <button type="button" disabled={busy || conflict} onClick={() => backgroundFileRef.current?.click()}>
                   <Camera aria-hidden="true" />
-                  {upload.isPending ? c.uploading : c.changeAvatar}
+                  {backgroundUpload.isPending ? c.uploading : c.changeBackground}
                 </button>
               </div>
               <div className="do-profile-fields">
@@ -546,7 +593,7 @@ function ProfilePage() {
                   className="do-profile-public-photo"
                   style={{
                     backgroundImage:
-                      "linear-gradient(0deg, rgba(0,12,31,.9), rgba(0,11,29,.06) 68%), url('/images/user-cave-photo-hero-preview.jpg')",
+                      `linear-gradient(0deg, rgba(0,12,31,.9), rgba(0,11,29,.06) 68%), url(${JSON.stringify(backgroundUrl ?? "/images/user-cave-photo-hero-preview.jpg")})`,
                   }}
                 >
                   <span>{c.publicPreview}</span>
