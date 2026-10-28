@@ -1,4 +1,4 @@
-name: Recovery PC profile editor test
+name: Recovery PC profile background test
 on:
   workflow_dispatch:
 permissions:
@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   profile:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/pc-profile-recovery'
+    if: github.ref == 'refs/heads/codex/pc-layout-keyboard-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -20,9 +20,10 @@ jobs:
           node-version: '22'
       - name: Install cloud browser
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
-          npx playwright install --with-deps chromium
-      - name: Verify profile and avatar on recovery only
+          npm install --prefix "$RUNNER_TEMP/profile-browser" --ignore-scripts --no-save --package-lock=false playwright@1.56.1
+          node "$RUNNER_TEMP/profile-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify separate background avatar and exact fixture cleanup
         env:
           RECOVERY_SERVICE_ROLE_KEY: ${{ secrets.RECOVERY_SERVICE_ROLE_KEY }}
-        run: node scripts/recovery-profile.mjs
+          RECOVERY_PLAYWRIGHT_MODULE: ${{ runner.temp }}/profile-browser/node_modules/playwright/index.mjs
+        run: node scripts/recovery-profile-background.mjs

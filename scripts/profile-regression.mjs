@@ -169,6 +169,7 @@ function editor() {
           throw Error("Call API tests separately");
         },
         signedAvatarUrl: async () => "https://example.invalid/synthetic-avatar",
+        uploadProfileBackground() { throw Error("Call API tests separately"); },
       };
     if (name === "@/integrations/supabase/client")
       return {
@@ -321,6 +322,29 @@ await avatarFailure.complete(1, "local-account-a/retry.jpg");
 assert.equal(avatarFailure.profile.avatar_url, "local-account-a/retry.jpg");
 assert.equal(avatarFailure.field("name").props.value, "Keep text after upload failure");
 console.log("PASS: failed avatar upload keeps text, releases lock and permits retry");
+const backgroundEditor = editor();
+backgroundEditor.change("bio", "Unsaved background edit");
+backgroundEditor.render();
+const backgroundInput = () => backgroundEditor.find(n =>
+  n.type === "input" && n.props["aria-label"] === "更换个人主页背景图");
+backgroundInput().props.onChange({ target: { files: [{ name: "cover.png" }], value: "" } });
+backgroundEditor.render();
+backgroundEditor.save();
+backgroundEditor.upload();
+assert.equal(backgroundEditor.mutations[0].count, 0);
+assert.equal(backgroundEditor.mutations[1].count, 0);
+assert.equal(backgroundEditor.mutations[2].count, 1);
+const previousAvatar = backgroundEditor.profile.avatar_url;
+await backgroundEditor.complete(2, "local-account-a/background/test.jpg");
+assert.equal(backgroundEditor.profile.background_url, "local-account-a/background/test.jpg");
+assert.equal(backgroundEditor.profile.avatar_url, previousAvatar);
+assert.equal(backgroundEditor.field("bio").props.value, "Unsaved background edit");
+backgroundInput().props.onChange({ target: { files: [{ name: "retry.png" }], value: "" } });
+await backgroundEditor.complete(2, null, Error("Synthetic background failure"));
+assert.equal(backgroundEditor.profile.background_url, "local-account-a/background/test.jpg");
+assert.equal(backgroundEditor.field("bio").props.value, "Unsaved background edit");
+assert.equal(backgroundEditor.field("bio").props.disabled, false);
+console.log("PASS: background is independent of avatar, preserves drafts and locks overlapping operations");
 for (const value of ["1.5", "-1", "2147483648", "NaN"]) {
   e.change("tanks", value);
   e.render();
@@ -363,7 +387,20 @@ console.log(
 let sessionId = "local-account-a",
   queue = [],
   queries = 0;
+const storageCalls = [], mutations = [], predicates = [];
 const fakeClient = {
+  storage: {
+    from(bucket) {
+      assert.equal(bucket, "avatars");
+      return {
+        async upload(path, file, options) {
+          storageCalls.push({ action: "upload", path, options });
+          return { error: null };
+        },
+        async remove(paths) { storageCalls.push({ action: "remove", paths }); return { error: null }; },
+      };
+    },
+  },
   auth: {
     getSession: async () => ({
       data: { session: { user: { id: sessionId, email: "local@example.invalid" } } },
@@ -373,6 +410,10 @@ const fakeClient = {
     queries++;
     const chain = {};
     for (const method of ["select", "eq", "is", "update", "insert"]) chain[method] = () => chain;
+    chain.update = input => { mutations.push(input); return chain; };
+    for (const method of ["eq", "is"]) chain[method] = (...args) => {
+      predicates.push([method, ...args]); return chain;
+    };
     for (const method of ["single", "maybeSingle"])
       chain[method] = async () => {
         assert.ok(queue.length, "Unexpected database call");
@@ -385,9 +426,8 @@ const api = load("src/lib/profile.ts", (name) => {
   if (name === "@/integrations/supabase/client") return { supabase: fakeClient };
   if (name === "@/lib/images")
     return {
-      prepareWebImage() {
-        throw Error("Unexpected image processing");
-      },
+      assertSupportedWebImage(file) { if (file.type !== "image/png") throw Error("Invalid image"); },
+      prepareWebImage: async () => ({ type: "image/jpeg" }),
     };
   throw Error("Unexpected import");
 });
@@ -419,6 +459,30 @@ assert.equal((await api.getMyProfile()).id, sessionId);
 console.log(
   "PASS: missing-profile initialization never ignores a failure and safely reads a concurrent creation",
 );
+const cover = { name: "cover.png", type: "image/png", size: 1024 };
+queue = [{ data: { id: sessionId }, error: null }];
+const coverPath = await api.uploadProfileBackground(cover, sessionId, null);
+assert.ok(coverPath.startsWith(sessionId + "/background/"));
+assert.deepEqual(Object.keys(mutations.at(-1)), ["background_url"]);
+assert.ok(predicates.some(p => p[0] === "is" && p[1] === "background_url" && p[2] === null));
+assert.equal(storageCalls.at(-1).options.upsert, false);
+const priorUploads = storageCalls.length;
+await assert.rejects(() => api.uploadProfileBackground({ ...cover, size: 11 * 1024 * 1024 }, sessionId, null));
+await assert.rejects(() => api.uploadProfileBackground(cover, "different-account", null));
+assert.equal(storageCalls.length, priorUploads);
+queue = [
+  { data: null, error: null },
+  { data: { background_url: "other-cover" }, error: null },
+];
+await assert.rejects(() => api.uploadProfileBackground(cover, sessionId, null));
+assert.equal(storageCalls.at(-1).action, "remove");
+queue = [
+  { data: null, error: { message: "Response lost" } },
+  { data: { background_url: coverPath }, error: null },
+];
+assert.equal(await api.uploadProfileBackground(cover, sessionId, null), coverPath);
+assert.equal(storageCalls.at(-1).action, "upload", "A saved reference must not be deleted");
+console.log("PASS: background API uses independent owner path, rejects oversized/account mismatch and preserves committed images");
 const retry = () => {};
 let queryIndex = 0;
 const hook = load("src/hooks/useProfile.ts", (name) =>

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { prepareWebImage } from "@/lib/images";
+import { assertSupportedWebImage, prepareWebImage } from "@/lib/images";
 
 export const AVATAR_BUCKET = "avatars";
 
@@ -7,12 +7,13 @@ export type Profile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  background_url: string | null;
   cert_level: string | null;
   tank_count: number;
   bio: string | null;
 };
 
-export type PublicProfile = Profile & { created_at: string };
+export type PublicProfile = Omit<Profile, "background_url"> & { created_at: string };
 
 export const CERT_LEVELS = [
   "OW 开放水域",
@@ -34,7 +35,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+    .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
@@ -44,6 +45,7 @@ export async function getMyProfile(): Promise<Profile | null> {
       id: user.id,
       display_name: user.email?.split("@")[0] ?? "潜水员",
       avatar_url: null,
+      background_url: null,
       cert_level: null,
       tank_count: 0,
       bio: null,
@@ -51,14 +53,14 @@ export async function getMyProfile(): Promise<Profile | null> {
     const { data: created, error: createError } = await supabase
       .from("profiles")
       .insert(fallback)
-      .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+      .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
       .single();
     if (createError) {
       // Another simultaneous profile query may already have created the row.
       if (createError.code !== "23505") throw createError;
       const { data: existing, error: readError } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+        .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
         .eq("id", user.id)
         .single();
       if (readError) throw readError;
@@ -101,13 +103,13 @@ export async function updateMyProfile(
   for (const key of profileFields)
     query = baseline[key] === null ? query.is(key, null) : query.eq(key, baseline[key]!);
   const { data, error } = await query
-    .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+    .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
     .maybeSingle();
   if (error) throw error;
   if (!data) {
     const current = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, cert_level, tank_count, bio")
+      .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
       .eq("id", user.id)
       .maybeSingle();
     if (current.error) throw current.error;
@@ -156,6 +158,52 @@ export async function uploadAvatar(
   const { data: updated, error: updateError } = await mutation.select("id").maybeSingle();
   if (updateError) throw updateError;
   if (!updated) throw new ProfileConflictError();
+  return path;
+}
+
+// Separate homepage image; existing account deletion removes this owner's files.
+export async function uploadProfileBackground(
+  file: File,
+  expectedUserId: string,
+  baselineBackground: string | null,
+): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const user = data.session?.user;
+  if (!user || user.id !== expectedUserId)
+    throw new Error("登录账号已变化，请重新载入资料 / Reload your profile before uploading.");
+  if (baselineBackground === undefined) throw new ProfileConflictError();
+  assertSupportedWebImage(file);
+  if (!file.size || file.size > 10 * 1024 * 1024)
+    throw new Error("请选择不超过 10MB 的图片 / Choose an image up to 10MB.");
+  const image = await prepareWebImage(file, { maxEdge: 1920, quality: 0.84 });
+  const path = `${user.id}/background/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, image, {
+    cacheControl: "31536000",
+    contentType: "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw error;
+  try {
+    const latest = await supabase.auth.getSession();
+    if (latest.data.session?.user.id !== user.id)
+      throw new Error("登录账号已变化，请重新载入资料");
+    let query = supabase.from("profiles").update({ background_url: path }).eq("id", user.id);
+    query = baselineBackground === null
+      ? query.is("background_url", null)
+      : query.eq("background_url", baselineBackground);
+    const { data: updated, error: updateError } = await query.select("id").maybeSingle();
+    if (updateError) throw updateError;
+    if (!updated) throw new ProfileConflictError();
+  } catch (cause) {
+    // A lost response can follow a committed update. Check before cleanup;
+    // unknown state must retain the image rather than break a saved reference.
+    const current = await supabase.from("profiles").select("background_url")
+      .eq("id", user.id).maybeSingle().catch(() => null);
+    if (current && !current.error && current.data?.background_url === path) return path;
+    if (current && !current.error)
+      await supabase.storage.from(AVATAR_BUCKET).remove([path]).catch(() => undefined);
+    throw cause;
+  }
   return path;
 }
 
