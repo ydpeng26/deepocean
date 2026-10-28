@@ -415,9 +415,11 @@ const fakeClient = {
       predicates.push([method, ...args]); return chain;
     };
     for (const method of ["single", "maybeSingle"])
-      chain[method] = async () => {
+      chain[method] = () => {
         assert.ok(queue.length, "Unexpected database call");
-        return queue.shift();
+        // SDK builders are PromiseLike: await/then work, direct catch does not.
+        const result = queue.shift();
+        return { then: (resolve, reject) => Promise.resolve(result).then(resolve, reject) };
       };
     return chain;
   },
