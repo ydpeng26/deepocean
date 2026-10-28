@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getPublicProfile, signedAvatarUrl } from "@/lib/profile";
 import { PublicCertificateSummary } from "@/components/PublicCertificateSummary";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export const Route = createFileRoute("/_authenticated/divers/$id")({
   head: () => ({ meta: [{ title: "潜水员主页 · SupDiver" }, { name: "description", content: "查看 SupDiver 潜水员的公开资料。" }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/divers/$id")({
 });
 
 function PublicDiverPage() {
+  const { language } = useLanguage();
   const { id } = Route.useParams();
   const { data: profile, isPending, isError } = useQuery({ queryKey: ["public-profile", id], queryFn: () => getPublicProfile(id) });
   const { data: avatarUrl } = useQuery({ queryKey: ["public-avatar", profile?.avatar_url], queryFn: () => signedAvatarUrl(profile?.avatar_url ?? null), enabled: Boolean(profile?.avatar_url), staleTime: 55 * 60 * 1000 });
@@ -25,6 +27,10 @@ function PublicDiverPage() {
       <div className="px-6 pb-8 sm:px-10">
         <Avatar className="-mt-20 h-40 w-40 border-4 border-background shadow-2xl"><AvatarImage src={avatarUrl ?? undefined} alt={name} className="h-full w-full object-cover" /><AvatarFallback className="text-5xl">{name[0]}</AvatarFallback></Avatar>
         <h1 className="mt-5 text-3xl text-primary">{name}</h1>
+        {(profile.age != null || profile.region) && <p className="mt-3 text-sm text-muted-foreground break-words">
+          {profile.age != null && (language === "zh-CN" ? `${profile.age} 岁` : `Age ${profile.age}`)}
+          {profile.age != null && profile.region ? " · " : ""}{profile.region}
+        </p>}
         <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{profile.bio?.trim() || "这位潜水员还没有填写个人简介。"}</p>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <div className="border border-border p-4"><Award className="h-5 w-5 text-sky-500" /><small className="mt-3 block text-muted-foreground">最高潜水证书</small><strong className="mt-1 block">{profile.cert_level || "暂未填写"}</strong></div>

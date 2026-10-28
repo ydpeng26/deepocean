@@ -18,6 +18,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { listDives } from "@/lib/dives";
+import { profileAge, profileToday } from "@/lib/profile-demographics";
+import "@/styles/profile-demographics.css";
 import {
   CERT_LEVELS,
   signedAvatarUrl,
@@ -134,6 +136,17 @@ function ProfilePage() {
   const [cert, setCert] = useState("");
   const [tanks, setTanks] = useState("0");
   const [bio, setBio] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [region, setRegion] = useState("");
+  const [agePublic, setAgePublic] = useState(false);
+  const [regionPublic, setRegionPublic] = useState(false);
+  const age = profileAge(birthDate);
+  function loadDemographics(value: Profile) {
+    setBirthDate(value.birth_date ?? "");
+    setRegion(value.region ?? "");
+    setAgePublic(value.age_public ?? false);
+    setRegionPublic(value.region_public ?? false);
+  }
   const [saved, setSaved] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarPreviewRef = useRef<string | null>(null);
@@ -161,6 +174,7 @@ function ProfilePage() {
       setCert(profile.cert_level ?? "");
       setTanks(String(profile.tank_count ?? 0));
       setBio(profile.bio ?? "");
+      loadDemographics(profile);
     }
   }, [profile]);
   const save = useMutation({
@@ -183,6 +197,7 @@ function ProfilePage() {
       setCert(confirmed.cert_level ?? "");
       setTanks(String(confirmed.tank_count));
       setBio(confirmed.bio ?? "");
+      loadDemographics(confirmed);
       void queryClient.invalidateQueries({ queryKey: ["public-profile", confirmed.id] });
       setSaved(true);
       toast.success(language === "zh-CN" ? "个人资料已保存" : "Profile saved");
@@ -277,7 +292,7 @@ function ProfilePage() {
       5) *
       100,
   );
-  function changed(setter: (value: string) => void, value: string) {
+  function changed<T,>(setter: (value: T) => void, value: T) {
     if (operationRef.current) return;
     setter(value);
     setSaved(false);
@@ -293,6 +308,10 @@ function ProfilePage() {
     )
       return;
     const count = Number(tanks);
+    if (birthDate && age === null) {
+      toast.error(language === "zh-CN" ? "请填写有效且不晚于今天的出生日期" : "Enter a valid date of birth, no later than today.");
+      return;
+    }
     if (!Number.isInteger(count) || count < 0 || count > 2147483647) {
       toast.error(
         language === "zh-CN"
@@ -311,6 +330,10 @@ function ProfilePage() {
         cert_level: cert || null,
         tank_count: count,
         bio: bio.trim().slice(0, 300) || null,
+        birth_date: birthDate || null,
+        region: region.trim() || null,
+        age_public: agePublic,
+        region_public: regionPublic,
       },
     });
   }
@@ -342,6 +365,7 @@ function ProfilePage() {
       setCert(latest.cert_level ?? "");
       setTanks(String(latest.tank_count));
       setBio(latest.bio ?? "");
+      loadDemographics(latest);
       setConflict(false);
       setSaved(false);
     } catch {
@@ -493,6 +517,27 @@ function ProfilePage() {
                 </button>
               </div>
               <div className="do-profile-fields">
+                <div>
+                  <label>
+                    <span>{language === "zh-CN" ? "出生日期（选填，仅自己可见）" : "Date of birth (optional, private)"}</span>
+                    <input aria-label="birth-date" type="date" min="1900-01-01" max={profileToday()} value={birthDate} disabled={busy} onChange={(event) => changed(setBirthDate, event.target.value)} />
+                  </label>
+                  <small>{language === "zh-CN" ? `年龄：${age === null ? "未填写" : `${age} 岁`}。公开时仅显示年龄，不显示出生日期。` : `Age: ${age ?? "not provided"}. Only age can be public, never your date of birth.`}</small>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+                    <input style={{ width: "auto" }} aria-label="age-public" type="checkbox" checked={agePublic} disabled={busy} onChange={(event) => changed(setAgePublic, event.target.checked)} />
+                    <span>{language === "zh-CN" ? "公开展示年龄" : "Show age publicly"}</span>
+                  </label>
+                </div>
+                <div>
+                  <label>
+                    <span>{language === "zh-CN" ? "地区（选填）" : "Region (optional)"}</span>
+                    <input aria-label="region" value={region} maxLength={80} disabled={busy} placeholder={language === "zh-CN" ? "例如：中国 · 上海（无需详细地址）" : "e.g. China · Shanghai (no street address)"} onChange={(event) => changed(setRegion, event.target.value)} />
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+                    <input style={{ width: "auto" }} aria-label="region-public" type="checkbox" checked={regionPublic} disabled={busy} onChange={(event) => changed(setRegionPublic, event.target.checked)} />
+                    <span>{language === "zh-CN" ? "公开展示地区" : "Show region publicly"}</span>
+                  </label>
+                </div>
                 <label className="do-profile-wide">
                   <span>{c.displayName}</span>
                   <input
@@ -603,6 +648,11 @@ function ProfilePage() {
                     <p>{bio.trim() || c.publicHint}</p>
                   </div>
                 </div>
+                {(agePublic && age !== null || regionPublic && region.trim()) && <p style={{ padding: "16px 28px", overflowWrap: "anywhere" }}>
+                  {agePublic && age !== null && <span>{language === "zh-CN" ? `${age} 岁` : `Age ${age}`}</span>}
+                  {agePublic && age !== null && regionPublic && region.trim() ? " · " : ""}
+                  {regionPublic && region.trim()}
+                </p>}
                 <div className="do-profile-public-stats">
                   <div>
                     <strong>{dives.length}</strong>

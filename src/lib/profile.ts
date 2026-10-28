@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { assertSupportedWebImage, prepareWebImage } from "@/lib/images";
+import { profileAge } from "@/lib/profile-demographics";
 
 export const AVATAR_BUCKET = "avatars";
 
@@ -11,9 +12,14 @@ export type Profile = {
   cert_level: string | null;
   tank_count: number;
   bio: string | null;
+  birth_date: string | null;
+  region: string | null;
+  age_public: boolean;
+  region_public: boolean;
 };
 
-export type PublicProfile = Omit<Profile, "background_url"> & { created_at: string };
+export type PublicProfile = Omit<Profile, "background_url" | "birth_date" | "age_public" | "region_public"> & { created_at: string; age: number | null };
+const PROFILE_COLUMNS = "id, display_name, avatar_url, background_url, cert_level, tank_count, bio, birth_date, region, age_public, region_public";
 
 export const CERT_LEVELS = [
   "OW 开放水域",
@@ -35,7 +41,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
+    .select(PROFILE_COLUMNS)
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
@@ -53,14 +59,14 @@ export async function getMyProfile(): Promise<Profile | null> {
     const { data: created, error: createError } = await supabase
       .from("profiles")
       .insert(fallback)
-      .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
+      .select(PROFILE_COLUMNS)
       .single();
     if (createError) {
       // Another simultaneous profile query may already have created the row.
       if (createError.code !== "23505") throw createError;
       const { data: existing, error: readError } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
+        .select(PROFILE_COLUMNS)
         .eq("id", user.id)
         .single();
       if (readError) throw readError;
@@ -76,6 +82,10 @@ export type ProfileUpdate = {
   cert_level: string | null;
   tank_count: number;
   bio: string | null;
+  birth_date: string | null;
+  region: string | null;
+  age_public: boolean;
+  region_public: boolean;
 };
 
 export class ProfileConflictError extends Error {
@@ -86,7 +96,7 @@ export class ProfileConflictError extends Error {
     this.name = "ProfileConflictError";
   }
 }
-const profileFields = ["display_name", "cert_level", "tank_count", "bio"] as const;
+const profileFields = ["display_name", "cert_level", "tank_count", "bio", "birth_date", "region", "age_public", "region_public"] as const;
 
 export async function updateMyProfile(
   input: ProfileUpdate,
@@ -99,17 +109,20 @@ export async function updateMyProfile(
   if (expectedUserId && user.id !== expectedUserId)
     throw new Error("登录账号已变化，请重新载入资料");
   if (!baseline) throw new ProfileConflictError();
+  if (input.birth_date && profileAge(input.birth_date) === null)
+    throw new Error("请填写有效的出生日期 / Enter a valid date of birth.");
+  if ((input.region?.length ?? 0) > 80) throw new Error("地区最多 80 个字符 / Region: maximum 80 characters.");
   let query = supabase.from("profiles").update(input).eq("id", user.id);
   for (const key of profileFields)
     query = baseline[key] === null ? query.is(key, null) : query.eq(key, baseline[key]!);
   const { data, error } = await query
-    .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
+    .select(PROFILE_COLUMNS)
     .maybeSingle();
   if (error) throw error;
   if (!data) {
     const current = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, background_url, cert_level, tank_count, bio")
+      .select(PROFILE_COLUMNS)
       .eq("id", user.id)
       .maybeSingle();
     if (current.error) throw current.error;

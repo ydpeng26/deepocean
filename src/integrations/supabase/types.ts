@@ -179,6 +179,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          birth_date: string | null
+          region: string | null
+          age_public: boolean
+          region_public: boolean
           avatar_url: string | null
           background_url: string | null
           bio: string | null
@@ -189,6 +193,10 @@ export type Database = {
           tank_count: number
         }
         Insert: {
+          birth_date?: string | null
+          region?: string | null
+          age_public?: boolean
+          region_public?: boolean
           avatar_url?: string | null
           background_url?: string | null
           bio?: string | null
@@ -199,6 +207,10 @@ export type Database = {
           tank_count?: number
         }
         Update: {
+          birth_date?: string | null
+          region?: string | null
+          age_public?: boolean
+          region_public?: boolean
           avatar_url?: string | null
           background_url?: string | null
           bio?: string | null
@@ -228,6 +240,8 @@ export type Database = {
       get_public_diver_profile: {
         Args: { target_user_id: string }
         Returns: {
+          age: number | null
+          region: string | null
           avatar_url: string | null
           bio: string | null
           cert_level: string | null

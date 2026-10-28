@@ -40,6 +40,15 @@ function load(file, require) {
   );
   return module.exports;
 }
+const demographics = load("src/lib/profile-demographics.ts", () => { throw Error("Unexpected import"); });
+assert.equal(demographics.profileAge("2000-10-29", "2026-10-28"), 25);
+assert.equal(demographics.profileAge("2000-10-28", "2026-10-28"), 26);
+assert.equal(demographics.profileAge("2000-02-29", "2025-02-28"), 24);
+assert.equal(demographics.profileAge("2000-02-29", "2025-03-01"), 25);
+for (const value of [null, "", "2025-02-29", "2026-10-29", "1899-01-01", "bad"])
+  assert.equal(demographics.profileAge(value, "2026-10-28"), null);
+assert.equal(demographics.profileToday(new Date("2026-10-27T16:00:00Z")), "2026-10-28");
+console.log("PASS: calendar birthday, leap day, timezone and invalid date boundaries");
 const original = () => ({
   id: "local-account-a",
   display_name: "Original",
@@ -47,6 +56,11 @@ const original = () => ({
   cert_level: "OW 开放水域",
   tank_count: 3,
   avatar_url: null,
+  background_url: null,
+  birth_date: null,
+  region: null,
+  age_public: false,
+  region_public: false,
 });
 class ProfileConflictError extends Error {}
 function nodes(tree, out = []) {
@@ -118,6 +132,7 @@ function editor() {
   const fallback = new Proxy({}, { get: (_, key) => String(key) });
   const jsx = (type, props) => ({ type, props });
   const component = load("src/routes/_authenticated/profile.tsx", (name) => {
+    if (name === "@/lib/profile-demographics") return demographics;
     if (name === "react") return react;
     if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
     if (name === "@tanstack/react-router")
@@ -238,6 +253,30 @@ function editor() {
   state.render();
   return state;
 }
+const demographicEditor = editor();
+const demographicField = key => demographicEditor.find(n => n.type === "input" && n.props["aria-label"] === key);
+assert.equal(demographicField("age-public").props.checked, false);
+assert.equal(demographicField("region-public").props.checked, false);
+demographicField("birth-date").props.onChange({ target: { value: "2000-10-28" } });
+demographicField("region").props.onChange({ target: { value: "  中国 · 上海  " } });
+demographicField("age-public").props.onChange({ target: { checked: true } });
+demographicEditor.render();
+assert.equal(demographicField("region-public").props.checked, false);
+demographicEditor.profile = { ...demographicEditor.profile, avatar_url: "synthetic.jpg" };
+demographicEditor.render(); demographicEditor.render();
+assert.equal(demographicField("birth-date").props.value, "2000-10-28");
+demographicEditor.save();
+assert.equal(demographicEditor.mutations[0].variables.values.birth_date, "2000-10-28");
+assert.equal(demographicEditor.mutations[0].variables.values.region, "中国 · 上海");
+assert.equal(demographicEditor.mutations[0].variables.values.age_public, true);
+assert.equal(demographicEditor.mutations[0].variables.values.region_public, false);
+await demographicEditor.complete(0, null, Error("Synthetic failure"));
+assert.equal(demographicField("birth-date").props.value, "2000-10-28");
+assert.equal(demographicField("age-public").props.checked, true);
+demographicField("birth-date").props.onChange({ target: { value: "2999-01-01" } });
+demographicEditor.render(); demographicEditor.save();
+assert.equal(demographicEditor.mutations[0].count, 1, "Future DOB must not reach mutation");
+console.log("PASS: private defaults, independent toggles, trimmed region, cache/failure draft retention and invalid DOB guard");
 const e = editor();
 e.change("name", "Unsaved name");
 e.change("bio", "Unsaved bio");
@@ -425,6 +464,7 @@ const fakeClient = {
   },
 };
 const api = load("src/lib/profile.ts", (name) => {
+  if (name === "@/lib/profile-demographics") return demographics;
   if (name === "@/integrations/supabase/client") return { supabase: fakeClient };
   if (name === "@/lib/images")
     return {
@@ -433,7 +473,7 @@ const api = load("src/lib/profile.ts", (name) => {
     };
   throw Error("Unexpected import");
 });
-const input = { display_name: "Confirmed", cert_level: null, tank_count: 0, bio: null };
+const input = { display_name: "Confirmed", cert_level: null, tank_count: 0, bio: null, birth_date: null, region: null, age_public: false, region_public: false };
 queue = [{ data: null, error: { code: "PGRST116" } }];
 await assert.rejects(() => api.updateMyProfile(input, sessionId, original()));
 queue = [{ data: { ...original(), ...input }, error: null }];
