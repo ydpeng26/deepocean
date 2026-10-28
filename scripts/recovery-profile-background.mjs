@@ -115,9 +115,15 @@ try {
     await bio.inputValue() === "Unsaved synthetic biography" &&
     stored.bio === "Synthetic baseline", "background_preserves_unsaved_text");
   async function backgroundVisible(selector) {
-    return poll(() => page.locator(selector).evaluate(el => getComputedStyle(el).backgroundImage),
+    await poll(() => page.locator(selector).evaluate(el => getComputedStyle(el).backgroundImage),
       value => value.includes("/storage/v1/object/sign/avatars/") &&
         value.includes("/background/"));
+    await page.locator(selector).evaluate(async el => {
+      const url = getComputedStyle(el).backgroundImage.match(/url\("([^"]+)"\)/)?.[1];
+      if (!url) throw Error("Missing generated background URL");
+      const image = new Image(); image.src = url; await image.decode();
+      if (!image.naturalWidth || !image.naturalHeight) throw Error("Background did not decode");
+    });
   }
   await backgroundVisible(".do-profile-cover-upload-photo");
   await backgroundVisible(".do-profile-public-photo");
@@ -126,7 +132,7 @@ try {
   stage = "failed background";
   failBackground = true;
   await background.setInputFiles(image);
-  await page.getByText("Synthetic background save failure", { exact: true }).waitFor();
+  await page.getByText("背景图上传失败，原背景未更改", { exact: true }).waitFor();
   check((await profile()).background_url === stored.background_url &&
     (await profile()).avatar_url === avatar &&
     await bio.inputValue() === "Unsaved synthetic biography", "failure_changed_prior_data");
