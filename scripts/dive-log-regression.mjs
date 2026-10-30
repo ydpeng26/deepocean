@@ -24,6 +24,7 @@ function query(){let action='read',body,filters=[],range=null;const chain={
 }return chain;}
 const supabase={auth:{getSession:async()=>({data:{session:{user:{id:state.owner}}}})},from:query,storage:{from:()=>({upload:async(path)=>{if(state.objects.has(path))return{error:{statusCode:'409'}};state.objects.add(path);if(state.uploadLost){state.uploadLost=false;return{error:Error('Lost upload response')};}return{error:null};},createSignedUrls:async paths=>({data:paths.filter(p=>!p.includes('missing')).reverse().map(path=>({path,signedUrl:'signed:'+path})),error:null})})}};
 const images=load('src/lib/images.ts',()=>({}));
+const ordering=load('src/lib/dive-order.ts',()=>({}));
 const api=load('src/lib/dives.ts',name=>name.endsWith('/images')?{...images,prepareWebImage:async file=>file}:{supabase});
 for(const [raw,kind] of [['-1','depth'],['-1','duration'],['1.5','duration'],['1,5','temperature'],['NaN','temperature'],['Infinity','depth'],['1.22','temperature'],['2147483648','duration']])assert.throws(()=>api.parseDiveNumber(raw,'字段',kind));
 assert.equal(api.parseDiveNumber('-2.5','温度','temperature'),-2.5);assert.equal(api.parseDiveNumber('','温度','temperature'),null);assert.equal(api.parseDiveNumber('0','深度','depth'),0);
@@ -56,6 +57,7 @@ const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='@tanstack/react-query')return{useQuery:()=>({data:[],isError:false,isFetching:false,dataUpdatedAt:1,refetch:async()=>({})}),useQueryClient:()=>({setQueryData:()=>s.cache++,invalidateQueries:async()=>{}})};
  if(name==='sonner')return{toast:{error:()=>{},success:()=>{}}};
  if(name==='@/lib/images')return images;
+ if(name==='@/lib/dive-order')return ordering;
  if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:()=>{s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
  if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;

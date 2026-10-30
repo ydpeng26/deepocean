@@ -17,6 +17,7 @@ import {
 } from "@/lib/dives";
 import { assertSupportedWebImage, WEB_IMAGE_ACCEPT } from "@/lib/images";
 import { DiveMedia } from "@/components/DiveMedia";
+import { newestDivesFirst } from "@/lib/dive-order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -161,7 +162,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       if (dive) {
         queryClient.setQueryData(["dive", dive.id], savedDive);
         queryClient.setQueryData<Dive[]>(["dives"], (current) =>
-          current?.map((item) => (item.id === savedDive.id ? savedDive : item)),
+          current && newestDivesFirst(current.map((item) => (item.id === savedDive.id ? savedDive : item))),
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success(t("记录已更新"));
@@ -170,7 +171,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       } else {
         queryClient.setQueryData(["dive", savedDive.id], savedDive);
         queryClient.setQueryData<Dive[]>(["dives"], (current) =>
-          current ? [savedDive, ...current.filter((item) => item.id !== savedDive.id)] : current,
+          current ? newestDivesFirst([savedDive, ...current.filter((item) => item.id !== savedDive.id)]) : current,
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success(t("记录已保存"));

@@ -21,6 +21,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { diveNumbers } from "@/lib/dive-order";
 
 export const Route = createFileRoute("/_authenticated/dives/logs")({
   head: () => ({
@@ -96,6 +97,7 @@ const copy = {
 function DivePhoto({
   photo,
   index,
+  number,
   path,
   videoOnly,
   ownerId,
@@ -106,6 +108,7 @@ function DivePhoto({
 }: {
   photo: string | null;
   index: number;
+  number: number;
   path: string | null;
   videoOnly: boolean;
   ownerId: string;
@@ -144,7 +147,7 @@ function DivePhoto({
           className="h-full w-full"
         />
       </div>
-      <span>#{String(index + 1).padStart(3, "0")}</span>
+      <span>#{String(number).padStart(3, "0")}</span>
     </div>
   );
 }
@@ -160,6 +163,7 @@ function DiveLogsPage() {
     isError,
     refetch,
   } = useQuery({ queryKey: ["dives"], queryFn: listDives });
+  const numbers = useMemo(() => diveNumbers(dives), [dives]);
   const logPhotoPaths = useMemo(
     () => dives.map((dive) => diveCover(dive).path).filter((path): path is string => Boolean(path)),
     [dives],
@@ -336,6 +340,7 @@ function DiveLogsPage() {
                     </div>
                     <DivePhoto
                       index={index}
+                      number={numbers.get(dive.id)!}
                       path={diveCover(dive).path}
                       videoOnly={diveCover(dive).videoOnly}
                       ownerId={dive.user_id}
