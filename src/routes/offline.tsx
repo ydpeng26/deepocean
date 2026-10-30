@@ -439,6 +439,11 @@ function OfflinePage() {
                     />
                   </label>
                   <label>
+                    {language === "zh-CN" ? "入水时间（选填，潜点当地时间）" : "Entry time (optional, local time at dive site)"}
+                    <input type="time" step={60} value={fields.entry_time ?? ""}
+                      onChange={(e) => update("entry_time", e.target.value)} />
+                  </label>
+                  <label>
                     {t.weather}
                     <select
                       value={fields.weather}

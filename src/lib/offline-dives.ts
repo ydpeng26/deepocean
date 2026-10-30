@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { BuddyRole, DiveType } from "@/lib/dives";
+import { parseDiveEntryTime } from "@/lib/dive-order";
 
 const DATABASE_NAME = "supdiver-offline";
 const STORE_NAME = "dive-drafts";
@@ -9,6 +10,7 @@ export type OfflineDiveFields = {
   region: string;
   site_name: string;
   dive_date: string;
+  entry_time?: string;
   weather: string;
   surface_temp: string;
   water_temp: string;
@@ -47,7 +49,7 @@ function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
 
 function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
   return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
-    (key) => a[key] === b[key],
+    (key) => key === "entry_time" ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
   );
 }
 
@@ -90,6 +92,7 @@ export function emptyOfflineDive(): OfflineDiveFields {
     region: "",
     site_name: "",
     dive_date: localDate.toISOString().slice(0, 10),
+    entry_time: "",
     weather: "",
     surface_temp: "",
     water_temp: "",
@@ -160,6 +163,7 @@ export async function saveOfflineDive(
 ): Promise<OfflineDive> {
   const draft: OfflineDive = {
     ...fields,
+    entry_time: parseDiveEntryTime(fields.entry_time)?.slice(0, 5) ?? "",
     country: fields.country.trim().slice(0, 80),
     region: fields.region.trim().slice(0, 100),
     site_name: fields.site_name.trim().slice(0, 120),
@@ -278,6 +282,7 @@ async function performSync(
         region: draft.region || null,
         site_name: draft.site_name,
         dive_date: draft.dive_date,
+        entry_time: parseDiveEntryTime(draft.entry_time),
         weather: draft.weather || null,
         surface_temp: optionalNumber(draft.surface_temp),
         water_temp: optionalNumber(draft.water_temp),
@@ -303,7 +308,7 @@ async function performSync(
         const { data: existing, error: lookupError } = await supabase
           .from("dives")
           .select(
-            "id, country, region, site_name, dive_date, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
+            "id, country, region, site_name, dive_date, entry_time, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
           )
           .eq("id", draft.id)
           .eq("user_id", userId)
@@ -319,6 +324,7 @@ async function performSync(
           "region",
           "site_name",
           "dive_date",
+          "entry_time",
           "weather",
           "surface_temp",
           "water_temp",

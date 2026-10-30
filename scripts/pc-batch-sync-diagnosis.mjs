@@ -48,7 +48,7 @@ function api(label, locks) {
         rows.set(body.id, clone(body)); state.committed.push(body.id); await state.afterCommit?.(body); return { error: null };
       })().then(resolve, reject); } }; return q;
     } };
-  return { state, module: load('src/lib/offline-dives.ts', () => ({ supabase }), { indexedDB, navigator: { onLine: true, locks } }) };
+  return { state, module: load('src/lib/offline-dives.ts', name => name === '@/lib/dive-order' ? load('src/lib/dive-order.ts', () => ({})) : ({ supabase }), { indexedDB, navigator: { onLine: true, locks } }) };
 }
 const a = api('A'), b = api('B');
 const fields = { ...a.module.emptyOfflineDive(), country: 'Indonesia', site_name: 'SYNTHETIC-BATCH', notes: 'synthetic' };

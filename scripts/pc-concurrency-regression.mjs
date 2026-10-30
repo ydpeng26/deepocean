@@ -76,7 +76,7 @@ function query() {
 }
 const supabase = { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getUser: async () => ({ data: { user: { id: owner } } }),
   getSession: async () => ({ data: { session: { user: { id: owner } } } }) }, from: query };
-const offline = () => load('src/lib/offline-dives.ts', () => ({ supabase }), { indexedDB, navigator: { onLine: true } });
+const offline = () => load('src/lib/offline-dives.ts', name => name === '@/lib/dive-order' ? load('src/lib/dive-order.ts', () => ({})) : ({ supabase }), { indexedDB, navigator: { onLine: true } });
 const a = offline(), b = offline();
 const fields = { ...a.emptyOfflineDive(), country: 'Indonesia', site_name: 'SYNTHETIC', notes: 'base' };
 let initial = await a.saveOfflineDive(fields);
@@ -213,6 +213,7 @@ function onlineFormHarness() {
     if (name === '@tanstack/react-router') return { useNavigate: () => () => {} };
     if (name === '@tanstack/react-query') return { useQuery: () => ({ data: [] }), useQueryClient: () => ({ setQueryData() {}, invalidateQueries: async () => {} }) };
     if (name === 'sonner') return { toast: { error() {}, success() {} } };
+    if (name === '@/lib/dive-order') return load('src/lib/dive-order.ts', () => ({}));
     if (name === '@/lib/dives') return { ...dives, saveDive: async (...args) => { calls.push(args); throw Error('simulated conflict'); } };
     if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
   }).DiveForm;
@@ -230,3 +231,21 @@ assert.equal(onlineForm.calls[0][0].site_name, 'Unsaved online text');
 assert.equal(onlineForm.render().find(n => n.props.id === 'site').props.value, 'Unsaved online text');
 console.log('PASS: actual_online_form_keeps_mount_revision_after_background_refresh_and_retains_conflict_draft');
 console.log('AUDIT: local_regression_passed; real_browser_recovery_acceptance_not_run');
+
+// Entry-time roundtrip and old draft compatibility with actual IDB/sync module.
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const timedDraft=await a.saveOfflineDive({...fields,entry_time:'08:30'});
+assert.equal((await a.listOfflineDives())[0].entry_time,'08:30');
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.get(timedDraft.id).entry_time,'08:30:00');
+assert.equal(stored.size,0);
+stored.set(timedDraft.id,clone({...timedDraft,entry_time:'09:30'}));
+const mismatchedTime=await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(mismatchedTime.synced,0);assert.equal(mismatchedTime.failures.length,1);
+assert.equal(stored.size,1);assert.equal(rows.get(timedDraft.id).entry_time,'08:30:00');
+stored.clear();rows.clear();
+const oldDraft=await a.saveOfflineDive({...fields});delete oldDraft.entry_time;stored.set(oldDraft.id,clone(oldDraft));
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.get(oldDraft.id).entry_time,null);assert.equal(stored.size,0);
+await assert.rejects(a.saveOfflineDive({...fields,entry_time:'24:00'}));
+console.log('PASS: offline entry time survives save/read/sync, legacy drafts sync as null, invalid time rejected');

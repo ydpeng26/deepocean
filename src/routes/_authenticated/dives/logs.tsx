@@ -337,6 +337,7 @@ function DiveLogsPage() {
                       <strong>{parts.day}</strong>
                       <span>{parts.month}</span>
                       <small>{parts.year}</small>
+                      {dive.entry_time && <small>{dive.entry_time.slice(0, 5)}</small>}
                     </div>
                     <DivePhoto
                       index={index}

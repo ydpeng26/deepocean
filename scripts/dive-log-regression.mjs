@@ -48,7 +48,7 @@ assert.deepEqual(Array.from(await api.signedPhotoUrls(['a/missing.mp4','a/good.p
 console.log('PASS: immutable_retry_uploads_reuse_two_objects_oversized_video_rejected_and_signing_preserves_path_slots');
 
 function nodes(tree,out=[]){if(Array.isArray(tree))tree.forEach(item=>nodes(item,out));else if(tree&&typeof tree==='object'){if(tree.type)out.push(tree);nodes(tree.props?.children,out);}return out;}
-function formHarness(){let cursor=0;const cells=[],cleanups=[];let resolve,reject;const s={calls:0,cache:0,navigations:0,busy:[],tree:null};
+function formHarness(dive){let cursor=0;const cells=[],cleanups=[];let resolve,reject;const s={calls:0,payload:null,cache:0,navigations:0,busy:[],tree:null};
 const react={useRef(value){const i=cursor++;return cells[i]??={current:value};},useState(value){const i=cursor++;if(!(i in cells))cells[i]=typeof value==='function'?value():value;return[cells[i],v=>{cells[i]=typeof v==='function'?v(cells[i]):v;}];},useEffect(fn){const i=cursor++;if(!(i in cells)){cells[i]=true;cleanups.push(fn());}}};
 const jsx=(type,props)=>({type,props});
 const Component=load('src/components/DiveForm.tsx',name=>{
@@ -58,10 +58,10 @@ const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='sonner')return{toast:{error:()=>{},success:()=>{}}};
  if(name==='@/lib/images')return images;
  if(name==='@/lib/dive-order')return ordering;
- if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:()=>{s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
+ if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:(payload)=>{s.payload=payload;s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
  if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;
-s.render=()=>{cursor=0;s.tree=Component({onBusyChange:v=>s.busy.push(v)});return nodes(s.tree);};
+s.render=()=>{cursor=0;s.tree=Component({dive,onBusyChange:v=>s.busy.push(v)});return nodes(s.tree);};
 s.input=(id,value)=>s.render().find(n=>n.props.id===id).props.onChange({target:{value}});
 s.submit=()=>s.render().find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
 s.resolve=()=>resolve({...payload,id:'saved'});s.reject=()=>reject(Error('Synthetic'));s.unmount=()=>cleanups.forEach(fn=>fn?.());return s;}
@@ -73,3 +73,13 @@ console.log('PASS: real_form_synchronous_lock_disabled_fieldset_failure_draft_re
 s=formHarness();s.input('country','Indonesia');s.input('site','Retained draft');const selection={files:[{name:'camera.heic',type:'image/heic'}],value:'selected'};
 s.render().find(n=>n.props.id==='photos').props.onChange({target:selection});assert.equal(selection.value,'');assert.equal(s.render().find(n=>n.props.id==='site').props.value,'Retained draft');assert.equal(s.calls,0);
 console.log('PASS: actual_form_heic_rejected_at_selection_before_save_and_keeps_location_draft');
+
+s=formHarness();s.input('country','Indonesia');s.input('site','Timed dive');s.input('entry-time','08:30');
+const timedSubmit=s.submit();await tick();assert.equal(s.payload.entry_time,'08:30:00');s.resolve();await timedSubmit;
+s=formHarness();s.input('country','Indonesia');s.input('site','Untimed dive');const untimedSubmit=s.submit();await tick();assert.equal(s.payload.entry_time,null);s.resolve();await untimedSubmit;
+s=formHarness();s.input('country','Indonesia');s.input('site','Bad time');s.input('entry-time','24:00');await s.submit();assert.equal(s.calls,0);
+console.log('PASS: actual form saves canonical entry time, allows old untimed records and rejects invalid input before saving');
+
+s=formHarness({...payload,id:"editing",entry_time:"14:15:00",updated_at:"v1"});
+assert.equal(s.render().find(n=>n.props.id==="entry-time").props.value,"14:15");
+console.log("PASS: editing prefills saved entry time in minute format");

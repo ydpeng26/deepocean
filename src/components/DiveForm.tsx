@@ -17,7 +17,7 @@ import {
 } from "@/lib/dives";
 import { assertSupportedWebImage, WEB_IMAGE_ACCEPT } from "@/lib/images";
 import { DiveMedia } from "@/components/DiveMedia";
-import { newestDivesFirst } from "@/lib/dive-order";
+import { newestDivesFirst, parseDiveEntryTime } from "@/lib/dive-order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +60,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [diveDate, setDiveDate] = useState(
     dive?.dive_date ?? new Date().toISOString().slice(0, 10),
   );
+  const [entryTime, setEntryTime] = useState(dive?.entry_time?.slice(0, 5) ?? "");
   const [weather, setWeather] = useState(dive?.weather ?? "");
   const [surfaceTemp, setSurfaceTemp] = useState(dive?.surface_temp?.toString() ?? "");
   const [waterTemp, setWaterTemp] = useState(dive?.water_temp?.toString() ?? "");
@@ -122,6 +123,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     onBusyChange?.(true);
     try {
       const numeric = {
+        entry_time: parseDiveEntryTime(entryTime),
         surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
         water_temp: parseDiveNumber(waterTemp, t("水下温度"), "temperature"),
         max_depth: parseDiveNumber(maxDepth, t("最大深度"), "depth"),
@@ -251,6 +253,15 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 onChange={(e) => setDiveDate(e.target.value)}
                 className={field}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="entry-time">{t("入水时间（选填）")}</Label>
+              <Input id="entry-time" type="time" step={60} value={entryTime}
+                onChange={(e) => setEntryTime(e.target.value)} className={field}
+                aria-describedby="entry-time-help" />
+              <p id="entry-time-help" className="text-xs text-muted-foreground">
+                {t("填写潜点当地时间；未填时排在当天已填时间的记录之后。")}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t("当天天气")}</Label>

@@ -11,6 +11,7 @@ export type Dive = {
   region: string | null;
   site_name: string;
   dive_date: string;
+  entry_time?: string | null;
   weather: string | null;
   surface_temp: number | null;
   water_temp: number | null;
@@ -196,6 +197,7 @@ export async function listDives(): Promise<Dive[]> {
       .select("*", { count: "exact" })
       .eq("user_id", owner)
       .order("dive_date", { ascending: false })
+      .order("entry_time", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(offset, offset + pageSize - 1);
