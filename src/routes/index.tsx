@@ -47,6 +47,7 @@ function Landing() {
             <div className="do-card-meta"><p><MapPin />{copy.cardLocation}</p><p><CalendarDays />{copy.cardDate}</p></div>
             <div className="do-card-site"><span>{copy.cardSiteLabel}</span><strong>{copy.cardSite}</strong></div>
           </div>
+          <div className="flex items-center justify-between border-t border-white/10 px-6 py-3 text-sm"><span className="text-white/65">{language === "zh-CN" ? "潜水方式" : "Dive setting"}</span><strong className="text-white">{language === "zh-CN" ? "岸潜" : "Shore dive"}</strong></div>
           <div className="do-stats"><div><Gauge /><strong>32</strong><span>{copy.maxDepth} (m)</span></div><div><Timer /><strong>60</strong><span>{copy.diveTime} ({copy.unitMinutes})</span></div><div><Waves /><strong>Air</strong><span>{copy.gasType}</span></div></div>
         </section>
       </main>
