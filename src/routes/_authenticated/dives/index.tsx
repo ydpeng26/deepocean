@@ -1,3 +1,4 @@
+import { DiveAchievements } from "@/components/DiveAchievements";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -149,7 +150,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : dives.length}</strong></div>
             <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending || isError ? "—" : countries.length}</strong></div>
             <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
-            <div className="do-passport-identity-row"><span>{c.maxDepth}</span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong></div>
+            <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
             <div className="do-passport-identity-row"><span>{c.tanks}</span><strong>{profile?.tank_count ?? 0}</strong></div>
             <Link to={profileHref} className="do-passport-panel-link">{c.editProfile}<ChevronRight aria-hidden="true" /></Link>
           </section>

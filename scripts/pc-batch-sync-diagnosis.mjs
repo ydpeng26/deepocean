@@ -48,7 +48,7 @@ function api(label, locks) {
         rows.set(body.id, clone(body)); state.committed.push(body.id); await state.afterCommit?.(body); return { error: null };
       })().then(resolve, reject); } }; return q;
     } };
-  return { state, module: load('src/lib/offline-dives.ts', () => ({ supabase }), { indexedDB, navigator: { onLine: true, locks } }) };
+  return { state, module: load('src/lib/offline-dives.ts', name => name === '@/lib/dive-companions' ? load('src/lib/dive-companions.ts',()=>({})) : name === '@/lib/dive-order' ? load('src/lib/dive-order.ts', () => ({})) : ({ supabase }), { indexedDB, navigator: { onLine: true, locks } }) };
 }
 const a = api('A'), b = api('B');
 const fields = { ...a.module.emptyOfflineDive(), country: 'Indonesia', site_name: 'SYNTHETIC-BATCH', notes: 'synthetic' };
@@ -120,6 +120,7 @@ function workspace() {
     if (name === '@tanstack/react-query') return { useQueryClient: () => ({ invalidateQueries: async () => invalidations.push('invalidated') }) };
     if (name === '@/i18n/LanguageProvider') return { useLanguage: () => ({ language: 'zh-CN',toggleLanguage() {} }) };
     if (name === '@/integrations/supabase/client') return { supabase: { auth: { onAuthStateChange(callback) { authCallback = callback; return { data: { subscription: { unsubscribe() {} } } }; } } } };
+    if (name === '@/lib/dive-companions') return load('src/lib/dive-companions.ts',()=>({}));
     if (name === '@/lib/offline-dives') return { OfflineSyncBusy: a.module.OfflineSyncBusy, listOfflineDives: async () => [draft], syncOfflineDives: (_progress,opts) => { options=opts;return new Promise((resolve,reject) => { resolveSync = resolve; rejectSync=reject; }); } };
     return new Proxy({}, { get: (_,key) => key });
   }, { navigator: { onLine: true }, Blob, window: { confirm: () => true, addEventListener() {}, removeEventListener() {} } }).OfflineSyncWorkspace;

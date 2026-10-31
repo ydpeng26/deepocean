@@ -65,12 +65,15 @@ export type Database = {
       }
       dives: {
         Row: {
+          companions: Json | null
           buddy_name: string | null
           buddy_role: Database["public"]["Enums"]["buddy_role"] | null
           country: string
           region: string | null
           created_at: string
           dive_date: string
+          gas_type: string | null
+          entry_time: string | null
           dive_type: Database["public"]["Enums"]["dive_type"]
           duration_min: number | null
           id: string
@@ -86,12 +89,15 @@ export type Database = {
           weather: string | null
         }
         Insert: {
+          companions?: Json | null
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
           country: string
           region?: string | null
           created_at?: string
           dive_date: string
+          gas_type?: string | null
+          entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null
           id?: string
@@ -107,12 +113,15 @@ export type Database = {
           weather?: string | null
         }
         Update: {
+          companions?: Json | null
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
           country?: string
           region?: string | null
           created_at?: string
           dive_date?: string
+          gas_type?: string | null
+          entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null
           id?: string

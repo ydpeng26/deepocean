@@ -3,6 +3,10 @@ import { useLanguage, type Language } from "@/i18n/LanguageProvider";
 
 // Presentation only: persisted category/weather values and user text never change.
 export const liveEnglish: Record<string, string> = {
+  "入水时间（选填）": "Entry time (optional)",
+  "填写潜点当地时间；未填时排在当天已填时间的记录之后。": "Use local time at the dive site. Untimed dives follow timed dives in chronological numbering.",
+  "入水时间（潜点当地时间）": "Entry time (local time at dive site)",
+  "未填写": "Not recorded",
   "登录 · SupDiver": "Sign in · SupDiver",
   "无信号记录 · SupDiver": "Offline log · SupDiver",
   "离线草稿与同步 · SupDiver": "Offline drafts & sync · SupDiver",

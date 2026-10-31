@@ -1,3 +1,4 @@
+import { companionsText } from "@/lib/dive-companions";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +22,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
+import { diveNumbers } from "@/lib/dive-order";
 
 export const Route = createFileRoute("/_authenticated/dives/logs")({
   head: () => ({
@@ -96,6 +98,7 @@ const copy = {
 function DivePhoto({
   photo,
   index,
+  number,
   path,
   videoOnly,
   ownerId,
@@ -106,6 +109,7 @@ function DivePhoto({
 }: {
   photo: string | null;
   index: number;
+  number: number;
   path: string | null;
   videoOnly: boolean;
   ownerId: string;
@@ -144,7 +148,7 @@ function DivePhoto({
           className="h-full w-full"
         />
       </div>
-      <span>#{String(index + 1).padStart(3, "0")}</span>
+      <span>#{String(number).padStart(3, "0")}</span>
     </div>
   );
 }
@@ -160,6 +164,7 @@ function DiveLogsPage() {
     isError,
     refetch,
   } = useQuery({ queryKey: ["dives"], queryFn: listDives });
+  const numbers = useMemo(() => diveNumbers(dives), [dives]);
   const logPhotoPaths = useMemo(
     () => dives.map((dive) => diveCover(dive).path).filter((path): path is string => Boolean(path)),
     [dives],
@@ -203,6 +208,16 @@ function DiveLogsPage() {
       }),
     [country, dives, query],
   );
+  const years = useMemo(() => {
+    const groups = new Map<string, Dive[]>();
+    for (const dive of filtered) {
+      const year = dive.dive_date.slice(0, 4);
+      const group = groups.get(year) ?? [];
+      group.push(dive);
+      groups.set(year, group);
+    }
+    return [...groups.entries()].sort(([a], [b]) => b.localeCompare(a));
+  }, [filtered]);
   const totalMinutes = dives.reduce((sum, dive) => sum + (Number(dive.duration_min) || 0), 0);
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const dateParts = (value: string) => {
@@ -308,7 +323,7 @@ function DiveLogsPage() {
           </aside>
           <section className="do-logs-list" aria-live="polite">
             <div className="do-logs-year">
-              <span>{c.year}</span>
+              <span>{language === "zh-CN" ? "按年份浏览 · 点击展开" : "Browse by year · Click to expand"}</span>
               <i />
             </div>
             {isPending ? (
@@ -325,7 +340,15 @@ function DiveLogsPage() {
                 </button>
               </div>
             ) : filtered.length ? (
-              filtered.map((dive, index) => {
+              years.map(([year, yearDives]) => (
+                <details key={`${query.trim()}-${country}-${year}`} className="group rounded-2xl border border-white/15 p-4">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 py-2 text-lg font-semibold focus-visible:outline focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
+                    <ChevronRight aria-hidden="true" className="h-5 w-5 transition-transform group-open:rotate-90" />
+                    <span>{year}{language === "zh-CN" ? "年" : ""}</span>
+                    <span className="ml-auto text-sm font-normal opacity-70">{yearDives.length} {c.entries}</span>
+                  </summary>
+                  <div className="mt-4 grid gap-6">
+                  {yearDives.map((dive, index) => {
                 const parts = dateParts(dive.dive_date);
                 return (
                   <article className="do-log-entry" key={dive.id}>
@@ -333,9 +356,11 @@ function DiveLogsPage() {
                       <strong>{parts.day}</strong>
                       <span>{parts.month}</span>
                       <small>{parts.year}</small>
+                      {dive.entry_time && <small>{dive.entry_time.slice(0, 5)}</small>}
                     </div>
                     <DivePhoto
                       index={index}
+                      number={numbers.get(dive.id)!}
                       path={diveCover(dive).path}
                       videoOnly={diveCover(dive).videoOnly}
                       ownerId={dive.user_id}
@@ -387,7 +412,7 @@ function DiveLogsPage() {
                           {language === "en" ? "Create a keepsake" : "制作纪念卡"}
                         </Link>
                         <span>
-                          {c.guide} · {dive.buddy_name || "—"}
+                          {c.guide} · {companionsText(dive, language === "en")}
                         </span>
                         <Link to="/dives/$id" params={{ id: dive.id }}>
                           {c.view}
@@ -397,7 +422,10 @@ function DiveLogsPage() {
                     </div>
                   </article>
                 );
-              })
+                  })}
+                  </div>
+                </details>
+              ))
             ) : (
               <div className="do-logs-empty">
                 <Search aria-hidden="true" />

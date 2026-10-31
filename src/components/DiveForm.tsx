@@ -3,10 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  BUDDY_ROLE_LABELS,
   DIVE_TYPE_LABELS,
   WEATHER_OPTIONS,
-  type BuddyRole,
   type Dive,
   type DiveType,
   signedPhotoUrls,
@@ -17,6 +15,7 @@ import {
 } from "@/lib/dives";
 import { assertSupportedWebImage, WEB_IMAGE_ACCEPT } from "@/lib/images";
 import { DiveMedia } from "@/components/DiveMedia";
+import { newestDivesFirst, parseDiveEntryTime } from "@/lib/dive-order";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImagePlus, Upload, X } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
+import { readCompanions, companionFields } from "@/lib/dive-companions";
 import { useLiveCopy } from "@/i18n/liveCopy";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
 export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const t = useLiveCopy();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -59,14 +62,15 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [diveDate, setDiveDate] = useState(
     dive?.dive_date ?? new Date().toISOString().slice(0, 10),
   );
+  const [entryTime, setEntryTime] = useState(dive?.entry_time?.slice(0, 5) ?? "");
+  const [gasType, setGasType] = useState(dive?.gas_type ?? "");
   const [weather, setWeather] = useState(dive?.weather ?? "");
   const [surfaceTemp, setSurfaceTemp] = useState(dive?.surface_temp?.toString() ?? "");
   const [waterTemp, setWaterTemp] = useState(dive?.water_temp?.toString() ?? "");
   const [maxDepth, setMaxDepth] = useState(dive?.max_depth?.toString() ?? "");
   const [duration, setDuration] = useState(dive?.duration_min?.toString() ?? "");
   const [diveType, setDiveType] = useState<DiveType>(dive?.dive_type ?? "recreational");
-  const [buddyRole, setBuddyRole] = useState<BuddyRole | "">(dive?.buddy_role ?? "");
-  const [buddyName, setBuddyName] = useState(dive?.buddy_name ?? "");
+  const [companions, setCompanions] = useState(() => readCompanions(dive));
   const [notes, setNotes] = useState(dive?.notes ?? "");
   const [existingPaths, setExistingPaths] = useState<string[]>(dive?.photo_urls ?? []);
   const [existingThumbnailPaths, setExistingThumbnailPaths] = useState<string[]>(
@@ -120,7 +124,10 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     setSaving(true);
     onBusyChange?.(true);
     try {
+      if (gasType.trim().length > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
       const numeric = {
+        entry_time: parseDiveEntryTime(entryTime),
+        ...companionFields(companions),
         surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
         water_temp: parseDiveNumber(waterTemp, t("水下温度"), "temperature"),
         max_depth: parseDiveNumber(maxDepth, t("最大深度"), "depth"),
@@ -141,11 +148,10 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         region: region.trim().slice(0, 100) || null,
         site_name: siteName.trim().slice(0, 120),
         dive_date: diveDate,
+        gas_type: gasType.trim() || null,
         weather: weather || null,
         ...numeric,
         dive_type: diveType,
-        buddy_role: buddyRole === "" ? null : buddyRole,
-        buddy_name: buddyName.trim().slice(0, 80) || null,
         photo_urls: [...existingPaths, ...uploaded.photoPaths],
         photo_thumbnail_urls: [...existingThumbnailPaths, ...uploaded.thumbnailPaths],
         notes: notes.trim().slice(0, 2000) || null,
@@ -161,7 +167,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       if (dive) {
         queryClient.setQueryData(["dive", dive.id], savedDive);
         queryClient.setQueryData<Dive[]>(["dives"], (current) =>
-          current?.map((item) => (item.id === savedDive.id ? savedDive : item)),
+          current && newestDivesFirst(current.map((item) => (item.id === savedDive.id ? savedDive : item))),
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success(t("记录已更新"));
@@ -170,7 +176,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       } else {
         queryClient.setQueryData(["dive", savedDive.id], savedDive);
         queryClient.setQueryData<Dive[]>(["dives"], (current) =>
-          current ? [savedDive, ...current.filter((item) => item.id !== savedDive.id)] : current,
+          current ? newestDivesFirst([savedDive, ...current.filter((item) => item.id !== savedDive.id)]) : current,
         );
         void queryClient.invalidateQueries({ queryKey: ["dives"], refetchType: "inactive" });
         toast.success(t("记录已保存"));
@@ -250,6 +256,24 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 onChange={(e) => setDiveDate(e.target.value)}
                 className={field}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="entry-time">{t("入水时间（选填）")}</Label>
+              <Input id="entry-time" type="time" step={60} value={entryTime}
+                onChange={(e) => setEntryTime(e.target.value)} className={field}
+                aria-describedby="entry-time-help" />
+              <p id="entry-time-help" className="text-xs text-muted-foreground">
+                {t("填写潜点当地时间；未填时排在当天已填时间的记录之后。")}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gas-type">{language === "en" ? "Gas type (optional)" : "气体类型（选填）"}</Label>
+              <Input id="gas-type" list="gas-options" maxLength={80} value={gasType}
+                onChange={(e) => setGasType(e.target.value)} className={field}
+                placeholder={language === "en" ? "Choose or enter gas / mix" : "选择或填写气体／配比"} />
+              <datalist id="gas-options">
+                {["Air", "Nitrox", "Trimix", "Oxygen"].map(gas => <option key={gas} value={gas} />)}
+              </datalist>
             </div>
             <div className="space-y-2">
               <Label>{t("当天天气")}</Label>
@@ -337,31 +361,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>{t("潜伴身份")}</Label>
-              <Select value={buddyRole} onValueChange={(v) => setBuddyRole(v as BuddyRole)}>
-                <SelectTrigger className={field}>
-                  <SelectValue placeholder={t("教练 / 同伴")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(BUDDY_ROLE_LABELS) as BuddyRole[]).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {t(BUDDY_ROLE_LABELS[k])}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="buddy">{t("潜伴姓名")}</Label>
-              <Input
-                id="buddy"
-                value={buddyName}
-                onChange={(e) => setBuddyName(e.target.value)}
-                className={field}
-                maxLength={80}
-              />
-            </div>
+            <DiveCompanionsEditor value={companions} onChange={setCompanions} english={language === "en"} />
           </div>
         </section>
 
