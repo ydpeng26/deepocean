@@ -11,22 +11,22 @@ export function DiveAchievements({ dives, english, pending, error }: { dives: Di
     [english ? "Unique dive sites" : "到访潜点数", stats.siteCount],
     [english ? `${stats.currentYear} dives` : `${stats.currentYear} 年潜数`, stats.annualCount],
   ];
-  return <section className="rounded-2xl border border-white/15 bg-slate-950/40 p-5 text-white" aria-labelledby="dive-achievements-title">
-    <h2 id="dive-achievements-title" className="text-lg font-semibold">{english ? "My diving milestones" : "我的潜水里程碑"}</h2>
-    <p className="mt-2 text-sm text-slate-300">{english ? "Automatically calculated from saved dive logs." : "根据已保存的潜水日志自动统计。"}</p>
+  return <section className="do-passport-gear-panel p-5" aria-labelledby="dive-achievements-title">
+    <h2 id="dive-achievements-title" className="text-lg font-semibold text-[#e6f5ff]">{english ? "My diving milestones" : "我的潜水里程碑"}</h2>
+    <p className="mt-2 text-sm text-[#a9c8df]">{english ? "Automatically calculated from saved dive logs." : "根据已保存的潜水日志自动统计。"}</p>
     <dl className="my-5 grid grid-cols-2 gap-4">
-      {metrics.map(([label, value]) => <div key={label} className="rounded-xl bg-white/5 p-3"><dt className="text-xs text-slate-300">{label}</dt><dd className="mt-2 text-xl font-semibold">{unavailable ? "—" : value}</dd></div>)}
+      {metrics.map(([label, value]) => <div key={label} className="rounded-xl border border-[#84c5ee]/15 bg-[#011b37]/40 p-3"><dt className="text-xs text-[#a9c8df]">{label}</dt><dd className="mt-2 text-xl font-semibold text-[#80d0ff]">{unavailable ? "—" : value}</dd></div>)}
     </dl>
     {unavailable ? <p role="status">{error ? (english ? "Statistics unavailable. Please reload your logs." : "统计暂时无法加载，请重新加载日志。") : (english ? "Loading statistics…" : "正在读取统计…")}</p> : <>
-      <div className={`flex items-center gap-4 rounded-xl border p-4 ${stats.hundredUnlocked ? "border-amber-300/50 bg-amber-300/10 text-amber-200" : "border-white/10 text-slate-300"}`}>
+      <div className={`flex items-center gap-4 rounded-xl border p-4 ${stats.hundredUnlocked ? "border-[#80d0ff]/50 bg-[#80d0ff]/10 text-[#80d0ff]" : "border-[#84c5ee]/15 text-[#a9c8df]"}`}>
         <Award aria-hidden="true" className="h-12 w-12 shrink-0" />
         <div><h3 className="font-semibold">{english ? "100 dives badge" : "百潜成就勋章"}</h3>
           <p className="mt-1 text-sm">{stats.hundredUnlocked ? (english ? `Unlocked · ${stats.total} dives logged` : `已解锁 · 已记录 ${stats.total} 潜`) : (english ? `${stats.total} / 100 dives · ${100 - stats.total} to go` : `${stats.total} / 100 潜 · 距离解锁还差 ${100 - stats.total} 潜`)}</p>
-          <progress className="mt-2 h-2 w-full accent-amber-300" value={stats.progress} max={100} aria-label={english ? "Progress toward 100 dives" : "百潜成就进度"} />
+          <progress className="mt-2 h-2 w-full accent-[#80d0ff]" value={stats.progress} max={100} aria-label={english ? "Progress toward 100 dives" : "百潜成就进度"} />
         </div>
       </div>
       <details className="mt-4"><summary className="cursor-pointer py-2 text-sm">{english ? "Dives by year" : "查看历年潜数"}</summary>
-        {stats.years.length ? <dl className="grid grid-cols-2 gap-3 py-3">{stats.years.map(([year, count]) => <div key={year} className="flex justify-between gap-2"><dt>{year}</dt><dd>{count} {english ? "dives" : "潜"}</dd></div>)}</dl> : <p className="py-2 text-sm text-slate-300">{english ? "No dive logs yet." : "尚无潜水日志。"}</p>}
+        {stats.years.length ? <dl className="grid grid-cols-2 gap-3 py-3">{stats.years.map(([year, count]) => <div key={year} className="flex justify-between gap-2"><dt>{year}</dt><dd>{count} {english ? "dives" : "潜"}</dd></div>)}</dl> : <p className="py-2 text-sm text-[#a9c8df]">{english ? "No dive logs yet." : "尚无潜水日志。"}</p>}
       </details>
     </>}
   </section>;
