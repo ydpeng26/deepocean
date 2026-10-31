@@ -13,7 +13,9 @@ import {
   type OfflineDive,
   type OfflineDiveFields,
 } from "@/lib/offline-dives";
-import type { BuddyRole, DiveType } from "@/lib/dives";
+import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
+import { readCompanions } from "@/lib/dive-companions";
+import type { DiveType } from "@/lib/dives";
 
 const copy = {
   "zh-CN": {
@@ -521,25 +523,7 @@ function OfflinePage() {
                       <option value="technical">{t.technical}</option>
                     </select>
                   </label>
-                  <label>
-                    {t.role}
-                    <select
-                      value={fields.buddy_role}
-                      onChange={(e) => update("buddy_role", e.target.value as BuddyRole | "")}
-                    >
-                      <option value="">{t.noRole}</option>
-                      <option value="instructor">{t.instructor}</option>
-                      <option value="buddy">{t.buddyRole}</option>
-                    </select>
-                  </label>
-                  <label className="do-offline-span">
-                    {t.buddy}
-                    <input
-                      value={fields.buddy_name}
-                      onChange={(e) => update("buddy_name", e.target.value)}
-                      maxLength={80}
-                    />
-                  </label>
+                  <DiveCompanionsEditor value={readCompanions(fields)} onChange={people => update("companions", people)} english={language === "en"} />
                 </div>
               </section>
               <section>

@@ -25,7 +25,7 @@ function query(){let action='read',body,filters=[],range=null;const chain={
 const supabase={auth:{getSession:async()=>({data:{session:{user:{id:state.owner}}}})},from:query,storage:{from:()=>({upload:async(path)=>{if(state.objects.has(path))return{error:{statusCode:'409'}};state.objects.add(path);if(state.uploadLost){state.uploadLost=false;return{error:Error('Lost upload response')};}return{error:null};},createSignedUrls:async paths=>({data:paths.filter(p=>!p.includes('missing')).reverse().map(path=>({path,signedUrl:'signed:'+path})),error:null})})}};
 const images=load('src/lib/images.ts',()=>({}));
 const ordering=load('src/lib/dive-order.ts',()=>({}));
-const api=load('src/lib/dives.ts',name=>name.endsWith('/images')?{...images,prepareWebImage:async file=>file}:{supabase});
+const api=load('src/lib/dives.ts',name=>name==='@/lib/dive-companions'?load('src/lib/dive-companions.ts',()=>({})):name.endsWith('/images')?{...images,prepareWebImage:async file=>file}:{supabase});
 for(const [raw,kind] of [['-1','depth'],['-1','duration'],['1.5','duration'],['1,5','temperature'],['NaN','temperature'],['Infinity','depth'],['1.22','temperature'],['2147483648','duration']])assert.throws(()=>api.parseDiveNumber(raw,'字段',kind));
 assert.equal(api.parseDiveNumber('-2.5','温度','temperature'),-2.5);assert.equal(api.parseDiveNumber('','温度','temperature'),null);assert.equal(api.parseDiveNumber('0','深度','depth'),0);
 console.log('PASS: numeric_validation_preserves_valid_negative_temperature_rejects_malformed_negative_depth_and_fractional_duration');
@@ -57,9 +57,11 @@ const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='@tanstack/react-query')return{useQuery:()=>({data:[],isError:false,isFetching:false,dataUpdatedAt:1,refetch:async()=>({})}),useQueryClient:()=>({setQueryData:()=>s.cache++,invalidateQueries:async()=>{}})};
  if(name==='sonner')return{toast:{error:()=>{},success:()=>{}}};
  if(name==='@/lib/images')return images;
+ if(name==='@/lib/dive-companions')return load('src/lib/dive-companions.ts',()=>({}));
+ if(name==='@/i18n/LanguageProvider')return{useLanguage:()=>({language:'zh-CN'})};
  if(name==='@/lib/dive-order')return ordering;
  if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:(payload)=>{s.payload=payload;s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
- if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
+ if(name==="@/i18n/LanguageProvider")return{useLanguage:()=>({language:"zh-CN"})};if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;
 s.render=()=>{cursor=0;s.tree=Component({dive,onBusyChange:v=>s.busy.push(v)});return nodes(s.tree);};
 s.input=(id,value)=>s.render().find(n=>n.props.id===id).props.onChange({target:{value}});
@@ -83,3 +85,13 @@ console.log('PASS: actual form saves canonical entry time, allows old untimed re
 s=formHarness({...payload,id:"editing",entry_time:"14:15:00",updated_at:"v1"});
 assert.equal(s.render().find(n=>n.props.id==="entry-time").props.value,"14:15");
 console.log("PASS: editing prefills saved entry time in minute format");
+
+s=formHarness();s.input('country','Indonesia');s.input('site','Group dive');
+const group=[{name:'Buddy A',role:'buddy'},{name:'Buddy B',role:'buddy'},{name:'Guide A',role:'guide'},{name:'Guide B',role:'guide'}];
+s.render().find(n=>n.type==='DiveCompanionsEditor').props.onChange(group);
+const groupSave=s.submit();await tick();assert.equal(s.payload.companions.length,4);assert.equal(s.payload.companions[3].name,'Guide B');s.resolve();await groupSave;
+s=formHarness({...payload,id:'legacy',buddy_name:'Legacy buddy',buddy_role:'buddy',updated_at:'v'});
+assert.equal(s.render().find(n=>n.type==='DiveCompanionsEditor').props.value[0].name,'Legacy buddy');
+s.render().find(n=>n.type==='DiveCompanionsEditor').props.onChange([]);
+const removeSave=s.submit();await tick();assert.equal(s.payload.companions.length,0);assert.equal(s.payload.buddy_name,null);s.resolve();await removeSave;
+console.log('PASS: actual form saves multiple buddies/guides, prefills legacy person and clearing people clears legacy fields');

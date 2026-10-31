@@ -3,10 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  BUDDY_ROLE_LABELS,
   DIVE_TYPE_LABELS,
   WEATHER_OPTIONS,
-  type BuddyRole,
   type Dive,
   type DiveType,
   signedPhotoUrls,
@@ -30,12 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImagePlus, Upload, X } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
+import { readCompanions, companionFields } from "@/lib/dive-companions";
 import { useLiveCopy } from "@/i18n/liveCopy";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
 export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const t = useLiveCopy();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -67,8 +69,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [maxDepth, setMaxDepth] = useState(dive?.max_depth?.toString() ?? "");
   const [duration, setDuration] = useState(dive?.duration_min?.toString() ?? "");
   const [diveType, setDiveType] = useState<DiveType>(dive?.dive_type ?? "recreational");
-  const [buddyRole, setBuddyRole] = useState<BuddyRole | "">(dive?.buddy_role ?? "");
-  const [buddyName, setBuddyName] = useState(dive?.buddy_name ?? "");
+  const [companions, setCompanions] = useState(() => readCompanions(dive));
   const [notes, setNotes] = useState(dive?.notes ?? "");
   const [existingPaths, setExistingPaths] = useState<string[]>(dive?.photo_urls ?? []);
   const [existingThumbnailPaths, setExistingThumbnailPaths] = useState<string[]>(
@@ -124,6 +125,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     try {
       const numeric = {
         entry_time: parseDiveEntryTime(entryTime),
+        ...companionFields(companions),
         surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
         water_temp: parseDiveNumber(waterTemp, t("水下温度"), "temperature"),
         max_depth: parseDiveNumber(maxDepth, t("最大深度"), "depth"),
@@ -147,8 +149,6 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         weather: weather || null,
         ...numeric,
         dive_type: diveType,
-        buddy_role: buddyRole === "" ? null : buddyRole,
-        buddy_name: buddyName.trim().slice(0, 80) || null,
         photo_urls: [...existingPaths, ...uploaded.photoPaths],
         photo_thumbnail_urls: [...existingThumbnailPaths, ...uploaded.thumbnailPaths],
         notes: notes.trim().slice(0, 2000) || null,
@@ -349,31 +349,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>{t("潜伴身份")}</Label>
-              <Select value={buddyRole} onValueChange={(v) => setBuddyRole(v as BuddyRole)}>
-                <SelectTrigger className={field}>
-                  <SelectValue placeholder={t("教练 / 同伴")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(BUDDY_ROLE_LABELS) as BuddyRole[]).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {t(BUDDY_ROLE_LABELS[k])}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="buddy">{t("潜伴姓名")}</Label>
-              <Input
-                id="buddy"
-                value={buddyName}
-                onChange={(e) => setBuddyName(e.target.value)}
-                className={field}
-                maxLength={80}
-              />
-            </div>
+            <DiveCompanionsEditor value={companions} onChange={setCompanions} english={language === "en"} />
           </div>
         </section>
 

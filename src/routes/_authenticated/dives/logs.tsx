@@ -1,3 +1,4 @@
+import { companionsText } from "@/lib/dive-companions";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -393,7 +394,7 @@ function DiveLogsPage() {
                           {language === "en" ? "Create a keepsake" : "制作纪念卡"}
                         </Link>
                         <span>
-                          {c.guide} · {dive.buddy_name || "—"}
+                          {c.guide} · {companionsText(dive, language === "en")}
                         </span>
                         <Link to="/dives/$id" params={{ id: dive.id }}>
                           {c.view}

@@ -1,3 +1,4 @@
+import { companionsText } from "@/lib/dive-companions";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +10,6 @@ import { DiveForm } from "@/components/DiveForm";
 import { DiveMedia } from "@/components/DiveMedia";
 import { Button } from "@/components/ui/button";
 import {
-  BUDDY_ROLE_LABELS,
   DIVE_TYPE_LABELS,
   deleteDive,
   formatDate,
@@ -136,9 +136,7 @@ function DiveDetail() {
     ["潜水类型", DIVE_TYPE_LABELS[dive.dive_type]],
     [
       "潜伴",
-      [dive.buddy_role ? BUDDY_ROLE_LABELS[dive.buddy_role] : null, dive.buddy_name]
-        .filter(Boolean)
-        .join(" · ") || "—",
+      companionsText(dive, language === "en"),
     ],
   ];
 

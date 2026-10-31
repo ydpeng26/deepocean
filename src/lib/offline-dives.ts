@@ -1,3 +1,4 @@
+import { readCompanions, companionFields, normalizeCompanions, type DiveCompanion } from "@/lib/dive-companions";
 import { supabase } from "@/integrations/supabase/client";
 import type { BuddyRole, DiveType } from "@/lib/dives";
 import { parseDiveEntryTime } from "@/lib/dive-order";
@@ -19,6 +20,7 @@ export type OfflineDiveFields = {
   dive_type: DiveType;
   buddy_role: BuddyRole | "";
   buddy_name: string;
+  companions?: DiveCompanion[] | null;
   notes: string;
 };
 
@@ -49,7 +51,7 @@ function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
 
 function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
   return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
-    (key) => key === "entry_time" ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
+    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : key === "entry_time" ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
   );
 }
 
@@ -101,6 +103,7 @@ export function emptyOfflineDive(): OfflineDiveFields {
     dive_type: "recreational",
     buddy_role: "",
     buddy_name: "",
+    companions: null,
     notes: "",
   };
 }
@@ -163,6 +166,7 @@ export async function saveOfflineDive(
 ): Promise<OfflineDive> {
   const draft: OfflineDive = {
     ...fields,
+    companions: normalizeCompanions(readCompanions(fields)),
     entry_time: parseDiveEntryTime(fields.entry_time)?.slice(0, 5) ?? "",
     country: fields.country.trim().slice(0, 80),
     region: fields.region.trim().slice(0, 100),
@@ -289,8 +293,7 @@ async function performSync(
         max_depth: optionalNumber(draft.max_depth),
         duration_min: optionalNumber(draft.duration_min),
         dive_type: draft.dive_type,
-        buddy_role: draft.buddy_role || null,
-        buddy_name: draft.buddy_name || null,
+        ...companionFields(readCompanions(draft)),
         photo_urls: [],
         photo_thumbnail_urls: [],
         notes: draft.notes || null,
@@ -308,7 +311,7 @@ async function performSync(
         const { data: existing, error: lookupError } = await supabase
           .from("dives")
           .select(
-            "id, country, region, site_name, dive_date, entry_time, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, notes",
+            "id, country, region, site_name, dive_date, entry_time, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
           )
           .eq("id", draft.id)
           .eq("user_id", userId)
@@ -336,6 +339,7 @@ async function performSync(
           "notes",
         ] as const;
         if (
+          JSON.stringify(readCompanions(existing as unknown as OfflineDiveFields)) !== JSON.stringify(payload.companions) ||
           comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))
         ) {
           failures.push(`${draft.site_name}: 云端已有不同内容的记录，请先核对；本机草稿仍保留`);
