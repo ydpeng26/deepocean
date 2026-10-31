@@ -44,7 +44,8 @@ const page = load('src/routes/_authenticated/dives/logs.tsx', name => {
   if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
   if (name === '@tanstack/react-router') return { createFileRoute: () => o => o, useNavigate: () => () => {}, Link: 'Link' };
   if (name === '@tanstack/react-query') return { useQuery: ({ queryKey }) => ({ data: queryKey[0] === 'dives' ? rows : [], refetch: async () => {} }) };
-  if (name === '@/lib/dive-order') return ordering;
+  if (name === '@/lib/dive-companions') return load('src/lib/dive-companions.ts',()=>({}));
+    if (name === '@/lib/dive-order') return ordering;
   if (name === '@/lib/dives') return { diveCover: () => ({ path: null, videoOnly: false }) };
   if (name === '@/hooks/useProfile') return { useProfile: () => ({ profile: { id: 'synthetic' } }) };
   if (name === '@/i18n/LanguageProvider') return { useLanguage: () => ({ language: 'zh-CN' }) };
@@ -90,3 +91,19 @@ rows = newestDivesFirst([afternoon, morning, midnight]);
 assert.equal(displayed().join(','), '#003,#002,#001');
 search = 'morning'; assert.equal(displayed().join(','), '#002');
 console.log('PASS: entry time orders same-day logs, edits renumber, missing differs from midnight, minute validation and filtered UI');
+
+// Native details keep every year collapsed initially; numbering remains global.
+search = ''; country = 'all';
+rows = newestDivesFirst([fixture('old', '2024-06-01'), fixture('recent', '2026-01-01'), fixture('same-year', '2026-02-01')]);
+stateIndex = 0;
+let groups = nodes(page()).filter(n => n.type === 'details');
+assert.equal(groups.length, 2);
+assert.ok(groups.every(n => !n.props.open));
+assert.equal(nodes(groups[0]).filter(n => n.type === 'article').length, 2);
+assert.equal(nodes(groups[1]).filter(n => n.type === 'article').length, 1);
+assert.equal(displayed().join(','), '#003,#002,#001');
+search = 'old'; stateIndex = 0;
+groups = nodes(page()).filter(n => n.type === 'details');
+assert.equal(groups.length, 1);
+assert.equal(displayed().join(','), '#001');
+console.log('PASS: yearly collapsed groups contain all matching logs, newest year first, filters preserve global numbering');

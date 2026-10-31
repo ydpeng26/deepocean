@@ -208,6 +208,16 @@ function DiveLogsPage() {
       }),
     [country, dives, query],
   );
+  const years = useMemo(() => {
+    const groups = new Map<string, Dive[]>();
+    for (const dive of filtered) {
+      const year = dive.dive_date.slice(0, 4);
+      const group = groups.get(year) ?? [];
+      group.push(dive);
+      groups.set(year, group);
+    }
+    return [...groups.entries()].sort(([a], [b]) => b.localeCompare(a));
+  }, [filtered]);
   const totalMinutes = dives.reduce((sum, dive) => sum + (Number(dive.duration_min) || 0), 0);
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const dateParts = (value: string) => {
@@ -313,7 +323,7 @@ function DiveLogsPage() {
           </aside>
           <section className="do-logs-list" aria-live="polite">
             <div className="do-logs-year">
-              <span>{c.year}</span>
+              <span>{language === "zh-CN" ? "按年份浏览 · 点击展开" : "Browse by year · Click to expand"}</span>
               <i />
             </div>
             {isPending ? (
@@ -330,7 +340,15 @@ function DiveLogsPage() {
                 </button>
               </div>
             ) : filtered.length ? (
-              filtered.map((dive, index) => {
+              years.map(([year, yearDives]) => (
+                <details key={`${query.trim()}-${country}-${year}`} className="group rounded-2xl border border-white/15 p-4">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 py-2 text-lg font-semibold focus-visible:outline focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
+                    <ChevronRight aria-hidden="true" className="h-5 w-5 transition-transform group-open:rotate-90" />
+                    <span>{year}{language === "zh-CN" ? "年" : ""}</span>
+                    <span className="ml-auto text-sm font-normal opacity-70">{yearDives.length} {c.entries}</span>
+                  </summary>
+                  <div className="mt-4 grid gap-6">
+                  {yearDives.map((dive, index) => {
                 const parts = dateParts(dive.dive_date);
                 return (
                   <article className="do-log-entry" key={dive.id}>
@@ -404,7 +422,10 @@ function DiveLogsPage() {
                     </div>
                   </article>
                 );
-              })
+                  })}
+                  </div>
+                </details>
+              ))
             ) : (
               <div className="do-logs-empty">
                 <Search aria-hidden="true" />
