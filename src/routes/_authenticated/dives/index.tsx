@@ -1,3 +1,4 @@
+import { DiveAchievements } from "@/components/DiveAchievements";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -162,6 +163,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
               <div className="do-passport-summary-stats"><span><strong>{isPending || isError ? "—" : dives.length}</strong>{c.dives}</span><span><strong>{isPending || isError ? "—" : countries.length}</strong>{c.countries}</span><span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong>{c.underwater}</span><span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong>{c.maxDepth}</span></div>
             </div>
           </section>
+          <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
           <section className="do-passport-map-panel" aria-label={c.mapTitle}>
             <div className="do-passport-panel-heading"><span>03 / {c.mapTitle}</span><Compass aria-hidden="true" /></div>
             <div className="do-passport-map-layout">
