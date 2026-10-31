@@ -128,6 +128,7 @@ function DiveDetail() {
     ["潜点名称", dive.site_name],
     ["潜水日期", formatDate(dive.dive_date)],
     ["入水时间（潜点当地时间）", dive.entry_time?.slice(0, 5) ?? "未填写"],
+    ["气体类型", dive.gas_type || "未填写"],
     ["当天天气", dive.weather ?? "—"],
     ["水上温度", dive.surface_temp != null ? `${dive.surface_temp} °C` : "—"],
     ["水下温度", dive.water_temp != null ? `${dive.water_temp} °C` : "—"],

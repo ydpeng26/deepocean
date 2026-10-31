@@ -63,6 +63,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     dive?.dive_date ?? new Date().toISOString().slice(0, 10),
   );
   const [entryTime, setEntryTime] = useState(dive?.entry_time?.slice(0, 5) ?? "");
+  const [gasType, setGasType] = useState(dive?.gas_type ?? "");
   const [weather, setWeather] = useState(dive?.weather ?? "");
   const [surfaceTemp, setSurfaceTemp] = useState(dive?.surface_temp?.toString() ?? "");
   const [waterTemp, setWaterTemp] = useState(dive?.water_temp?.toString() ?? "");
@@ -123,6 +124,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     setSaving(true);
     onBusyChange?.(true);
     try {
+      if (gasType.trim().length > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
       const numeric = {
         entry_time: parseDiveEntryTime(entryTime),
         ...companionFields(companions),
@@ -146,6 +148,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         region: region.trim().slice(0, 100) || null,
         site_name: siteName.trim().slice(0, 120),
         dive_date: diveDate,
+        gas_type: gasType.trim() || null,
         weather: weather || null,
         ...numeric,
         dive_type: diveType,
@@ -262,6 +265,15 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               <p id="entry-time-help" className="text-xs text-muted-foreground">
                 {t("填写潜点当地时间；未填时排在当天已填时间的记录之后。")}
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gas-type">{language === "en" ? "Gas type (optional)" : "气体类型（选填）"}</Label>
+              <Input id="gas-type" list="gas-options" maxLength={80} value={gasType}
+                onChange={(e) => setGasType(e.target.value)} className={field}
+                placeholder={language === "en" ? "Choose or enter gas / mix" : "选择或填写气体／配比"} />
+              <datalist id="gas-options">
+                {["Air", "Nitrox", "Trimix", "Oxygen"].map(gas => <option key={gas} value={gas} />)}
+              </datalist>
             </div>
             <div className="space-y-2">
               <Label>{t("当天天气")}</Label>

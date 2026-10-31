@@ -13,6 +13,7 @@ export type Dive = {
   site_name: string;
   dive_date: string;
   entry_time?: string | null;
+  gas_type?: string | null;
   weather: string | null;
   surface_temp: number | null;
   water_temp: number | null;

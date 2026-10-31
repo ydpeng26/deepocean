@@ -446,6 +446,15 @@ function OfflinePage() {
                       onChange={(e) => update("entry_time", e.target.value)} />
                   </label>
                   <label>
+                    {language === "zh-CN" ? "气体类型（选填）" : "Gas type (optional)"}
+                    <input list="offline-gas-options" maxLength={80} value={fields.gas_type ?? ""}
+                      placeholder={language === "zh-CN" ? "选择或填写气体／配比" : "Choose or enter gas / mix"}
+                      onChange={(e) => update("gas_type", e.target.value)} />
+                    <datalist id="offline-gas-options">
+                      {["Air", "Nitrox", "Trimix", "Oxygen"].map(gas => <option key={gas} value={gas} />)}
+                    </datalist>
+                  </label>
+                  <label>
                     {t.weather}
                     <select
                       value={fields.weather}

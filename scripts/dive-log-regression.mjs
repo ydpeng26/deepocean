@@ -95,3 +95,11 @@ assert.equal(s.render().find(n=>n.type==='DiveCompanionsEditor').props.value[0].
 s.render().find(n=>n.type==='DiveCompanionsEditor').props.onChange([]);
 const removeSave=s.submit();await tick();assert.equal(s.payload.companions.length,0);assert.equal(s.payload.buddy_name,null);s.resolve();await removeSave;
 console.log('PASS: actual form saves multiple buddies/guides, prefills legacy person and clearing people clears legacy fields');
+
+s=formHarness();s.input('country','Indonesia');s.input('site','Gas test');s.input('gas-type',' Nitrox 32 ');
+const gasSave=s.submit();await tick();assert.equal(s.payload.gas_type,'Nitrox 32');s.resolve();await gasSave;
+s=formHarness({...payload,id:'gas-edit',gas_type:'Trimix 21/35',updated_at:'v'});
+assert.equal(s.render().find(n=>n.props.id==='gas-type').props.value,'Trimix 21/35');
+s.input('gas-type','');const clearGas=s.submit();await tick();assert.equal(s.payload.gas_type,null);s.resolve();await clearGas;
+s=formHarness();s.input('country','Indonesia');s.input('site','Invalid gas');s.input('gas-type','x'.repeat(81));await s.submit();assert.equal(s.calls,0);
+console.log('PASS: gas type saves trimmed mix, prefills editing, clears to null and validates length');

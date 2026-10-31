@@ -12,6 +12,7 @@ export type OfflineDiveFields = {
   site_name: string;
   dive_date: string;
   entry_time?: string;
+  gas_type?: string;
   weather: string;
   surface_temp: string;
   water_temp: string;
@@ -51,7 +52,7 @@ function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
 
 function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
   return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
-    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : key === "entry_time" ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
+    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : (key === "entry_time" || key === "gas_type") ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
   );
 }
 
@@ -95,6 +96,7 @@ export function emptyOfflineDive(): OfflineDiveFields {
     site_name: "",
     dive_date: localDate.toISOString().slice(0, 10),
     entry_time: "",
+    gas_type: "",
     weather: "",
     surface_temp: "",
     water_temp: "",
@@ -164,8 +166,10 @@ export async function saveOfflineDive(
   existingId?: string,
   options: { expected?: OfflineDive; requestId?: string } = {},
 ): Promise<OfflineDive> {
+  if ((fields.gas_type?.trim().length ?? 0) > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
   const draft: OfflineDive = {
     ...fields,
+    gas_type: fields.gas_type?.trim() ?? "",
     companions: normalizeCompanions(readCompanions(fields)),
     entry_time: parseDiveEntryTime(fields.entry_time)?.slice(0, 5) ?? "",
     country: fields.country.trim().slice(0, 80),
@@ -287,6 +291,7 @@ async function performSync(
         site_name: draft.site_name,
         dive_date: draft.dive_date,
         entry_time: parseDiveEntryTime(draft.entry_time),
+        gas_type: draft.gas_type?.trim() || null,
         weather: draft.weather || null,
         surface_temp: optionalNumber(draft.surface_temp),
         water_temp: optionalNumber(draft.water_temp),
@@ -311,7 +316,7 @@ async function performSync(
         const { data: existing, error: lookupError } = await supabase
           .from("dives")
           .select(
-            "id, country, region, site_name, dive_date, entry_time, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
+            "id, country, region, site_name, dive_date, entry_time, gas_type, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
           )
           .eq("id", draft.id)
           .eq("user_id", userId)
@@ -328,6 +333,7 @@ async function performSync(
           "site_name",
           "dive_date",
           "entry_time",
+          "gas_type",
           "weather",
           "surface_temp",
           "water_temp",

@@ -72,6 +72,7 @@ export type Database = {
           region: string | null
           created_at: string
           dive_date: string
+          gas_type: string | null
           entry_time: string | null
           dive_type: Database["public"]["Enums"]["dive_type"]
           duration_min: number | null
@@ -95,6 +96,7 @@ export type Database = {
           region?: string | null
           created_at?: string
           dive_date: string
+          gas_type?: string | null
           entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null
@@ -118,6 +120,7 @@ export type Database = {
           region?: string | null
           created_at?: string
           dive_date?: string
+          gas_type?: string | null
           entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null

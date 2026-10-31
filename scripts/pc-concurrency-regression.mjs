@@ -262,3 +262,13 @@ stored.set(teamDraft.id,clone({...teamDraft,companions:[...team,{name:'Added',ro
 const conflictTeam=await a.syncOfflineDives(undefined,{expectedUserId:owner});
 assert.equal(conflictTeam.failures.length,1);assert.equal(stored.size,1);assert.equal(rows.get(teamDraft.id).companions.length,3);
 console.log('PASS: all companions survive offline save/sync and changed team on retry retains draft without overwrite');
+
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const gasDraft=await a.saveOfflineDive({...fields,gas_type:' Nitrox 32 '});
+assert.equal((await a.listOfflineDives())[0].gas_type,'Nitrox 32');
+await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(gasDraft.id).gas_type,'Nitrox 32');
+stored.set(gasDraft.id,clone({...gasDraft,gas_type:'Air'}));
+const gasConflict=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(gasConflict.failures.length,1);assert.equal(stored.size,1);
+stored.clear();rows.clear();const legacyGas=await a.saveOfflineDive({...fields});delete legacyGas.gas_type;stored.set(legacyGas.id,clone(legacyGas));
+await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(legacyGas.id).gas_type,null);
+console.log('PASS: offline gas survives save and sync, changed retry retains draft, legacy empty gas syncs as null');
