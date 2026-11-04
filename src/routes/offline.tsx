@@ -13,7 +13,9 @@ import {
   type OfflineDive,
   type OfflineDiveFields,
 } from "@/lib/offline-dives";
-import type { BuddyRole, DiveType } from "@/lib/dives";
+import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
+import { readCompanions } from "@/lib/dive-companions";
+import type { DiveType } from "@/lib/dives";
 
 const copy = {
   "zh-CN": {
@@ -439,6 +441,20 @@ function OfflinePage() {
                     />
                   </label>
                   <label>
+                    {language === "zh-CN" ? "入水时间（选填，潜点当地时间）" : "Entry time (optional, local time at dive site)"}
+                    <input type="time" step={60} value={fields.entry_time ?? ""}
+                      onChange={(e) => update("entry_time", e.target.value)} />
+                  </label>
+                  <label>
+                    {language === "zh-CN" ? "气体类型（选填）" : "Gas type (optional)"}
+                    <input list="offline-gas-options" maxLength={80} value={fields.gas_type ?? ""}
+                      placeholder={language === "zh-CN" ? "选择或填写气体／配比" : "Choose or enter gas / mix"}
+                      onChange={(e) => update("gas_type", e.target.value)} />
+                    <datalist id="offline-gas-options">
+                      {["Air", "Nitrox", "Trimix", "Oxygen"].map(gas => <option key={gas} value={gas} />)}
+                    </datalist>
+                  </label>
+                  <label>
                     {t.weather}
                     <select
                       value={fields.weather}
@@ -516,25 +532,7 @@ function OfflinePage() {
                       <option value="technical">{t.technical}</option>
                     </select>
                   </label>
-                  <label>
-                    {t.role}
-                    <select
-                      value={fields.buddy_role}
-                      onChange={(e) => update("buddy_role", e.target.value as BuddyRole | "")}
-                    >
-                      <option value="">{t.noRole}</option>
-                      <option value="instructor">{t.instructor}</option>
-                      <option value="buddy">{t.buddyRole}</option>
-                    </select>
-                  </label>
-                  <label className="do-offline-span">
-                    {t.buddy}
-                    <input
-                      value={fields.buddy_name}
-                      onChange={(e) => update("buddy_name", e.target.value)}
-                      maxLength={80}
-                    />
-                  </label>
+                  <DiveCompanionsEditor value={readCompanions(fields)} onChange={people => update("companions", people)} english={language === "en"} />
                 </div>
               </section>
               <section>

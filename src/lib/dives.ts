@@ -1,3 +1,4 @@
+import { normalizeCompanions, type DiveCompanion } from "@/lib/dive-companions";
 import { supabase } from "@/integrations/supabase/client";
 import { assertSupportedWebImage, prepareWebImage } from "@/lib/images";
 
@@ -11,6 +12,8 @@ export type Dive = {
   region: string | null;
   site_name: string;
   dive_date: string;
+  entry_time?: string | null;
+  gas_type?: string | null;
   weather: string | null;
   surface_temp: number | null;
   water_temp: number | null;
@@ -19,6 +22,7 @@ export type Dive = {
   dive_type: DiveType;
   buddy_role: BuddyRole | null;
   buddy_name: string | null;
+  companions?: DiveCompanion[] | null;
   photo_urls: string[];
   photo_thumbnail_urls: string[];
   notes: string | null;
@@ -128,7 +132,11 @@ export async function saveDive(
   const confirm = (row: Dive) => {
     // Country aliases are canonicalized by the database trigger.
     const matches = Object.entries(payload).every(([key, value]) =>
-      key === "country"
+      key === "companions"
+        ? value == null
+          ? row.companions == null
+          : JSON.stringify(normalizeCompanions(row.companions ?? [])) === JSON.stringify(normalizeCompanions(value as DiveCompanion[]))
+        : key === "country"
         ? canonicalDiveCountry(row.country) === canonicalDiveCountry(payload.country)
         : JSON.stringify(row[key as keyof Dive]) === JSON.stringify(value),
     );
@@ -196,6 +204,7 @@ export async function listDives(): Promise<Dive[]> {
       .select("*", { count: "exact" })
       .eq("user_id", owner)
       .order("dive_date", { ascending: false })
+      .order("entry_time", { ascending: false, nullsFirst: true })
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(offset, offset + pageSize - 1);

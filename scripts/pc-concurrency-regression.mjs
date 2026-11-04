@@ -76,7 +76,7 @@ function query() {
 }
 const supabase = { auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }), getUser: async () => ({ data: { user: { id: owner } } }),
   getSession: async () => ({ data: { session: { user: { id: owner } } } }) }, from: query };
-const offline = () => load('src/lib/offline-dives.ts', () => ({ supabase }), { indexedDB, navigator: { onLine: true } });
+const offline = () => load('src/lib/offline-dives.ts', name => name === '@/lib/dive-companions' ? load('src/lib/dive-companions.ts',()=>({})) : name === '@/lib/dive-order' ? load('src/lib/dive-order.ts', () => ({})) : ({ supabase }), { indexedDB, navigator: { onLine: true } });
 const a = offline(), b = offline();
 const fields = { ...a.emptyOfflineDive(), country: 'Indonesia', site_name: 'SYNTHETIC', notes: 'base' };
 let initial = await a.saveOfflineDive(fields);
@@ -121,7 +121,7 @@ result = await a.syncOfflineDives(undefined, { expectedUserId: owner });
 assert.equal(result.synced, 1); assert.equal(stored.size, 0);
 await assert.rejects(b.saveOfflineDive(fields, initial.id, { expected: initial }), /Draft changed/);
 console.log('PASS: sync_preserves_inflight_edits_rejects_wrong_account_and_synced_draft_resurrection');
-const dives = load('src/lib/dives.ts', name => name.endsWith('/images') ? {} : { supabase });
+const dives = load('src/lib/dives.ts', name => name === '@/lib/dive-companions' ? load('src/lib/dive-companions.ts',()=>({})) : name.endsWith('/images') ? {} : { supabase });
 const payload = { user_id: owner, country: 'Indonesia', site_name: 'original', notes: 'original', photo_urls: [], photo_thumbnail_urls: [] };
 const base = { ...payload, id: 'synthetic-dive', updated_at: 'base' };
 rows.clear(); rows.set(base.id, clone(base));
@@ -157,9 +157,10 @@ function formHarness(initialItems = []) {
     if (name === '@tanstack/react-router') return { createFileRoute: () => config => ({ ...config, useSearch: () => initialItems.length ? { draft: initialItems[0].id } : {} }), Link: 'Link' };
     if (name === '@/i18n/LanguageProvider') return { useLanguage: () => ({ language, toggleLanguage() { language = 'en'; } }) };
     if (name === 'sonner') return { toast: { error: m => errors.push(m), success() {} } };
+    if (name === '@/lib/dive-companions') return load('src/lib/dive-companions.ts',()=>({}));
     if (name === '@/lib/offline-dives') return { ...a, listOfflineDives: async () => clone(initialItems),
       saveOfflineDive: (fields, id, options) => new Promise((resolve, reject) => pending.push({ fields: clone(fields), id, options, resolve, reject })) };
-    if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
+    if(name==="@/i18n/LanguageProvider")return{useLanguage:()=>({language:"zh-CN"})};if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
   }, { document: { getElementById: () => null }, window: { confirm: () => true } }).Route;
   const h = { pending, errors, render() { cursor = 0; return nodes(route.component()); },
     input(index, value) { h.render().filter(n => n.type === 'input')[index].props.onChange({ target: { value } }); },
@@ -213,8 +214,10 @@ function onlineFormHarness() {
     if (name === '@tanstack/react-router') return { useNavigate: () => () => {} };
     if (name === '@tanstack/react-query') return { useQuery: () => ({ data: [] }), useQueryClient: () => ({ setQueryData() {}, invalidateQueries: async () => {} }) };
     if (name === 'sonner') return { toast: { error() {}, success() {} } };
+    if (name === '@/lib/dive-companions') return load('src/lib/dive-companions.ts',()=>({}));
+    if (name === '@/lib/dive-order') return load('src/lib/dive-order.ts', () => ({}));
     if (name === '@/lib/dives') return { ...dives, saveDive: async (...args) => { calls.push(args); throw Error('simulated conflict'); } };
-    if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
+    if(name==="@/i18n/LanguageProvider")return{useLanguage:()=>({language:"zh-CN"})};if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({}, { get: (_, k) => k });
   }).DiveForm;
   const render = () => { cursor = 0; return nodes(Component({ dive: currentDive })); };
   return { calls, render, effects, refresh() { currentDive = { ...currentDive, updated_at: 'background-new-version', notes: 'background value' }; } };
@@ -230,3 +233,42 @@ assert.equal(onlineForm.calls[0][0].site_name, 'Unsaved online text');
 assert.equal(onlineForm.render().find(n => n.props.id === 'site').props.value, 'Unsaved online text');
 console.log('PASS: actual_online_form_keeps_mount_revision_after_background_refresh_and_retains_conflict_draft');
 console.log('AUDIT: local_regression_passed; real_browser_recovery_acceptance_not_run');
+
+// Entry-time roundtrip and old draft compatibility with actual IDB/sync module.
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const timedDraft=await a.saveOfflineDive({...fields,entry_time:'08:30'});
+assert.equal((await a.listOfflineDives())[0].entry_time,'08:30');
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.get(timedDraft.id).entry_time,'08:30:00');
+assert.equal(stored.size,0);
+stored.set(timedDraft.id,clone({...timedDraft,entry_time:'09:30'}));
+const mismatchedTime=await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(mismatchedTime.synced,0);assert.equal(mismatchedTime.failures.length,1);
+assert.equal(stored.size,1);assert.equal(rows.get(timedDraft.id).entry_time,'08:30:00');
+stored.clear();rows.clear();
+const oldDraft=await a.saveOfflineDive({...fields});delete oldDraft.entry_time;stored.set(oldDraft.id,clone(oldDraft));
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.get(oldDraft.id).entry_time,null);assert.equal(stored.size,0);
+await assert.rejects(a.saveOfflineDive({...fields,entry_time:'24:00'}));
+console.log('PASS: offline entry time survives save/read/sync, legacy drafts sync as null, invalid time rejected');
+
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const team=[{name:'Buddy 1',role:'buddy'},{name:'Buddy 2',role:'buddy'},{name:'Guide',role:'guide'}];
+const teamDraft=await a.saveOfflineDive({...fields,companions:team});
+assert.equal((await a.listOfflineDives())[0].companions.length,3);
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.get(teamDraft.id).companions.length,3);
+stored.set(teamDraft.id,clone({...teamDraft,companions:[...team,{name:'Added',role:'buddy'}]}));
+const conflictTeam=await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(conflictTeam.failures.length,1);assert.equal(stored.size,1);assert.equal(rows.get(teamDraft.id).companions.length,3);
+console.log('PASS: all companions survive offline save/sync and changed team on retry retains draft without overwrite');
+
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const gasDraft=await a.saveOfflineDive({...fields,gas_type:' Nitrox 32 '});
+assert.equal((await a.listOfflineDives())[0].gas_type,'Nitrox 32');
+await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(gasDraft.id).gas_type,'Nitrox 32');
+stored.set(gasDraft.id,clone({...gasDraft,gas_type:'Air'}));
+const gasConflict=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(gasConflict.failures.length,1);assert.equal(stored.size,1);
+stored.clear();rows.clear();const legacyGas=await a.saveOfflineDive({...fields});delete legacyGas.gas_type;stored.set(legacyGas.id,clone(legacyGas));
+await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(legacyGas.id).gas_type,null);
+console.log('PASS: offline gas survives save and sync, changed retry retains draft, legacy empty gas syncs as null');
