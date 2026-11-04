@@ -73,6 +73,8 @@ export type Database = {
           created_at: string
           dive_date: string
           gas_type: string | null
+          count_tank: boolean
+          used_gear_ids: string[]
           entry_time: string | null
           dive_type: Database["public"]["Enums"]["dive_type"]
           duration_min: number | null
@@ -97,6 +99,8 @@ export type Database = {
           created_at?: string
           dive_date: string
           gas_type?: string | null
+          count_tank?: boolean
+          used_gear_ids?: string[]
           entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null
@@ -121,6 +125,8 @@ export type Database = {
           created_at?: string
           dive_date?: string
           gas_type?: string | null
+          count_tank?: boolean
+          used_gear_ids?: string[]
           entry_time?: string | null
           dive_type?: Database["public"]["Enums"]["dive_type"]
           duration_min?: number | null

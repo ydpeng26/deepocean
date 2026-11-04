@@ -33,6 +33,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
 import { readCompanions, companionFields } from "@/lib/dive-companions";
 import { useLiveCopy } from "@/i18n/liveCopy";
+import { listGear } from "@/lib/gear";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
@@ -75,6 +76,10 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [diveType, setDiveType] = useState<DiveType>(dive?.dive_type ?? "recreational");
   const [companions, setCompanions] = useState(() => readCompanions(dive));
   const [notes, setNotes] = useState(dive?.notes ?? "");
+  const [countTank, setCountTank] = useState(dive?.count_tank ?? false);
+  const [usedGearIds, setUsedGearIds] = useState<string[]>(dive?.used_gear_ids ?? []);
+  const gearQuery = useQuery({ queryKey: ["gear"], queryFn: listGear });
+  const gear = gearQuery.data ?? [];
   const [existingPaths, setExistingPaths] = useState<string[]>(dive?.photo_urls ?? []);
   const [existingThumbnailPaths, setExistingThumbnailPaths] = useState<string[]>(
     (dive?.photo_urls ?? []).map((_, index) => dive?.photo_thumbnail_urls?.[index] ?? ""),
@@ -130,6 +135,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       setDiveType(previous.dive_type);
       setCompanions(readCompanions(previous));
       setNotes(previous.notes ?? "");
+      setCountTank(false);
+      setUsedGearIds([]);
       setExistingPaths([]);
       setExistingThumbnailPaths([]);
       setNewFiles([]);
@@ -206,6 +213,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         photo_urls: [...existingPaths, ...uploaded.photoPaths],
         photo_thumbnail_urls: [...existingThumbnailPaths, ...uploaded.thumbnailPaths],
         notes: notes.trim().slice(0, 2000) || null,
+        count_tank: countTank,
+        used_gear_ids: [...new Set(usedGearIds)].sort(),
       };
 
       const savedDive = await saveDive(
@@ -215,6 +224,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         editRevision.current,
       );
       if (!alive.current) return;
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+      void queryClient.invalidateQueries({ queryKey: ["gear"] });
       if (dive) {
         queryClient.setQueryData(["dive", dive.id], savedDive);
         queryClient.setQueryData<Dive[]>(["dives"], (current) =>
@@ -537,6 +548,12 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           </div>
         </section>
 
+        <section className="space-y-4 border-t border-border pt-8">
+          <h2 className="text-sm font-semibold">{language === "en" ? "Update my counters" : "联动累计次数"}</h2>
+          <label className="flex items-center gap-3 text-sm"><input id="count-tank" type="checkbox" checked={countTank} onChange={e => setCountTank(e.target.checked)} />{language === "en" ? "Add 1 to my tank count" : "计入累计瓶数（本潜 +1）"}</label>
+          <p className="text-xs text-muted-foreground">{language === "en" ? "Select equipment used on this dive. Each item adds 1 use. Editing or deleting this log adjusts its contribution automatically." : "勾选本潜使用的装备，每件累计 1 次。修改勾选或删除日志时，会自动调整本条日志产生的次数。"}</p>
+          {gearQuery.isError ? <button type="button" className="text-sm text-primary" onClick={() => gearQuery.refetch()}>{language === "en" ? "Equipment unavailable · Retry" : "装备读取失败，点击重试"}</button> : gearQuery.isPending ? <p className="text-xs">{language === "en" ? "Loading equipment…" : "正在读取装备…"}</p> : gear.length ? <div className="grid gap-3 sm:grid-cols-2">{gear.map(item => <label key={item.id} className="flex items-center gap-3 text-sm"><input type="checkbox" aria-label={[item.brand,item.model].filter(Boolean).join(" ") || item.category} checked={usedGearIds.includes(item.id)} onChange={e => setUsedGearIds(ids => e.target.checked ? [...ids,item.id] : ids.filter(id => id !== item.id))} />{[item.brand,item.model].filter(Boolean).join(" ") || item.category}</label>)}</div> : <p className="text-xs text-muted-foreground">{language === "en" ? "Add equipment under My Gear first." : "请先在“我的装备”添加装备，再选择本潜使用的装备。"}</p>}
+        </section>
         <div className="flex gap-3 border-t border-border pt-8">
           <Button type="submit" disabled={saving} className="rounded-none px-8">
             {saving ? t("保存中…") : t("保存记录")}

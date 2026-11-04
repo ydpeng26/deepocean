@@ -79,6 +79,8 @@ function DiveDetail() {
     if (!confirm("确定删除这条潜水记录吗？")) return;
     try {
       await deleteDive(id);
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["gear"] });
       await queryClient.invalidateQueries({ queryKey: ["dives"] });
       toast.success("已删除");
       navigate({ to: "/dives" });
