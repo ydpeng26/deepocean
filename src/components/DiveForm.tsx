@@ -12,6 +12,7 @@ import {
   parseDiveNumber,
   requireDiveOwner,
   saveDive,
+  listDives,
 } from "@/lib/dives";
 import { assertSupportedWebImage, WEB_IMAGE_ACCEPT } from "@/lib/images";
 import { DiveMedia } from "@/components/DiveMedia";
@@ -41,6 +42,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const copyingRef = useRef(false);
   const savingRef = useRef(false);
   const alive = useRef(true);
   const owner = useRef<Promise<string> | null>(null);
@@ -93,9 +96,57 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const mediaInput = useRef<HTMLInputElement>(null);
 
+  async function copyPrevious() {
+    if (dive || savingRef.current || copyingRef.current) return;
+    if (!window.confirm(language === "en"
+      ? "Replace the form with your last saved dive? Photos and videos are not copied. Review the time and other details before saving."
+      : "将用最近录入的日志替换当前表单内容，不复制照片和视频。请核对入水时间等信息后再保存。")) return;
+    copyingRef.current = true;
+    setCopying(true);
+    onBusyChange?.(true);
+    try {
+      const expectedOwner = await owner.current!;
+      await requireDiveOwner(expectedOwner);
+      const history = await listDives();
+      await requireDiveOwner(expectedOwner);
+      if (!alive.current) return;
+      const previous = history.filter(row => row.user_id === expectedOwner)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id))[0];
+      if (!previous) {
+        toast.error(language === "en" ? "No saved dive to copy yet." : "还没有可复制的潜水日志。");
+        return;
+      }
+      setCountry(previous.country);
+      setRegion(previous.region ?? "");
+      setSiteName(previous.site_name);
+      setDiveDate(previous.dive_date);
+      setEntryTime(previous.entry_time?.slice(0, 5) ?? "");
+      setGasType(previous.gas_type ?? "");
+      setWeather(previous.weather ?? "");
+      setSurfaceTemp(previous.surface_temp?.toString() ?? "");
+      setWaterTemp(previous.water_temp?.toString() ?? "");
+      setMaxDepth(previous.max_depth?.toString() ?? "");
+      setDuration(previous.duration_min?.toString() ?? "");
+      setDiveType(previous.dive_type);
+      setCompanions(readCompanions(previous));
+      setNotes(previous.notes ?? "");
+      setExistingPaths([]);
+      setExistingThumbnailPaths([]);
+      setNewFiles([]);
+      if (mediaInput.current) mediaInput.current.value = "";
+      requestId.current = crypto.randomUUID();
+      toast.success(language === "en" ? "Copied. Review the details, then save as a new dive." : "已复制，请修改并核对信息后保存为新日志。");
+    } catch {
+      if (alive.current) toast.error(language === "en" ? "Could not copy. Check your connection and account, then retry." : "复制失败，请检查网络和登录账号后重试。");
+    } finally {
+      copyingRef.current = false;
+      if (alive.current) { setCopying(false); onBusyChange?.(false); }
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (savingRef.current) return;
+    if (savingRef.current || copyingRef.current) return;
     const knownRegionCountries: Record<string, string> = {
       komodo: "Indonesia",
       科莫多: "Indonesia",
@@ -197,7 +248,13 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-      <fieldset disabled={saving} className="min-w-0 space-y-10" aria-busy={saving}>
+      <fieldset disabled={saving || copying} className="min-w-0 space-y-10" aria-busy={saving || copying}>
+        {!dive && <div className="space-y-2 rounded-xl border border-border p-4">
+          <Button type="button" variant="outline" onClick={copyPrevious}>
+            {copying ? (language === "en" ? "Copying…" : "正在复制…") : (language === "en" ? "Copy previous dive" : "复制上一条")}
+          </Button>
+          <p className="text-xs text-muted-foreground">{language === "en" ? "Use your most recently entered log as a starting point. Review date, time and dive details; photos and videos are not copied." : "复制最近录入的日志，核对日期、入水时间和本潜信息后保存；照片和视频需重新添加。"}</p>
+        </div>}
         <section className="space-y-6">
           <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {t("地点与时间")}

@@ -7,7 +7,7 @@ import ts from 'typescript';
 function load(path, require) {
   const code = ts.transpileModule(fs.readFileSync(new URL('../'+path,import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const module={exports:{}};
-  vm.runInNewContext(code,{module,exports:module.exports,require,crypto:webcrypto,Uint8Array,fetch(){throw Error('Network forbidden');}});
+  vm.runInNewContext(code,{module,exports:module.exports,require,crypto:webcrypto,Uint8Array,window:{confirm:()=>true},fetch(){throw Error('Network forbidden');}});
   return module.exports;
 }
 const state={owner:'a',rows:[],writes:0,lost:false,readFailPage:-1,changePage:-1,pages:[],objects:new Set(),uploadLost:false};
@@ -60,7 +60,7 @@ const Component=load('src/components/DiveForm.tsx',name=>{
  if(name==='@/lib/dive-companions')return load('src/lib/dive-companions.ts',()=>({}));
  if(name==='@/i18n/LanguageProvider')return{useLanguage:()=>({language:'zh-CN'})};
  if(name==='@/lib/dive-order')return ordering;
- if(name==='@/lib/dives')return{...api,requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:(payload)=>{s.payload=payload;s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
+ if(name==='@/lib/dives')return{...api,listDives:async()=>{if(s.copyError)throw Error('Unavailable');return s.history??[];},requireDiveOwner:async()=> 'a',signedPhotoUrls:async()=>[],saveDive:(payload)=>{s.payload=payload;s.calls++;return new Promise((a,b)=>{resolve=a;reject=b;});}};
  if(name==="@/i18n/LanguageProvider")return{useLanguage:()=>({language:"zh-CN"})};if(name==="@/i18n/liveCopy")return{useLiveCopy:()=>x=>x};if(name==="@/hooks/useModalFocus")return{useModalFocus(){}};return new Proxy({},{get:(_,key)=>key});
 }).DiveForm;
 s.render=()=>{cursor=0;s.tree=Component({dive,onBusyChange:v=>s.busy.push(v)});return nodes(s.tree);};
@@ -103,3 +103,13 @@ assert.equal(s.render().find(n=>n.props.id==='gas-type').props.value,'Trimix 21/
 s.input('gas-type','');const clearGas=s.submit();await tick();assert.equal(s.payload.gas_type,null);s.resolve();await clearGas;
 s=formHarness();s.input('country','Indonesia');s.input('site','Invalid gas');s.input('gas-type','x'.repeat(81));await s.submit();assert.equal(s.calls,0);
 console.log('PASS: gas type saves trimmed mix, prefills editing, clears to null and validates length');
+
+s=formHarness();s.input('site','Current input');
+const copyButton=()=>s.render().find(n=>n.props.onClick?.name==='copyPrevious');
+s.copyError=true;await copyButton().props.onClick();assert.equal(s.render().find(n=>n.props.id==='site').props.value,'Current input');
+s.copyError=false;s.history=[];await copyButton().props.onClick();assert.equal(s.render().find(n=>n.props.id==='site').props.value,'Current input');
+s.history=[{...payload,id:'older',user_id:'a',created_at:'2026-10-30',site_name:'Older'}, {...payload,id:'source',user_id:'a',created_at:'2026-11-01',dive_date:'2025-01-02',site_name:'Last entered',gas_type:'Nitrox 32',entry_time:'09:30:00',companions:[{name:'Guide A',role:'guide'}],photo_urls:['old.jpg'],photo_thumbnail_urls:['thumb.jpg']}];
+await copyButton().props.onClick();assert.equal(s.calls,0);assert.equal(s.render().find(n=>n.props.id==='site').props.value,'Last entered');
+const copiedSave=s.submit();await tick();assert.equal(s.payload.dive_date,'2025-01-02');assert.equal(s.payload.gas_type,'Nitrox 32');assert.equal(s.payload.entry_time,'09:30:00');assert.equal(s.payload.companions[0].name,'Guide A');assert.equal(s.payload.photo_urls.length,0);assert.notEqual(s.payload.id,'source');s.resolve();await copiedSave;
+s=formHarness({...payload,id:'edit',updated_at:'v'});assert.equal(copyButton(),undefined);
+console.log('PASS: copy uses last entered log, preserves inputs on failure/empty history, copies fields without media, saves a distinct log, and is absent during editing');
