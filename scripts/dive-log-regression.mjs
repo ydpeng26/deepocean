@@ -113,3 +113,14 @@ await copyButton().props.onClick();assert.equal(s.calls,0);assert.equal(s.render
 const copiedSave=s.submit();await tick();assert.equal(s.payload.dive_date,'2025-01-02');assert.equal(s.payload.gas_type,'Nitrox 32');assert.equal(s.payload.entry_time,'09:30:00');assert.equal(s.payload.companions[0].name,'Guide A');assert.equal(s.payload.photo_urls.length,0);assert.notEqual(s.payload.id,'source');s.resolve();await copiedSave;
 s=formHarness({...payload,id:'edit',updated_at:'v'});assert.equal(copyButton(),undefined);
 console.log('PASS: copy uses last entered log, preserves inputs on failure/empty history, copies fields without media, saves a distinct log, and is absent during editing');
+
+s=formHarness();s.input('country','Indonesia');s.input('site','Counter opt-in');
+s.render().find(n=>n.props.id==='count-tank').props.onChange({target:{checked:true}});
+const counterSave=s.submit();await tick();assert.equal(s.payload.count_tank,true);assert.equal(s.payload.used_gear_ids.length,0);s.resolve();await counterSave;
+s=formHarness({...payload,id:'linked',updated_at:'v',count_tank:true,used_gear_ids:['gear-2','gear-1','gear-1']});
+assert.equal(s.render().find(n=>n.props.id==='count-tank').props.checked,true);
+const linkedSave=s.submit();await tick();assert.equal(s.payload.used_gear_ids.join(','),'gear-1,gear-2');s.resolve();await linkedSave;
+s=formHarness();s.history=[{...payload,id:'source',created_at:'2026-11-01',user_id:'a',count_tank:true,used_gear_ids:['gear-1']}];
+await s.render().find(n=>n.props.onClick?.name==='copyPrevious').props.onClick();
+assert.equal(s.render().find(n=>n.props.id==='count-tank').props.checked,false);
+console.log('PASS: counters are opt-in, edit preserves equipment links with canonical IDs, and copy resets contribution');
