@@ -25,12 +25,6 @@ export function MainNavigation() {
       active: pathname.startsWith("/marine"),
     },
     {
-      to: "/profile",
-      zh: "个人资料",
-      en: "Profile",
-      active: pathname.startsWith("/profile") || pathname.startsWith("/certificates"),
-    },
-    {
       to: "/feedback",
       zh: "联系我们",
       en: "Contact us",

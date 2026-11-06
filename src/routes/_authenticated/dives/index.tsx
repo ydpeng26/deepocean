@@ -1,4 +1,6 @@
 import { DiveAchievements } from "@/components/DiveAchievements";
+import "@/components/passport-profile.css";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -144,7 +146,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
       <div className="do-passport-columns">
         <aside className="do-passport-profile-column" aria-label={c.identity}>
           <section className="do-passport-identity" aria-label={c.identity}>
-            <div className="do-passport-panel-heading"><span className="do-passport-serial">SUPDIVER / 01</span></div>
+            <div className="do-passport-panel-heading"><Link to={profileHref} className="do-passport-profile-edit"><Pencil aria-hidden="true" />{c.navProfile}</Link><span className="do-passport-serial">SUPDIVER / 01</span></div>
             <div className="do-passport-identity-person"><Avatar className="do-passport-profile-avatar"><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback className="do-passport-profile-avatar-fallback">{name.slice(0, 1)}</AvatarFallback></Avatar><div><h2 id="passport-identity-title">{name}</h2>{profile?.bio && <p className="do-passport-profile-bio">{profile.bio}</p>}</div></div>
             <PassportCommunityStats ownerId={liveProfile?.id} preview={preview} />
             <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : dives.length}</strong></div>
@@ -152,7 +154,6 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
             <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
             <div className="do-passport-identity-row"><span>{c.tanks}</span><strong>{profile?.tank_count ?? 0}</strong></div>
-            <Link to={profileHref} className="do-passport-panel-link">{c.editProfile}<ChevronRight aria-hidden="true" /></Link>
           </section>
         </aside>
 
