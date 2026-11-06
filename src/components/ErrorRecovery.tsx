@@ -6,7 +6,7 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 function useErrorLanguage() {
   const context = useOptionalLanguage();
-  const [fallback, setFallback] = useState<Language>("zh-CN");
+  const [fallback, setFallback] = useState<Language>("en");
   useEffect(() => {
     if (context) return;
     try {
@@ -14,9 +14,7 @@ function useErrorLanguage() {
       setFallback(
         saved === "en" || saved === "zh-CN"
           ? saved
-          : navigator.language.toLowerCase().startsWith("zh")
-            ? "zh-CN"
-            : "en",
+          : "en",
       );
     } catch {
       /* The fallback remains usable with blocked browser storage. */

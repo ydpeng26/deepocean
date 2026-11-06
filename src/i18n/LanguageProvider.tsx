@@ -16,16 +16,12 @@ function getSavedLanguage(): Language {
   } catch {
     /* Language persistence is optional. */
   }
-  try {
-    return window.navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
-  } catch {
-    return "zh-CN";
-  }
+  return "en";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // Match the server's first render, then restore the browser preference.
-  const [language, setLanguage] = useState<Language>("zh-CN");
+  const [language, setLanguage] = useState<Language>("en");
   const [ready, setReady] = useState(false);
   useEffect(() => {
     setLanguage(getSavedLanguage());

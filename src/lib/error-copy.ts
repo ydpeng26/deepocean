@@ -21,16 +21,7 @@ export const errorCopy = {
   },
 };
 
-export function errorPageLanguage(header?: string | null): "zh-CN" | "en" {
-  const choices = (header ?? "")
-    .split(",")
-    .map((part, index) => {
-      const [tag, ...params] = part.trim().toLowerCase().split(";");
-      const q = params.find((value) => value.trim().startsWith("q="));
-      const weight = q ? Number(q.trim().slice(2)) : 1;
-      return { tag, weight, index };
-    })
-    .filter(({ tag, weight }) => /^(zh|en)(-|$)/.test(tag) && weight > 0 && weight <= 1)
-    .sort((a, b) => b.weight - a.weight || a.index - b.index);
-  return choices[0]?.tag.startsWith("en") ? "en" : "zh-CN";
+export function errorPageLanguage(_header?: string | null): "zh-CN" | "en" {
+  // Match the site's English default; the page restores any saved preference.
+  return "en";
 }
