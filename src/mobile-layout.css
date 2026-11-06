@@ -1,0 +1,96 @@
+.do-responsive-details > summary { display: none; }
+@media (max-width: 700px) {
+  .do-responsive-details > summary {
+    display: list-item; min-height: 44px; padding: 12px 4px;
+    color: #96d9ff; font-size: 14px; cursor: pointer;
+  }
+  .do-responsive-details { min-width: 0; }
+  .do-member-header { display: grid; grid-template-columns: auto minmax(0,1fr); width: calc(100% - 24px); gap: 4px 8px; padding-top: 8px; }
+  .do-member-header .do-brand { gap: 4px; }
+  .do-member-header .do-brand b { font-size: 14px; }
+  .do-member-header .do-brand-mark { width: 28px; }
+  .do-member-header .do-passport-header-actions { gap: 2px; justify-self: end; }
+  .do-member-header .do-passport-header-actions > :is(a,button):not(.do-passport-account) { min-width: 44px; min-height: 44px; padding: 6px; }
+  .do-member-header > nav.do-main-navigation {
+    display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr));
+    grid-column: 1 / -1; gap: 0 6px; overflow: visible; padding-bottom: 4px;
+  }
+  .do-member-header .do-main-navigation a { justify-content: center; min-height: 44px; white-space: normal; text-align: center; font-size: 13px; line-height: 1.3; }
+  [data-private-member-root] :is(input,select,textarea):not([type=checkbox]):not([type=radio]),
+  .do-offline-form :is(input,select,textarea):not([type=checkbox]):not([type=radio]) { min-height: 44px; font-size: 16px; min-width: 0; max-width: 100%; }
+  [data-private-member-root] :is(input[type=checkbox],input[type=radio]) { width: 20px; height: 20px; flex-shrink: 0; }
+  .do-app-shell > main { padding: 24px 16px 40px; }
+  .do-app-shell h1 { font-size: 28px; margin-bottom: 20px; }
+  .do-app-shell :is(button,a[role=button]), .do-offline-form button { min-height: 44px; }
+  .do-app-shell label { font-size: 14px; line-height: 1.5; }
+  .do-dive-form { padding-bottom: 12px; }
+  .do-dive-form > fieldset { gap: 24px; }
+  .do-dive-form section > h2 { font-size: 14px; }
+  .do-dive-form .do-dive-form-hint { margin-bottom: 12px; font-size: 14px; line-height: 1.6; }
+  .do-dive-actions { position: sticky; bottom: 0; z-index: 20; flex-wrap: wrap; gap: 10px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: var(--background); border-top: 1px solid var(--border); }
+  .do-dive-actions > button[type=submit] { flex: 1; min-height: 48px; font-size: 16px; }
+  body:has(.do-dive-form) .do-back-to-top { bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .do-passport .do-passport-identity { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; padding-bottom: 12px; }
+  .do-passport-identity > * { grid-column: 1 / -1; }
+  .do-passport .do-passport-identity > .do-passport-identity-row { grid-column: auto; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; margin: 0; padding: 12px; min-height: 78px; }
+  .do-passport .do-passport-identity { padding-inline: 12px; }
+  .do-passport .do-passport-identity .do-passport-panel-heading { padding: 8px 0 0; }
+  .do-passport .do-passport-identity-person { margin: 8px 0; gap: 10px; }
+  .do-passport .do-passport-identity .do-passport-identity-person .do-passport-profile-avatar { width: 104px !important; max-width: 104px !important; max-height: 104px !important; }
+  .do-passport .do-passport-profile-bio { max-width: none; font-size: 13px; line-height: 1.6; -webkit-line-clamp: 2; }
+  .do-passport .do-passport-identity-row span { font-size: 13px; }
+  .do-passport .do-passport-identity-row strong { font-size: 18px; text-align: left; }
+  .do-passport-summary { min-height: 0; }
+  .do-passport-summary-content { padding: 22px 16px; }
+  .do-passport-summary-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .do-logs-intro { gap: 12px; padding-top: 8px; margin-bottom: 16px; }
+  .do-logs-intro h1 { font-size: 28px; }
+  .do-logs-intro p { font-size: 14px; line-height: 1.6; }
+  .do-logs-overview { margin-bottom: 14px; }
+  .do-logs-overview > div { min-height: 72px; padding: 12px; }
+  .do-logs-overview strong { font-size: 22px; }
+  .do-logs-overview span { font-size: 12px; }
+  .do-logs-filter-panel { padding: 12px; }
+  .do-logs-filter-title { font-size: 14px; }
+  .do-logs-search { margin-top: 10px; min-height: 44px; }
+  .do-logs-country-filters { gap: 6px; }
+  .do-logs-country-filters button { min-height: 44px; font-size: 13px; overflow-wrap: anywhere; }
+  .do-log-content { padding: 16px 12px; }
+  .do-log-place > span, .do-log-note small { font-size: 13px; }
+  .do-log-place h2 { font-size: 22px; overflow-wrap: anywhere; }
+  .do-log-metrics span { display: flex; flex-direction: column; align-items: flex-start; padding: 8px; }
+  .do-log-metrics b { font-size: 14px; }
+  .do-log-metrics small { font-size: 12px; }
+  .do-log-note p { font-size: 14px; line-height: 1.6; }
+  .do-log-footer { flex-wrap: wrap; gap: 8px; font-size: 13px; }
+  .do-log-footer > span { flex: 0 0 100%; overflow-wrap: anywhere; }
+  .do-log-footer a { min-height: 44px; font-size: 14px; }
+  .do-profile-intro { min-height: 0; padding: 16px 0 20px; }
+  .do-profile-intro h1 { font-size: 28px; }
+  .do-profile-layout { display: flex; flex-direction: column; gap: 16px; }
+  .do-profile-layout > * { width: 100%; min-width: 0; }
+  .do-profile-editor-panel { order: -1; }
+  .do-profile-fields label { font-size: 14px; }
+  .do-profile-editor-footer { position: sticky; bottom: 0; z-index: 15; background: #041b32; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .do-profile-save { min-height: 48px; font-size: 16px; }
+  .do-gear-intro { margin-top: 12px; }
+  .do-gear-intro h1 { font-size: 28px; }
+  .do-gear-intro > button { width: 100%; min-height: 48px; font-size: 16px; }
+  .do-forum-hero { min-height: 0; padding: 22px 18px; margin-top: 10px; }
+  .do-forum-hero h1 { font-size: 26px; margin-top: 8px; }
+  .do-forum-hero p { font-size: 14px; margin-top: 10px; line-height: 1.6; }
+  .do-forum-hero-orbit { display: none; }
+  .do-forum-tabs :is(a,button), .do-forum-create { min-height: 44px; font-size: 14px; }
+}
+@media (max-width: 360px) {
+  .do-member-header .do-brand b { display: none; }
+}
+/* Existing avatar dimensions are important declarations in the components layer. */
+@layer components {
+  @media (max-width: 700px) {
+    .do-passport .do-passport-identity .do-passport-identity-person .do-passport-profile-avatar {
+      width: 104px !important; min-width: 104px !important; max-width: 104px !important;
+      height: 104px !important; min-height: 104px !important; max-height: 104px !important;
+    }
+  }
+}

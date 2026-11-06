@@ -353,7 +353,7 @@ function GearPage() {
         <ArrowLeft className="h-3 w-3" />
         {t("返回海洋护照")}
       </Link>
-      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+      <div className="do-gear-intro mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="text-xs font-medium tracking-[.24em] text-sky-500">MY DIVE LOCKER</span>
           <h1 className="mt-2 text-4xl font-normal tracking-tight text-primary">
