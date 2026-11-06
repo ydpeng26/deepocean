@@ -7,6 +7,8 @@ import ts from 'typescript';
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const clone = value => value === undefined ? undefined : structuredClone(value);
 function load(path, require, globals = {}) {
+  const dependency = require;
+  require = name => name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
   const code = ts.transpileModule(fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
   }).outputText;
@@ -272,3 +274,10 @@ const gasConflict=await a.syncOfflineDives(undefined,{expectedUserId:owner});ass
 stored.clear();rows.clear();const legacyGas=await a.saveOfflineDive({...fields});delete legacyGas.gas_type;stored.set(legacyGas.id,clone(legacyGas));
 await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(legacyGas.id).gas_type,null);
 console.log('PASS: offline gas survives save and sync, changed retry retains draft, legacy empty gas syncs as null');
+
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const weighted=await a.saveOfflineDive({...fields,weight_value:'12.5',weight_unit:'lb',gas_type:'Trimix'});
+await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get(weighted.id).weight_value,12.5);assert.equal(rows.get(weighted.id).weight_unit,'lb');assert.equal(rows.get(weighted.id).gas_type,'Trimix');
+stored.set(weighted.id,clone({...weighted,weight_unit:'kg'}));const weightConflict=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(weightConflict.failures.length,1);assert.equal(stored.size,1);
+await assert.rejects(a.saveOfflineDive({...fields,weight_value:'-1',weight_unit:'kg'}));
+console.log('PASS: offline weight and units survive sync; changed-unit retry keeps draft, negative values rejected');

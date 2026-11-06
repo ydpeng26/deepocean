@@ -446,6 +446,14 @@ function OfflinePage() {
                       onChange={(e) => update("entry_time", e.target.value)} />
                   </label>
                   <label>
+                    {language === "zh-CN" ? "配重（选填）" : "Weight carried (optional)"}
+                    <input type="number" min="0" max="9999.99" step="0.01" value={fields.weight_value ?? ""} onChange={e => update("weight_value", e.target.value)} />
+                  </label>
+                  <label>
+                    {language === "zh-CN" ? "配重单位" : "Weight unit"}
+                    <select value={fields.weight_unit ?? "kg"} onChange={e => update("weight_unit", e.target.value as "kg" | "lb")}><option value="kg">kg（公斤）</option><option value="lb">lb（磅）</option></select>
+                  </label>
+                  <label>
                     {language === "zh-CN" ? "气体类型（选填）" : "Gas type (optional)"}
                     <input list="offline-gas-options" maxLength={80} value={fields.gas_type ?? ""}
                       placeholder={language === "zh-CN" ? "选择或填写气体／配比" : "Choose or enter gas / mix"}
