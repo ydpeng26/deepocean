@@ -264,8 +264,9 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   const field = "rounded-none";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10">
+    <form onSubmit={handleSubmit} className="do-dive-form space-y-10">
       <fieldset disabled={saving || copying} className="min-w-0 space-y-10" aria-busy={saving || copying}>
+        <p className="do-dive-form-hint text-sm text-muted-foreground">{language === "en" ? "Required: country, dive site and date. Other fields are optional." : "必填：潜水国家、潜点名称和日期。其余信息均可选填。"}</p>
         {!dive && <div className="space-y-2 rounded-xl border border-border p-4">
           <Button type="button" variant="outline" onClick={copyPrevious}>
             {copying ? (language === "en" ? "Copying…" : "正在复制…") : (language === "en" ? "Copy previous dive" : "复制上一条")}
@@ -569,7 +570,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
           <p className="text-xs text-muted-foreground">{language === "en" ? "Select equipment used on this dive. Each item adds 1 use. Editing or deleting this log adjusts its contribution automatically." : "勾选本潜使用的装备，每件累计 1 次。修改勾选或删除日志时，会自动调整本条日志产生的次数。"}</p>
           {gearQuery.isError ? <button type="button" className="text-sm text-primary" onClick={() => gearQuery.refetch()}>{language === "en" ? "Equipment unavailable · Retry" : "装备读取失败，点击重试"}</button> : gearQuery.isPending ? <p className="text-xs">{language === "en" ? "Loading equipment…" : "正在读取装备…"}</p> : gear.length ? <div className="grid gap-3 sm:grid-cols-2">{gear.map(item => <label key={item.id} className="flex items-center gap-3 text-sm"><input type="checkbox" aria-label={[item.brand,item.model].filter(Boolean).join(" ") || item.category} checked={usedGearIds.includes(item.id)} onChange={e => setUsedGearIds(ids => e.target.checked ? [...ids,item.id] : ids.filter(id => id !== item.id))} />{[item.brand,item.model].filter(Boolean).join(" ") || item.category}</label>)}</div> : <p className="text-xs text-muted-foreground">{language === "en" ? "Add equipment under My Gear first." : "请先在“我的装备”添加装备，再选择本潜使用的装备。"}</p>}
         </section>
-        <div className="flex gap-3 border-t border-border pt-8">
+        <div className="do-dive-actions flex gap-3 border-t border-border pt-8">
           <Button type="submit" disabled={saving} className="rounded-none px-8">
             {saving ? t("保存中…") : t("保存记录")}
           </Button>

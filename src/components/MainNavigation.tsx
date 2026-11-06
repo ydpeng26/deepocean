@@ -34,6 +34,7 @@ export function MainNavigation() {
   return (
     <nav
       className="do-main-navigation"
+      data-language={language}
       aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}
     >
       {links.map((link) => (

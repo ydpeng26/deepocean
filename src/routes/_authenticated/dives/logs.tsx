@@ -23,6 +23,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
 import { diveNumbers } from "@/lib/dive-order";
+import { ResponsiveDetails } from "@/components/ResponsiveDetails";
 
 export const Route = createFileRoute("/_authenticated/dives/logs")({
   head: () => ({
@@ -288,6 +289,7 @@ function DiveLogsPage() {
                 placeholder={c.search}
               />
             </label>
+            <ResponsiveDetails title={language === "en" ? "Waters & filters" : "海域筛选"}>
             <div className="do-logs-country-filters">
               <button
                 type="button"
@@ -312,6 +314,7 @@ function DiveLogsPage() {
               <strong>{isPending || isError ? "—" : filtered.length}</strong>
               <small>{c.entries}</small>
             </div>
+            </ResponsiveDetails>
             <div className="do-logs-watermark">
               <Waves aria-hidden="true" />
               <span>

@@ -3,6 +3,7 @@ import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanst
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import mobileCss from "../mobile-layout.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineUpdateNotice } from "@/components/OfflineUpdateNotice";
 import { AuthStorageNotice } from "@/components/AuthStorageNotice";
@@ -37,6 +38,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "stylesheet", href: mobileCss },
       { rel: "icon", href: "/images/supdiver-wave-mark.svg", type: "image/svg+xml" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

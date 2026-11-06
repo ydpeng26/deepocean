@@ -21,3 +21,11 @@ const browser={scrollY:0,addEventListener:(name,handler)=>{scrollHandler=handler
 const back=load('src/components/BackToTop.tsx',name=>name==='react/jsx-runtime'?{jsx,jsxs:jsx}:name==='react'?{useState:()=>[visible,v=>{visible=v;}],useEffect:fn=>{if(!installed){installed=true;cleanup=fn();}}}:name==='lucide-react'?{ArrowUp:'ArrowUp'}:{useLanguage:()=>({language:'zh-CN'})},{window:browser}).BackToTop;
 assert.equal(back(),null);browser.scrollY=500;scrollHandler();let button=back();assert.equal(button.props['aria-label'],'回到顶部');button.props.onClick();assert.equal(lastScroll.top,0);assert.equal(lastScroll.behavior,'smooth');reduced=true;button.props.onClick();assert.equal(lastScroll.behavior,'instant');browser.scrollY=0;scrollHandler();assert.equal(back(),null);cleanup();assert.ok(removed);
 console.log('PASS: one current navigation item on passport/logs/new/detail/forum/marine/contact; back-to-top visibility, action, reduced-motion and cleanup');
+
+let expanded=true,attached=false,onResize,dispose;
+const media={matches:true,addEventListener:(_,fn)=>{onResize=fn;},removeEventListener:()=>{dispose=true;}};
+const disclosure=load('src/components/ResponsiveDetails.tsx',name=>name==='react/jsx-runtime'?{jsx,jsxs:jsx}:{useState:()=>[expanded,value=>{expanded=value;}],useEffect:fn=>{if(!attached){attached=true;cleanup=fn();}}},{window:{matchMedia:()=>media}}).ResponsiveDetails;
+disclosure({title:'Details',children:'Content'});assert.equal(disclosure({title:'Details',children:'Content'}).props.open,false);
+disclosure({title:'Details',children:'Content'}).props.onToggle({currentTarget:{open:true}});assert.equal(expanded,true);
+media.matches=false;onResize();assert.equal(expanded,true);media.matches=true;onResize();assert.equal(expanded,false);cleanup();assert.ok(dispose);
+console.log('PASS: mobile details start collapsed, open on request, desktop resize restores content, listeners cleaned up');

@@ -152,8 +152,8 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : dives.length}</strong></div>
             <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending || isError ? "—" : countries.length}</strong></div>
             <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
-            <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
             <div className="do-passport-identity-row"><span>{c.tanks}</span><strong>{profile?.tank_count ?? 0}</strong></div>
+            <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
           </section>
         </aside>
 
