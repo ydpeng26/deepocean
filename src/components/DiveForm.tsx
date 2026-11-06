@@ -34,6 +34,7 @@ import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
 import { readCompanions, companionFields } from "@/lib/dive-companions";
 import { useLiveCopy } from "@/i18n/liveCopy";
 import { listGear } from "@/lib/gear";
+import { diveWeightFields } from "@/lib/dive-weight";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
@@ -68,6 +69,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   );
   const [entryTime, setEntryTime] = useState(dive?.entry_time?.slice(0, 5) ?? "");
   const [gasType, setGasType] = useState(dive?.gas_type ?? "");
+  const [weight, setWeight] = useState(dive?.weight_value?.toString() ?? "");
+  const [weightUnit, setWeightUnit] = useState(dive?.weight_unit ?? "kg");
   const [weather, setWeather] = useState(dive?.weather ?? "");
   const [surfaceTemp, setSurfaceTemp] = useState(dive?.surface_temp?.toString() ?? "");
   const [waterTemp, setWaterTemp] = useState(dive?.water_temp?.toString() ?? "");
@@ -127,6 +130,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       setDiveDate(previous.dive_date);
       setEntryTime(previous.entry_time?.slice(0, 5) ?? "");
       setGasType(previous.gas_type ?? "");
+      setWeight(previous.weight_value?.toString() ?? "");
+      setWeightUnit(previous.weight_unit ?? "kg");
       setWeather(previous.weather ?? "");
       setSurfaceTemp(previous.surface_temp?.toString() ?? "");
       setWaterTemp(previous.water_temp?.toString() ?? "");
@@ -184,6 +189,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     try {
       if (gasType.trim().length > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
       const numeric = {
+        ...diveWeightFields(weight, weightUnit),
         entry_time: parseDiveEntryTime(entryTime),
         ...companionFields(companions),
         surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
@@ -333,6 +339,15 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               <p id="entry-time-help" className="text-xs text-muted-foreground">
                 {t("填写潜点当地时间；未填时排在当天已填时间的记录之后。")}
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="weight-value">{language === "en" ? "Weight carried (optional)" : "配重（选填）"}</Label>
+              <div className="flex gap-2">
+                <Input id="weight-value" type="number" min="0" max="9999.99" step="0.01" value={weight} onChange={e => setWeight(e.target.value)} className={field} />
+                <select id="weight-unit" aria-label={language === "en" ? "Weight unit" : "配重单位"} value={weightUnit} onChange={e => setWeightUnit(e.target.value as "kg" | "lb")} className="border border-input bg-background px-3 text-sm">
+                  <option value="kg">kg（公斤）</option><option value="lb">lb（磅）</option>
+                </select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="gas-type">{language === "en" ? "Gas type (optional)" : "气体类型（选填）"}</Label>

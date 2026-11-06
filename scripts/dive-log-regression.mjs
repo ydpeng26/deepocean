@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import ts from 'typescript';
 function load(path, require) {
+  const dependency = require;
+  require = name => name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
   const code = ts.transpileModule(fs.readFileSync(new URL('../'+path,import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const module={exports:{}};
   vm.runInNewContext(code,{module,exports:module.exports,require,crypto:webcrypto,Uint8Array,window:{confirm:()=>true},fetch(){throw Error('Network forbidden');}});
@@ -124,3 +126,15 @@ s=formHarness();s.history=[{...payload,id:'source',created_at:'2026-11-01',user_
 await s.render().find(n=>n.props.onClick?.name==='copyPrevious').props.onClick();
 assert.equal(s.render().find(n=>n.props.id==='count-tank').props.checked,false);
 console.log('PASS: counters are opt-in, edit preserves equipment links with canonical IDs, and copy resets contribution');
+
+for (const gas of ['Air','Nitrox','Trimix','Oxygen','Nitrox 32']) {
+  s=formHarness();s.input('country','Indonesia');s.input('site','Weight and gas');s.input('gas-type',gas);s.input('weight-value','12.5');s.input('weight-unit','lb');
+  const saving=s.submit();await tick();assert.equal(s.payload.weight_value,12.5);assert.equal(s.payload.weight_unit,'lb');assert.equal(s.payload.gas_type,gas);s.resolve();await saving;
+}
+s=formHarness({...payload,id:'weight-edit',updated_at:'v',weight_value:4.25,weight_unit:'kg'});
+assert.equal(s.render().find(n=>n.props.id==='weight-value').props.value,'4.25');assert.equal(s.render().find(n=>n.props.id==='weight-unit').props.value,'kg');
+s.input('weight-value','');const clearWeight=s.submit();await tick();assert.equal(s.payload.weight_value,null);assert.equal(s.payload.weight_unit,null);s.resolve();await clearWeight;
+const weightFields=load('src/lib/dive-weight.ts',()=>({})).diveWeightFields;
+for(const invalid of ['-1','NaN','1.234','10000','1e2'])assert.throws(()=>weightFields(invalid,'kg'));
+assert.equal(weightFields('0','lb').weight_value,0);assert.equal(weightFields('6','kg').weight_unit,'kg');
+console.log('PASS: kg/lb weight save, edit, clear, zero and invalid numbers; all gas suggestions and custom mixes persist');

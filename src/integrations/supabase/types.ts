@@ -73,6 +73,8 @@ export type Database = {
           created_at: string
           dive_date: string
           gas_type: string | null
+          weight_value: number | null
+          weight_unit: string | null
           count_tank: boolean
           used_gear_ids: string[]
           entry_time: string | null
@@ -99,6 +101,8 @@ export type Database = {
           created_at?: string
           dive_date: string
           gas_type?: string | null
+          weight_value?: number | null
+          weight_unit?: string | null
           count_tank?: boolean
           used_gear_ids?: string[]
           entry_time?: string | null
@@ -125,6 +129,8 @@ export type Database = {
           created_at?: string
           dive_date?: string
           gas_type?: string | null
+          weight_value?: number | null
+          weight_unit?: string | null
           count_tank?: boolean
           used_gear_ids?: string[]
           entry_time?: string | null

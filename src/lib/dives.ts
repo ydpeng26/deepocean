@@ -14,6 +14,8 @@ export type Dive = {
   dive_date: string;
   entry_time?: string | null;
   gas_type?: string | null;
+  weight_value?: number | null;
+  weight_unit?: "kg" | "lb" | null;
   count_tank?: boolean;
   used_gear_ids?: string[];
   weather: string | null;

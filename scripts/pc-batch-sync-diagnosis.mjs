@@ -11,6 +11,8 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 const baseline = '9ac9a990c0595f77dcabfbd5cedfc96f4c4defea';
 const fixed = process.argv.includes('--fixed');
 function load(path, require, globals = {}) {
+  const dependency = require;
+  require = name => name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
   const module = { exports: {} };
   const source = fixed ? fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8') : execFileSync('git', ['show', baseline + ':' + path], { encoding: 'utf8' });
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: 1, jsx: 4, target: 9 } }).outputText,

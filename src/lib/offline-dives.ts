@@ -2,6 +2,7 @@ import { readCompanions, companionFields, normalizeCompanions, type DiveCompanio
 import { supabase } from "@/integrations/supabase/client";
 import type { BuddyRole, DiveType } from "@/lib/dives";
 import { parseDiveEntryTime } from "@/lib/dive-order";
+import { diveWeightFields } from "@/lib/dive-weight";
 
 const DATABASE_NAME = "supdiver-offline";
 const STORE_NAME = "dive-drafts";
@@ -13,6 +14,8 @@ export type OfflineDiveFields = {
   dive_date: string;
   entry_time?: string;
   gas_type?: string;
+  weight_value?: string;
+  weight_unit?: "kg" | "lb";
   weather: string;
   surface_temp: string;
   water_temp: string;
@@ -52,7 +55,7 @@ function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
 
 function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
   return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
-    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : (key === "entry_time" || key === "gas_type") ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
+    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : key === "weight_unit" ? (a[key] ?? "kg") === (b[key] ?? "kg") : (key === "entry_time" || key === "gas_type" || key === "weight_value") ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
   );
 }
 
@@ -97,6 +100,8 @@ export function emptyOfflineDive(): OfflineDiveFields {
     dive_date: localDate.toISOString().slice(0, 10),
     entry_time: "",
     gas_type: "",
+    weight_value: "",
+    weight_unit: "kg",
     weather: "",
     surface_temp: "",
     water_temp: "",
@@ -167,6 +172,7 @@ export async function saveOfflineDive(
   options: { expected?: OfflineDive; requestId?: string } = {},
 ): Promise<OfflineDive> {
   if ((fields.gas_type?.trim().length ?? 0) > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
+  diveWeightFields(fields.weight_value, fields.weight_unit);
   const draft: OfflineDive = {
     ...fields,
     gas_type: fields.gas_type?.trim() ?? "",
@@ -292,6 +298,7 @@ async function performSync(
         dive_date: draft.dive_date,
         entry_time: parseDiveEntryTime(draft.entry_time),
         gas_type: draft.gas_type?.trim() || null,
+        ...diveWeightFields(draft.weight_value, draft.weight_unit),
         weather: draft.weather || null,
         surface_temp: optionalNumber(draft.surface_temp),
         water_temp: optionalNumber(draft.water_temp),
@@ -316,7 +323,7 @@ async function performSync(
         const { data: existing, error: lookupError } = await supabase
           .from("dives")
           .select(
-            "id, country, region, site_name, dive_date, entry_time, gas_type, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
+            "id, country, region, site_name, dive_date, entry_time, gas_type, weight_value, weight_unit, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
           )
           .eq("id", draft.id)
           .eq("user_id", userId)
@@ -334,6 +341,8 @@ async function performSync(
           "dive_date",
           "entry_time",
           "gas_type",
+          "weight_value",
+          "weight_unit",
           "weather",
           "surface_temp",
           "water_temp",
