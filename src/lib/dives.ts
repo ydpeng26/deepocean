@@ -1,11 +1,12 @@
 import { normalizeCompanions, type DiveCompanion } from "@/lib/dive-companions";
 import { supabase } from "@/integrations/supabase/client";
 import { assertSupportedWebImage, prepareWebImage } from "@/lib/images";
+import type { DiveRecord } from "@/lib/dive-record";
 
 export type DiveType = "recreational" | "freediving" | "technical";
 export type BuddyRole = "instructor" | "buddy";
 
-export type Dive = {
+export type Dive = DiveRecord & {
   id: string;
   user_id: string;
   country: string;

@@ -33,6 +33,7 @@ import { ScubaTankIcon } from "@/components/ScubaTankIcon";
 import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { listDives } from "@/lib/dives";
+import { diveCount, divePeriodLabel } from "@/lib/dive-record";
 import {
   blockForumAuthor,
   createForumPost,
@@ -1031,7 +1032,7 @@ export function ForumPage({
                 <option value="">{c.addLog}</option>
                 {(divesQuery.data ?? []).map((dive) => (
                   <option key={dive.id} value={dive.id}>
-                    {dive.site_name} · {dive.dive_date}
+                    {dive.site_name} · {divePeriodLabel(dive, language === "en")}{dive.record_mode === "summary" && ` · ${diveCount(dive)} ${language === "en" ? "dives" : "潜"}`}
                   </option>
                 ))}
               </select>

@@ -65,6 +65,12 @@ export type Database = {
       }
       dives: {
         Row: {
+          record_mode: "precise" | "summary"
+          dive_count: number
+          date_precision: "day" | "month" | "year" | "range"
+          period_end: string | null
+          site_names: string[]
+          total_duration_min: number | null
           companions: Json | null
           buddy_name: string | null
           buddy_role: Database["public"]["Enums"]["buddy_role"] | null
@@ -93,6 +99,12 @@ export type Database = {
           weather: string | null
         }
         Insert: {
+          record_mode?: "precise" | "summary"
+          dive_count?: number
+          date_precision?: "day" | "month" | "year" | "range"
+          period_end?: string | null
+          site_names?: string[]
+          total_duration_min?: number | null
           companions?: Json | null
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null
@@ -121,6 +133,12 @@ export type Database = {
           weather?: string | null
         }
         Update: {
+          record_mode?: "precise" | "summary"
+          dive_count?: number
+          date_precision?: "day" | "month" | "year" | "range"
+          period_end?: string | null
+          site_names?: string[]
+          total_duration_min?: number | null
           companions?: Json | null
           buddy_name?: string | null
           buddy_role?: Database["public"]["Enums"]["buddy_role"] | null

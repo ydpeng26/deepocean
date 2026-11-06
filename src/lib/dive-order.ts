@@ -1,4 +1,5 @@
-type DatedDive = { id: string; dive_date: string; entry_time?: string | null; created_at: string };
+import { diveCount, type DiveRecord } from "@/lib/dive-record";
+type DatedDive = DiveRecord & { id: string; dive_date: string; entry_time?: string | null; created_at: string };
 
 // Supabase returns dates and creation timestamps in a consistent ISO/UTC format.
 // Match listDives' database tie-breakers without mutating React Query's cache.
@@ -15,7 +16,12 @@ export function newestDivesFirst<T extends DatedDive>(dives: readonly T[]): T[] 
 
 /** Compute numbers over the entire owner's history, before any UI filtering. */
 export function diveNumbers(dives: readonly DatedDive[]): Map<string, number> {
-  return new Map([...dives].sort(chronological).map((dive, index) => [dive.id, index + 1]));
+  let next = 1;
+  return new Map([...dives].sort(chronological).map(dive => {
+    const start = next;
+    next += diveCount(dive);
+    return [dive.id, start];
+  }));
 }
 
 // Local wall-clock time at the dive site; never apply a timezone conversion.

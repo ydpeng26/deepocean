@@ -23,6 +23,8 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { diveCover, listDives, signedPhotoUrls, type Dive } from "@/lib/dives";
 import { diveNumbers } from "@/lib/dive-order";
+import { diveStats } from "@/lib/dive-stats";
+import { diveCount, diveNumberLabel, divePeriodLabel } from "@/lib/dive-record";
 import { ResponsiveDetails } from "@/components/ResponsiveDetails";
 
 export const Route = createFileRoute("/_authenticated/dives/logs")({
@@ -110,7 +112,7 @@ function DivePhoto({
 }: {
   photo: string | null;
   index: number;
-  number: number;
+  number: string;
   path: string | null;
   videoOnly: boolean;
   ownerId: string;
@@ -149,7 +151,7 @@ function DivePhoto({
           className="h-full w-full"
         />
       </div>
-      <span>#{String(number).padStart(3, "0")}</span>
+      <span>#{number}</span>
     </div>
   );
 }
@@ -202,7 +204,7 @@ function DiveLogsPage() {
         return (
           (country === "all" || dive.country === country) &&
           (!search ||
-            `${dive.site_name} ${dive.region ?? ""} ${dive.country} ${dive.notes ?? ""}`
+            `${dive.site_name} ${(dive.site_names ?? []).join(" ")} ${dive.region ?? ""} ${dive.country} ${dive.notes ?? ""}`
               .toLowerCase()
               .includes(search))
         );
@@ -219,7 +221,8 @@ function DiveLogsPage() {
     }
     return [...groups.entries()].sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
-  const totalMinutes = dives.reduce((sum, dive) => sum + (Number(dive.duration_min) || 0), 0);
+  const stats = diveStats(dives);
+  const totalMinutes = stats.totalMinutes;
   const name = profile?.display_name?.trim() || (language === "zh-CN" ? "潜水员" : "Diver");
   const dateParts = (value: string) => {
     const [year, month, day] = value.split("-");
@@ -255,8 +258,8 @@ function DiveLogsPage() {
         </section>
         <section className="do-logs-overview">
           <div>
-            <strong>{isPending || isError ? "—" : dives.length}</strong>
-            <span>{c.entries}</span>
+            <strong>{isPending || isError ? "—" : stats.total}</strong>
+            <span>{language === "en" ? "Dives" : "潜水次数"} · {dives.length} {c.entries}</span>
           </div>
           <div>
             <strong>{isPending || isError ? "—" : countries.length}</strong>
@@ -268,7 +271,7 @@ function DiveLogsPage() {
                 ? "—"
                 : `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`}
             </strong>
-            <span>{c.underwater}</span>
+            <span>{c.underwater}{stats.missingTotalCount > 0 && (language === "en" ? " (known totals only)" : "（仅统计已知累计时间）")}</span>
           </div>
           <div>
             <strong>{c.year}</strong>
@@ -348,7 +351,7 @@ function DiveLogsPage() {
                   <summary className="flex cursor-pointer list-none items-center gap-3 py-2 text-lg font-semibold focus-visible:outline focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
                     <ChevronRight aria-hidden="true" className="h-5 w-5 transition-transform group-open:rotate-90" />
                     <span>{year}{language === "zh-CN" ? "年" : ""}</span>
-                    <span className="ml-auto text-sm font-normal opacity-70">{yearDives.length} {c.entries}</span>
+                    <span className="ml-auto text-sm font-normal opacity-70">{yearDives.reduce((sum, d) => sum + diveCount(d), 0)} {language === "en" ? "dives" : "潜"} · {yearDives.length} {c.entries}</span>
                   </summary>
                   <div className="mt-4 grid gap-6">
                   {yearDives.map((dive, index) => {
@@ -356,14 +359,14 @@ function DiveLogsPage() {
                 return (
                   <article className="do-log-entry" key={dive.id}>
                     <div className="do-log-date">
-                      <strong>{parts.day}</strong>
-                      <span>{parts.month}</span>
+                      <strong>{dive.record_mode === "summary" ? "≈" : parts.day}</strong>
+                      <span>{dive.record_mode === "summary" && dive.date_precision === "year" ? (language === "en" ? "YEAR" : "全年") : parts.month}</span>
                       <small>{parts.year}</small>
-                      {dive.entry_time && <small>{dive.entry_time.slice(0, 5)}</small>}
+                      {dive.record_mode !== "summary" && dive.entry_time && <small>{dive.entry_time.slice(0, 5)}</small>}
                     </div>
                     <DivePhoto
                       index={index}
-                      number={numbers.get(dive.id)!}
+                      number={diveNumberLabel(numbers.get(dive.id)!, dive)}
                       path={diveCover(dive).path}
                       videoOnly={diveCover(dive).videoOnly}
                       ownerId={dive.user_id}
@@ -375,6 +378,7 @@ function DiveLogsPage() {
                     />
                     <div className="do-log-content">
                       <div className="do-log-place">
+                        {dive.record_mode === "summary" && <p className="mb-2 text-sm text-[#80d0ff]">{language === "en" ? "Summary" : "模糊记录"} · {diveCount(dive)} {language === "en" ? "dives" : "潜"} · {divePeriodLabel(dive, language === "en")}</p>}
                         <span>
                           <MapPin aria-hidden="true" />
                           {[dive.country, dive.region].filter(Boolean).join(" · ")}
@@ -383,6 +387,7 @@ function DiveLogsPage() {
                           {dive.site_name ||
                             (language === "zh-CN" ? "未命名潜点" : "Untitled site")}
                         </h2>
+                        {dive.record_mode === "summary" && !!dive.site_names?.length && <p className="mt-2 text-sm text-muted-foreground">{dive.site_names.join(" · ")}</p>}
                       </div>
                       <div className="do-log-metrics">
                         <span>
@@ -393,7 +398,7 @@ function DiveLogsPage() {
                         <span>
                           <Clock3 aria-hidden="true" />
                           <b>{dive.duration_min ?? "—"} min</b>
-                          <small>{c.duration}</small>
+                          <small>{dive.record_mode === "summary" ? (language === "en" ? "Longest single dive" : "最长单次时间") : c.duration}</small>
                         </span>
                         <span>
                           <Thermometer aria-hidden="true" />

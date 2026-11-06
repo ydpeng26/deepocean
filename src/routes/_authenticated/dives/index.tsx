@@ -1,4 +1,6 @@
 import { DiveAchievements } from "@/components/DiveAchievements";
+import { diveStats } from "@/lib/dive-stats";
+import { diveCount, divePeriodLabel } from "@/lib/dive-record";
 import "@/components/passport-profile.css";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
@@ -126,7 +128,8 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
   const gearHref = preview ? "/gear-preview" : "/gear";
   const countries = Array.from(new Set(dives.map((d) => d.country.trim()).filter(Boolean)));
   const maxDepth = dives.reduce((max, d) => Math.max(max, Number(d.max_depth) || 0), 0);
-  const totalMinutes = dives.reduce((sum, d) => sum + (Number(d.duration_min) || 0), 0);
+  const stats = diveStats(dives);
+  const totalMinutes = stats.totalMinutes;
   const timeDisplay = totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m` : `${totalMinutes}m`;
   const visibleDives = showAll ? dives : dives.slice(0, 3);
   const date = (value: string) => new Intl.DateTimeFormat(language === "zh-CN" ? "zh-CN" : "en", {
@@ -149,9 +152,9 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
             <div className="do-passport-panel-heading"><Link to={profileHref} className="do-passport-profile-edit"><Pencil aria-hidden="true" />{c.navProfile}</Link><span className="do-passport-serial">SUPDIVER / 01</span></div>
             <div className="do-passport-identity-person"><Avatar className="do-passport-profile-avatar"><AvatarImage src={avatarUrl ?? undefined} alt={name} /><AvatarFallback className="do-passport-profile-avatar-fallback">{name.slice(0, 1)}</AvatarFallback></Avatar><div><h2 id="passport-identity-title">{name}</h2>{profile?.bio && <p className="do-passport-profile-bio">{profile.bio}</p>}</div></div>
             <PassportCommunityStats ownerId={liveProfile?.id} preview={preview} />
-            <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : dives.length}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.dives}</span><strong>{isPending || isError ? "—" : stats.total}</strong></div>
             <div className="do-passport-identity-row"><span>{c.countryCount}</span><strong>{isPending || isError ? "—" : countries.length}</strong></div>
-            <div className="do-passport-identity-row"><span>{c.underwater}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
+            <div className="do-passport-identity-row"><span>{c.underwater}{stats.missingTotalCount > 0 && (language === "en" ? " (known totals only)" : "（仅已知累计时间）")}</span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong></div>
             <div className="do-passport-identity-row"><span>{c.tanks}</span><strong>{profile?.tank_count ?? 0}</strong></div>
             <DiveAchievements dives={dives} english={language === "en"} pending={isPending} error={isError} />
           </section>
@@ -161,7 +164,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
           <section className="do-passport-summary" aria-labelledby="passport-summary-title">
             <div className="do-passport-summary-photo" />
             <div className="do-passport-summary-content"><span className="do-passport-section-label">02 / {c.journey}</span><h2 id="passport-summary-title">{c.journey}</h2><p>{c.intro}</p>
-              <div className="do-passport-summary-stats"><span><strong>{isPending || isError ? "—" : dives.length}</strong>{c.dives}</span><span><strong>{isPending || isError ? "—" : countries.length}</strong>{c.countries}</span><span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong>{c.underwater}</span><span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong>{c.maxDepth}</span></div>
+              <div className="do-passport-summary-stats"><span><strong>{isPending || isError ? "—" : stats.total}</strong>{c.dives}</span><span><strong>{isPending || isError ? "—" : countries.length}</strong>{c.countries}</span><span><strong>{isPending || isError || !totalMinutes ? "—" : timeDisplay}</strong>{c.underwater}{stats.missingTotalCount > 0 && (language === "en" ? " (known totals only)" : "（仅已知累计时间）")}</span><span><strong>{isPending || isError || !maxDepth ? "—" : `${maxDepth}m`}</strong>{c.maxDepth}</span></div>
             </div>
           </section>
           <section className="do-passport-map-panel" aria-label={c.mapTitle}>
@@ -180,7 +183,7 @@ export function OceanPassport({ preview = false }: { preview?: boolean }) {
 
         <aside className="do-passport-right-column">
           <section className="do-passport-cert-panel" aria-labelledby="passport-cert-title"><div className="do-passport-panel-heading"><span>06 / {c.certificate}</span><Award aria-hidden="true" /></div><div className="do-passport-cert-card"><span>SUPDIVER / CERTIFICATION</span><Award aria-hidden="true" /><strong id="passport-cert-title">{profile?.cert_level && profile.cert_level !== "暂无" ? language === "en" ? englishCertifications[profile.cert_level] ?? profile.cert_level : profile.cert_level : c.certEmpty}</strong><small>{c.certHint}</small></div><Link to={certificatesHref} className="do-passport-panel-link">{c.certManage}<ChevronRight aria-hidden="true" /></Link></section>
-          <section id="passport-logs" className="do-passport-recent-panel" aria-labelledby="passport-recent-title"><div className="do-passport-panel-heading"><span>07 / {c.recent}</span><CalendarDays aria-hidden="true" /></div><h2 id="passport-recent-title">{c.recent}</h2><p className="do-passport-recent-intro">{c.recentIntro}</p>{latest && <DiveMedia className="do-passport-recent-image" ownerId={latest.user_id} path={latestPhotoPath} url={latestMedia.isError ? null : latestMedia.data} version={latestMedia.dataUpdatedAt} pending={latestMedia.isFetching} error={!!latestPhotoPath && latestMedia.isError} reload={() => latestMedia.refetch({ throwOnError: true })} cover videoOnly={latestCover.videoOnly} label={latestPhotoPath ? c.photoAlt : c.latest} />}{isPending ? <p className="do-passport-muted">{c.loading}</p> : isError ? <button type="button" className="do-passport-text-link" onClick={() => refetch()}>{c.loadError} {c.retry}<ArrowRight /></button> : dives.length ? <><ul className="do-passport-recent-list">{visibleDives.map((d) => <li key={d.id}><Link to="/dives/$id" params={{ id: d.id }}><span><strong>{d.site_name || c.noSite}</strong><small>{[d.country, d.region, date(d.dive_date)].filter(Boolean).join(" · ")}</small></span><ChevronRight aria-hidden="true" /></Link></li>)}</ul>{dives.length > 3 && <button type="button" className="do-passport-more" onClick={() => setShowAll((value) => !value)}>{showAll ? c.collapse : c.all}<ArrowRight aria-hidden="true" /></button>}</> : <div className="do-passport-recent-empty"><p>{c.latestEmpty}</p><Link to="/dives/new">{c.begin}<ArrowRight aria-hidden="true" /></Link></div>}<Link to="/dives/new" className="do-passport-recent-add"><Plus aria-hidden="true" />{c.addDive}</Link></section>
+          <section id="passport-logs" className="do-passport-recent-panel" aria-labelledby="passport-recent-title"><div className="do-passport-panel-heading"><span>07 / {c.recent}</span><CalendarDays aria-hidden="true" /></div><h2 id="passport-recent-title">{c.recent}</h2><p className="do-passport-recent-intro">{c.recentIntro}</p>{latest && <DiveMedia className="do-passport-recent-image" ownerId={latest.user_id} path={latestPhotoPath} url={latestMedia.isError ? null : latestMedia.data} version={latestMedia.dataUpdatedAt} pending={latestMedia.isFetching} error={!!latestPhotoPath && latestMedia.isError} reload={() => latestMedia.refetch({ throwOnError: true })} cover videoOnly={latestCover.videoOnly} label={latestPhotoPath ? c.photoAlt : c.latest} />}{isPending ? <p className="do-passport-muted">{c.loading}</p> : isError ? <button type="button" className="do-passport-text-link" onClick={() => refetch()}>{c.loadError} {c.retry}<ArrowRight /></button> : dives.length ? <><ul className="do-passport-recent-list">{visibleDives.map((d) => <li key={d.id}><Link to="/dives/$id" params={{ id: d.id }}><span><strong>{d.site_name || c.noSite}{d.record_mode === "summary" && ` · ${diveCount(d)} ${language === "en" ? "dives" : "潜"}`}</strong><small>{[d.country, d.region, d.record_mode === "summary" ? divePeriodLabel(d, language === "en") : date(d.dive_date)].filter(Boolean).join(" · ")}</small></span><ChevronRight aria-hidden="true" /></Link></li>)}</ul>{dives.length > 3 && <button type="button" className="do-passport-more" onClick={() => setShowAll((value) => !value)}>{showAll ? c.collapse : c.all}<ArrowRight aria-hidden="true" /></button>}</> : <div className="do-passport-recent-empty"><p>{c.latestEmpty}</p><Link to="/dives/new">{c.begin}<ArrowRight aria-hidden="true" /></Link></div>}<Link to="/dives/new" className="do-passport-recent-add"><Plus aria-hidden="true" />{c.addDive}</Link></section>
         </aside>
       </div>
     </main>

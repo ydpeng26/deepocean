@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import ts from 'typescript';
 
-function load(path, require = () => { throw Error('Unexpected import'); }) {
+function load(path, require = name => { if (name === '@/lib/dive-record') return load('src/lib/dive-record.ts'); throw Error('Unexpected import: ' + name); }) {
   const module = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
@@ -40,6 +40,8 @@ console.log('PASS: first log, backdated insert, date edit, deletion, same-day ti
 let rows = [c, b, a], search = '', country = 'all', stateIndex = 0;
 const jsx = (type, props) => ({ type, props });
 const page = load('src/routes/_authenticated/dives/logs.tsx', name => {
+  if (name === '@/lib/dive-record') return load('src/lib/dive-record.ts');
+  if (name === '@/lib/dive-stats') return load('src/lib/dive-stats.ts');
   if (name === 'react') return { useMemo: f => f(), useState: () => [stateIndex++ === 0 ? search : country, () => {}] };
   if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
   if (name === '@tanstack/react-router') return { createFileRoute: () => o => o, useNavigate: () => () => {}, Link: 'Link' };
@@ -107,3 +109,10 @@ groups = nodes(page()).filter(n => n.type === 'details');
 assert.equal(groups.length, 1);
 assert.equal(displayed().join(','), '#001');
 console.log('PASS: yearly collapsed groups contain all matching logs, newest year first, filters preserve global numbering');
+
+const summaryLog={...fixture('summary','2024-03-01'),record_mode:'summary',dive_count:12,date_precision:'month',period_end:'2024-03-31',site_names:['Monad Shoal','Gato Island'],site_name:'Malapascua',country:'Philippines'};
+rows=[{...fixture('after','2024-04-01')},summaryLog];search='';country='all';
+assert.equal(displayed().join(','),'#013,#001–012');
+search='gato';assert.equal(displayed().join(','),'#001–012','Searching any site in the summary finds the single entry and preserves the whole range');
+stateIndex=0;assert.equal(nodes(page()).filter(n=>n.type==='article').length,1);
+console.log('PASS: actual summary list displays one twelve-dive entry with a number range and searches all included sites');

@@ -35,6 +35,8 @@ import { readCompanions, companionFields } from "@/lib/dive-companions";
 import { useLiveCopy } from "@/i18n/liveCopy";
 import { listGear } from "@/lib/gear";
 import { diveWeightFields } from "@/lib/dive-weight";
+import { DiveRecordFields, type RecordFormValue } from "@/components/DiveRecordFields";
+import { diveRecordFields, diveCount } from "@/lib/dive-record";
 
 type Props = { dive?: Dive; onBusyChange?: (busy: boolean) => void; onSaved?: () => void };
 
@@ -68,6 +70,12 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     dive?.dive_date ?? new Date().toISOString().slice(0, 10),
   );
   const [entryTime, setEntryTime] = useState(dive?.entry_time?.slice(0, 5) ?? "");
+  const [record, setRecord] = useState<Omit<RecordFormValue, "dive_date">>({
+    record_mode: dive?.record_mode ?? "precise", dive_count: String(diveCount(dive ?? {})),
+    date_precision: dive?.date_precision ?? "month", period_end: dive?.period_end ?? "",
+    site_names: dive?.site_names?.join("\n") ?? "", total_duration_min: dive?.total_duration_min?.toString() ?? "",
+  });
+  const summary = record.record_mode === "summary";
   const [gasType, setGasType] = useState(dive?.gas_type ?? "");
   const [weight, setWeight] = useState(dive?.weight_value?.toString() ?? "");
   const [weightUnit, setWeightUnit] = useState(dive?.weight_unit ?? "kg");
@@ -128,6 +136,9 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       setRegion(previous.region ?? "");
       setSiteName(previous.site_name);
       setDiveDate(previous.dive_date);
+      setRecord({ record_mode: previous.record_mode ?? "precise", dive_count: String(diveCount(previous)),
+        date_precision: previous.date_precision ?? "month", period_end: previous.period_end ?? "",
+        site_names: previous.site_names?.join("\n") ?? "", total_duration_min: previous.total_duration_min?.toString() ?? "" });
       setEntryTime(previous.entry_time?.slice(0, 5) ?? "");
       setGasType(previous.gas_type ?? "");
       setWeight(previous.weight_value?.toString() ?? "");
@@ -179,8 +190,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
     };
     const resolvedCountry =
       country.trim() || knownRegionCountries[region.trim().toLowerCase()] || "";
-    if (!resolvedCountry || !siteName.trim() || !diveDate) {
-      toast.error(t("请填写潜水国家、潜点名称和日期"));
+    if (!resolvedCountry || (!summary && !siteName.trim()) || (summary && !region.trim() && !record.site_names?.trim()) || !diveDate) {
+      toast.error(summary ? (language === "en" ? "Enter a country, region or dive site, date and number of dives." : "请填写国家、地区或潜点、时间和潜水次数。") : t("请填写潜水国家、潜点名称和日期"));
       return;
     }
     savingRef.current = true;
@@ -190,13 +201,14 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
       if (gasType.trim().length > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
       const numeric = {
         ...diveWeightFields(weight, weightUnit),
-        entry_time: parseDiveEntryTime(entryTime),
+        entry_time: summary ? null : parseDiveEntryTime(entryTime),
         ...companionFields(companions),
         surface_temp: parseDiveNumber(surfaceTemp, t("水上温度"), "temperature"),
         water_temp: parseDiveNumber(waterTemp, t("水下温度"), "temperature"),
         max_depth: parseDiveNumber(maxDepth, t("最大深度"), "depth"),
         duration_min: parseDiveNumber(duration, t("潜水时长"), "duration"),
       };
+      const recordFields = diveRecordFields({ ...record, dive_date: diveDate }, numeric.duration_min);
       if (existingPaths.length + newFiles.length > 6)
         throw new Error(t("照片和视频合计最多 6 个，请先移除部分附件"));
       const userId = await (owner.current ?? requireDiveOwner(dive?.user_id));
@@ -210,8 +222,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
         user_id: userId,
         country: resolvedCountry.slice(0, 80),
         region: region.trim().slice(0, 100) || null,
-        site_name: siteName.trim().slice(0, 120),
-        dive_date: diveDate,
+        site_name: summary ? (region.trim() || recordFields.site_names?.[0] || "").slice(0, 120) : siteName.trim().slice(0, 120),
+        ...recordFields,
         gas_type: gasType.trim() || null,
         weather: weather || null,
         ...numeric,
@@ -266,7 +278,13 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
   return (
     <form onSubmit={handleSubmit} className="do-dive-form space-y-10">
       <fieldset disabled={saving || copying} className="min-w-0 space-y-10" aria-busy={saving || copying}>
-        <p className="do-dive-form-hint text-sm text-muted-foreground">{language === "en" ? "Required: country, dive site and date. Other fields are optional." : "必填：潜水国家、潜点名称和日期。其余信息均可选填。"}</p>
+        <DiveRecordFields value={{ ...record, dive_date: diveDate }} english={language === "en"} onChange={patch => {
+          if (patch.record_mode === "precise" && summary) setSiteName("");
+          if (patch.dive_date !== undefined) setDiveDate(patch.dive_date);
+          const { dive_date: ignored, ...rest } = patch; void ignored;
+          setRecord(current => ({ ...current, ...rest }));
+        }} />
+        <p className="do-dive-form-hint text-sm text-muted-foreground">{summary ? (language === "en" ? "Required: country, region or dive site, period and dive count. All measurements are optional." : "必填：国家、地区或潜点、时间和潜水次数。各项测量数据均可留空。") : (language === "en" ? "Required: country, dive site and date. Other fields are optional." : "必填：潜水国家、潜点名称和日期。其余信息均可选填。")}</p>
         {!dive && <div className="space-y-2 rounded-xl border border-border p-4">
           <Button type="button" variant="outline" onClick={copyPrevious}>
             {copying ? (language === "en" ? "Copying…" : "正在复制…") : (language === "en" ? "Copy previous dive" : "复制上一条")}
@@ -311,7 +329,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 placeholder={t("例如：Komodo / 科莫多")}
               />
             </div>
-            <div className="space-y-2">
+            {!summary && <div className="space-y-2">
               <Label htmlFor="site">{t("潜点名称")}</Label>
               <Input
                 id="site"
@@ -321,8 +339,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 maxLength={120}
                 placeholder={t("例如：Apo Reef")}
               />
-            </div>
-            <div className="space-y-2">
+            </div>}
+            {!summary && <div className="space-y-2">
               <Label htmlFor="date">{t("潜水日期")}</Label>
               <Input
                 id="date"
@@ -331,8 +349,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
                 onChange={(e) => setDiveDate(e.target.value)}
                 className={field}
               />
-            </div>
-            <div className="space-y-2">
+            </div>}
+            {!summary && <div className="space-y-2">
               <Label htmlFor="entry-time">{t("入水时间（选填）")}</Label>
               <Input id="entry-time" type="time" step={60} value={entryTime}
                 onChange={(e) => setEntryTime(e.target.value)} className={field}
@@ -340,7 +358,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               <p id="entry-time-help" className="text-xs text-muted-foreground">
                 {t("填写潜点当地时间；未填时排在当天已填时间的记录之后。")}
               </p>
-            </div>
+            </div>}
             <div className="space-y-2">
               <Label htmlFor="weight-value">{language === "en" ? "Weight carried (optional)" : "配重（选填）"}</Label>
               <div className="flex gap-2">
@@ -413,7 +431,7 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="duration">{t("时长 分钟")}</Label>
+              <Label htmlFor="duration">{summary ? (language === "en" ? "Longest single dive (min)" : "最长单次水下时间（分钟）") : t("时长 分钟")}</Label>
               <Input
                 id="duration"
                 inputMode="numeric"
@@ -566,8 +584,8 @@ export function DiveForm({ dive, onBusyChange, onSaved }: Props) {
 
         <section className="space-y-4 border-t border-border pt-8">
           <h2 className="text-sm font-semibold">{language === "en" ? "Update my counters" : "联动累计次数"}</h2>
-          <label className="flex items-center gap-3 text-sm"><input id="count-tank" type="checkbox" checked={countTank} onChange={e => setCountTank(e.target.checked)} />{language === "en" ? "Add 1 to my tank count" : "计入累计瓶数（本潜 +1）"}</label>
-          <p className="text-xs text-muted-foreground">{language === "en" ? "Select equipment used on this dive. Each item adds 1 use. Editing or deleting this log adjusts its contribution automatically." : "勾选本潜使用的装备，每件累计 1 次。修改勾选或删除日志时，会自动调整本条日志产生的次数。"}</p>
+          <label className="flex items-center gap-3 text-sm"><input id="count-tank" type="checkbox" checked={countTank} onChange={e => setCountTank(e.target.checked)} />{summary ? (language === "en" ? `Add ${record.dive_count || "?"} to my tank count` : `计入累计瓶数（+${record.dive_count || "?"}）`) : (language === "en" ? "Add 1 to my tank count" : "计入累计瓶数（本潜 +1）")}</label>
+          <p className="text-xs text-muted-foreground">{summary ? (language === "en" ? `Select only equipment used for every dive in this summary. Each selected item adds ${record.dive_count || "?"} uses. Editing or deleting adjusts its contribution.` : `仅勾选整段经历每次都使用的装备，每件累计 ${record.dive_count || "?"} 次；修改或删除记录时自动调整。`) : (language === "en" ? "Select equipment used on this dive. Each item adds 1 use. Editing or deleting this log adjusts its contribution automatically." : "勾选本潜使用的装备，每件累计 1 次。修改勾选或删除日志时，会自动调整本条日志产生的次数。")}</p>
           {gearQuery.isError ? <button type="button" className="text-sm text-primary" onClick={() => gearQuery.refetch()}>{language === "en" ? "Equipment unavailable · Retry" : "装备读取失败，点击重试"}</button> : gearQuery.isPending ? <p className="text-xs">{language === "en" ? "Loading equipment…" : "正在读取装备…"}</p> : gear.length ? <div className="grid gap-3 sm:grid-cols-2">{gear.map(item => <label key={item.id} className="flex items-center gap-3 text-sm"><input type="checkbox" aria-label={[item.brand,item.model].filter(Boolean).join(" ") || item.category} checked={usedGearIds.includes(item.id)} onChange={e => setUsedGearIds(ids => e.target.checked ? [...ids,item.id] : ids.filter(id => id !== item.id))} />{[item.brand,item.model].filter(Boolean).join(" ") || item.category}</label>)}</div> : <p className="text-xs text-muted-foreground">{language === "en" ? "Add equipment under My Gear first." : "请先在“我的装备”添加装备，再选择本潜使用的装备。"}</p>}
         </section>
         <div className="do-dive-actions flex gap-3 border-t border-border pt-8">

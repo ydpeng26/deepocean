@@ -16,6 +16,8 @@ import {
 import { DiveCompanionsEditor } from "@/components/DiveCompanionsEditor";
 import { readCompanions } from "@/lib/dive-companions";
 import type { DiveType } from "@/lib/dives";
+import { DiveRecordFields } from "@/components/DiveRecordFields";
+import { divePeriodLabel } from "@/lib/dive-record";
 
 const copy = {
   "zh-CN": {
@@ -259,7 +261,7 @@ function OfflinePage() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (working.current || loading) return;
-    if (!fields.country.trim() || !fields.site_name.trim() || !fields.dive_date) {
+    if (!fields.country.trim() || (fields.record_mode === "summary" ? !fields.region.trim() && !fields.site_names?.trim() : !fields.site_name.trim()) || !fields.dive_date) {
       toast.error(t.required);
       return;
     }
@@ -296,7 +298,7 @@ function OfflinePage() {
     } catch (error) {
       if (alive.current) {
         if (error instanceof OfflineDraftConflict) setConflict(true);
-        toast.error(error instanceof OfflineDraftConflict ? error.message : t.storageError);
+        toast.error(error instanceof Error ? error.message : t.storageError);
       }
     } finally {
       working.current = false;
@@ -402,6 +404,7 @@ function OfflinePage() {
               </div>
             )}
             <fieldset disabled={saving || loading} className="m-0 min-w-0 border-0 p-0">
+              <DiveRecordFields value={fields} english={language === "en"} onChange={patch => setFields(current => ({ ...current, ...patch }))} />
               <section>
                 <h2>{t.sectionPlace}</h2>
                 <div className="do-offline-fields">
@@ -422,7 +425,7 @@ function OfflinePage() {
                       maxLength={100}
                     />
                   </label>
-                  <label>
+                  {fields.record_mode !== "summary" && <label>
                     {t.site}
                     <input
                       value={fields.site_name}
@@ -430,8 +433,8 @@ function OfflinePage() {
                       maxLength={120}
                       required
                     />
-                  </label>
-                  <label>
+                  </label>}
+                  {fields.record_mode !== "summary" && <label>
                     {t.date}
                     <input
                       type="date"
@@ -439,12 +442,12 @@ function OfflinePage() {
                       onChange={(e) => update("dive_date", e.target.value)}
                       required
                     />
-                  </label>
-                  <label>
+                  </label>}
+                  {fields.record_mode !== "summary" && <label>
                     {language === "zh-CN" ? "入水时间（选填，潜点当地时间）" : "Entry time (optional, local time at dive site)"}
                     <input type="time" step={60} value={fields.entry_time ?? ""}
                       onChange={(e) => update("entry_time", e.target.value)} />
-                  </label>
+                  </label>}
                   <label>
                     {language === "zh-CN" ? "配重（选填）" : "Weight carried (optional)"}
                     <input type="number" min="0" max="9999.99" step="0.01" value={fields.weight_value ?? ""} onChange={e => update("weight_value", e.target.value)} />
@@ -494,7 +497,7 @@ function OfflinePage() {
                     />
                   </label>
                   <label>
-                    {t.duration}
+                    {fields.record_mode === "summary" ? (language === "en" ? "Longest single dive (min)" : "最长单次水下时间（分钟）") : t.duration}
                     <input
                       type="number"
                       inputMode="numeric"
@@ -584,7 +587,7 @@ function OfflinePage() {
                   <li key={draft.id}>
                     <strong>{draft.site_name}</strong>
                     <span>
-                      {[draft.country, draft.region, draft.dive_date].filter(Boolean).join(" · ")}
+                      {[draft.country, draft.region, draft.record_mode === "summary" ? `${divePeriodLabel(draft, language === "en")} · ${draft.dive_count} ${language === "en" ? "dives" : "潜"}` : draft.dive_date].filter(Boolean).join(" · ")}
                     </span>
                     <div>
                       <button

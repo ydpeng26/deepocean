@@ -8,7 +8,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 const clone = value => value === undefined ? undefined : structuredClone(value);
 function load(path, require, globals = {}) {
   const dependency = require;
-  require = name => name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
+  require = name => name === '@/lib/dive-record' ? load('src/lib/dive-record.ts',()=>({})) : name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
   const code = ts.transpileModule(fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
   }).outputText;
@@ -281,3 +281,15 @@ await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(rows.get
 stored.set(weighted.id,clone({...weighted,weight_unit:'kg'}));const weightConflict=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(weightConflict.failures.length,1);assert.equal(stored.size,1);
 await assert.rejects(a.saveOfflineDive({...fields,weight_value:'-1',weight_unit:'kg'}));
 console.log('PASS: offline weight and units survive sync; changed-unit retry keeps draft, negative values rejected');
+
+stored.clear();rows.clear();onInsert=undefined;owner='synthetic-A';
+const summaryFields={...fields,site_name:'',region:'Malapascua',country:'Philippines',record_mode:'summary',dive_count:'12',date_precision:'month',dive_date:'2024-03-01',site_names:'Monad Shoal\nGato Island',duration_min:'60',entry_time:'09:00'};
+const summaryDraft=await a.saveOfflineDive(summaryFields);
+assert.equal(summaryDraft.entry_time,'');assert.equal(summaryDraft.site_name,'Malapascua');
+await a.syncOfflineDives(undefined,{expectedUserId:owner});
+assert.equal(rows.size,1);assert.equal(rows.get(summaryDraft.id).dive_count,12);assert.equal(rows.get(summaryDraft.id).site_names.length,2);assert.equal(rows.get(summaryDraft.id).period_end,'2024-03-31');assert.equal(rows.get(summaryDraft.id).total_duration_min,null);
+stored.set(summaryDraft.id,clone({...summaryDraft,dive_count:'13'}));
+const changedSummary=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(changedSummary.failures.length,1);assert.equal(stored.size,1);assert.equal(rows.get(summaryDraft.id).dive_count,12);
+stored.set(summaryDraft.id,clone(summaryDraft));const identicalSummary=await a.syncOfflineDives(undefined,{expectedUserId:owner});assert.equal(identicalSummary.synced,1);assert.equal(stored.size,0);assert.equal(rows.size,1);
+await assert.rejects(a.saveOfflineDive({...summaryFields,dive_count:'0'}));
+console.log('PASS: offline summary metadata syncs once, no invented total, changed-count retry retains draft and identical retry reconciles without duplication');

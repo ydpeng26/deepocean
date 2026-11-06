@@ -1,4 +1,5 @@
 import { companionsText } from "@/lib/dive-companions";
+import { diveCount, divePeriodLabel } from "@/lib/dive-record";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -127,16 +128,19 @@ function DiveDetail() {
   const rows: Array<[string, string]> = [
     ["潜水国家", dive.country],
     ["地区 / 岛屿", dive.region ?? "—"],
-    ["潜点名称", dive.site_name],
-    ["潜水日期", formatDate(dive.dive_date)],
-    ["入水时间（潜点当地时间）", dive.entry_time?.slice(0, 5) ?? "未填写"],
+    [language === "en" ? "Recording mode" : "记录模式", dive.record_mode === "summary" ? (language === "en" ? "Summary" : "模糊记录") : (language === "en" ? "Precise" : "精确记录")],
+    [language === "en" ? "Number of dives" : "潜水次数", String(diveCount(dive))],
+    ["潜点名称", dive.record_mode === "summary" ? dive.site_names?.join(" · ") || "—" : dive.site_name],
+    ["潜水日期", dive.record_mode === "summary" ? divePeriodLabel(dive, language === "en") : formatDate(dive.dive_date)],
+    ...(dive.record_mode !== "summary" ? [["入水时间（潜点当地时间）", dive.entry_time?.slice(0, 5) ?? "未填写"] as [string, string]] : []),
     ["气体类型", dive.gas_type || "未填写"],
     ["配重", dive.weight_value == null ? "未填写" : `${dive.weight_value} ${dive.weight_unit ?? "kg"}`],
     ["当天天气", dive.weather ?? "—"],
     ["水上温度", dive.surface_temp != null ? `${dive.surface_temp} °C` : "—"],
     ["水下温度", dive.water_temp != null ? `${dive.water_temp} °C` : "—"],
     ["最大深度", dive.max_depth != null ? `${dive.max_depth} m` : "—"],
-    ["潜水时长", dive.duration_min != null ? `${dive.duration_min} 分钟` : "—"],
+    [dive.record_mode === "summary" ? (language === "en" ? "Longest single dive" : "最长单次水下时间") : "潜水时长", dive.duration_min != null ? `${dive.duration_min} ${language === "en" ? "min" : "分钟"}` : "—"],
+    ...(dive.record_mode === "summary" ? [[language === "en" ? "Known total underwater time" : "已知累计水下时间", dive.total_duration_min != null ? `${dive.total_duration_min} ${language === "en" ? "min" : "分钟"}` : (language === "en" ? "Unknown · excluded from total time" : "未知，不计入累计时间")] as [string, string]] : []),
     ["潜水类型", DIVE_TYPE_LABELS[dive.dive_type]],
     [
       "潜伴",
@@ -158,7 +162,7 @@ function DiveDetail() {
         <div>
           <h1 className="text-3xl font-normal tracking-tight text-primary">{dive.site_name}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {[dive.country, dive.region, formatDate(dive.dive_date)].filter(Boolean).join(" · ")}
+            {[dive.country, dive.region, dive.record_mode === "summary" ? `${divePeriodLabel(dive, language === "en")} · ${diveCount(dive)} ${language === "en" ? "dives" : "潜"}` : formatDate(dive.dive_date)].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
