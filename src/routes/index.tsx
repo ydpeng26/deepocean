@@ -51,7 +51,7 @@ function Landing() {
           <div className="do-stats"><div><Gauge /><strong>32</strong><span>{copy.maxDepth} (m)</span></div><div><Timer /><strong>60</strong><span>{copy.diveTime} ({copy.unitMinutes})</span></div><div><Waves /><strong>Air</strong><span>{copy.gasType}</span></div></div>
         </section>
       </main>
-      <footer id="about" className="do-footer"><blockquote>“{copy.quote}”</blockquote><cite>{copy.quoteBy}</cite><small>{copy.copyright}</small></footer>
+      <footer id="about" className="do-footer"><blockquote lang={language === "en" ? "en" : "zh-CN"} style={language === "en" ? { fontFamily: "Arial, Helvetica, sans-serif", letterSpacing: 0, wordSpacing: 0 } : undefined}>“{copy.quote}”</blockquote><cite>{copy.quoteBy}</cite><small>{copy.copyright}</small></footer>
     </div>
   );
 }

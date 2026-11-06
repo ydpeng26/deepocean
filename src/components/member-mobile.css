@@ -1,0 +1,26 @@
+@media (max-width: 700px) {
+  .do-member-header .do-passport-header-actions > .do-passport-account { display: none; }
+}
+.do-back-to-top {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #80d0ff80;
+  border-radius: 999px;
+  background: #05233ef2;
+  box-shadow: 0 5px 20px #0006;
+  color: #bde9ff;
+  font-size: 12px;
+  cursor: pointer;
+}
+.do-back-to-top svg { width: 18px; height: 18px; }
+.do-back-to-top:hover { background: #12436a; }
+.do-back-to-top:focus-visible { outline: 2px solid #80d0ff; outline-offset: 3px; }

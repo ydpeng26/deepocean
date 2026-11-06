@@ -37,7 +37,7 @@ export function MainNavigation() {
       aria-label={language === "zh-CN" ? "主要导航" : "Main navigation"}
     >
       {links.map((link) => (
-        <Link key={link.to} to={link.to} aria-current={link.active ? "page" : undefined}>
+        <Link key={link.to} to={link.to} activeOptions={{ exact: true }} aria-current={link.active ? "page" : undefined}>
           {language === "zh-CN" ? link.zh : link.en}
         </Link>
       ))}

@@ -12,7 +12,7 @@ export const landingCopy = {
     titleStart: "Log every dive", titleMiddle: "cherish every", titleAccent: "deep blue", subtitle: "Your own ocean story, rediscovered across countless days and nights",
     cta: "Get Started", offline: "Works offline", cardLocation: "Komodo, Indonesia", cardSiteLabel: "Dive Site", cardSite: "Batu Bolong", cardDate: "Aug 5, 2026",
     maxDepth: "Max Depth", diveTime: "Dive Time", gasType: "Gas Type", unitMinutes: "min", explore: "Explore the ocean",
-    quote: "The ocean is not a place to visit,\nit’s a place to belong.", quoteBy: "— Jacques Cousteau",
+    quote: "The ocean is not a place to visit,\nit's a place to belong.", quoteBy: "— Jacques Cousteau",
     copyright: "© 2026 SupDiver. All rights reserved.", languageLabel: "切换为中文", menu: "Open menu",
   },
 } as const;
