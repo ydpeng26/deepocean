@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import ts from "typescript";
 
 function load(file, require) {
+  const dependency = require;
+  require = name => name === "@/lib/dive-record" ? load("src/lib/dive-record.ts",()=>({})) : dependency(name);
   const source = readFileSync(new URL("../" + file, import.meta.url), "utf8");
   const code = ts.transpileModule(source, {
     compilerOptions: {
@@ -84,6 +86,7 @@ function editor() {
     messages: [],
     invalidations: [],
     refetches: 0,
+    dives: [],
     tree: null,
   };
   let cursor = 0,
@@ -144,7 +147,7 @@ function editor() {
       };
     if (name === "@tanstack/react-query")
       return {
-        useQuery: () => ({ data: [] }),
+        useQuery: () => ({ data: state.dives }),
         useQueryClient: () => queryClient,
         useMutation(options) {
           const i = mutationCursor++;
@@ -255,6 +258,13 @@ function editor() {
   state.render();
   return state;
 }
+
+const summaryProfile = editor();
+summaryProfile.dives = [{country:"Philippines",record_mode:"summary",dive_count:12},{country:"Philippines"}];
+summaryProfile.render();
+const summaryStats = summaryProfile.find(n => n.props?.className === "do-profile-public-stats");
+assert.equal(nodes(summaryStats).find(n => n.type === "strong").props.children,13);
+console.log("PASS: profile counts twelve summary dives plus one precise dive as thirteen");
 const demographicEditor = editor();
 const demographicField = key => demographicEditor.find(n => n.type === "input" && n.props["aria-label"] === key);
 assert.equal(demographicField("age-public").props.checked, false);

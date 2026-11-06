@@ -18,6 +18,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { listDives } from "@/lib/dives";
+import { diveCount } from "@/lib/dive-record";
 import { profileAge, profileToday } from "@/lib/profile-demographics";
 import "@/styles/profile-demographics.css";
 import {
@@ -652,7 +653,7 @@ function ProfilePage() {
                 </p>}
                 <div className="do-profile-public-stats">
                   <div>
-                    <strong>{dives.length}</strong>
+                    <strong>{dives.reduce((sum, dive) => sum + diveCount(dive), 0)}</strong>
                     <small>{c.dives}</small>
                   </div>
                   <div>

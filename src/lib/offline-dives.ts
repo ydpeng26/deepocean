@@ -1,13 +1,20 @@
 import { readCompanions, companionFields, normalizeCompanions, type DiveCompanion } from "@/lib/dive-companions";
 import { supabase } from "@/integrations/supabase/client";
-import type { BuddyRole, DiveType } from "@/lib/dives";
+import type { BuddyRole, DiveType, DivePayload } from "@/lib/dives";
 import { parseDiveEntryTime } from "@/lib/dive-order";
 import { diveWeightFields } from "@/lib/dive-weight";
+import { diveRecordFields, type DatePrecision, type RecordMode } from "@/lib/dive-record";
 
 const DATABASE_NAME = "supdiver-offline";
 const STORE_NAME = "dive-drafts";
 
 export type OfflineDiveFields = {
+  record_mode?: RecordMode;
+  dive_count?: string;
+  date_precision?: DatePrecision;
+  period_end?: string;
+  site_names?: string;
+  total_duration_min?: string;
   country: string;
   region: string;
   site_name: string;
@@ -54,8 +61,10 @@ function sameDraft(a: OfflineDive | undefined, b: OfflineDive) {
 }
 
 function sameFields(a: OfflineDiveFields, b: OfflineDiveFields) {
+  const defaults = { record_mode: "precise", dive_count: "1", date_precision: "month", period_end: "", site_names: "", total_duration_min: "" };
+  const left = { ...defaults, ...a }, right = { ...defaults, ...b };
   return (Object.keys(emptyOfflineDive()) as (keyof OfflineDiveFields)[]).every(
-    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : key === "weight_unit" ? (a[key] ?? "kg") === (b[key] ?? "kg") : (key === "entry_time" || key === "gas_type" || key === "weight_value") ? (a[key] ?? "") === (b[key] ?? "") : a[key] === b[key],
+    (key) => key === "companions" ? JSON.stringify(readCompanions(a)) === JSON.stringify(readCompanions(b)) : key === "weight_unit" ? (a[key] ?? "kg") === (b[key] ?? "kg") : (key === "entry_time" || key === "gas_type" || key === "weight_value") ? (a[key] ?? "") === (b[key] ?? "") : left[key] === right[key],
   );
 }
 
@@ -98,6 +107,7 @@ export function emptyOfflineDive(): OfflineDiveFields {
     region: "",
     site_name: "",
     dive_date: localDate.toISOString().slice(0, 10),
+    record_mode: "precise", dive_count: "1", date_precision: "month", period_end: "", site_names: "", total_duration_min: "",
     entry_time: "",
     gas_type: "",
     weight_value: "",
@@ -173,14 +183,17 @@ export async function saveOfflineDive(
 ): Promise<OfflineDive> {
   if ((fields.gas_type?.trim().length ?? 0) > 80) throw new Error("气体类型最多 80 个字符 / Gas type: maximum 80 characters");
   diveWeightFields(fields.weight_value, fields.weight_unit);
+  const record = diveRecordFields(fields, optionalNumber(fields.duration_min));
+  if (!fields.country.trim() || (fields.record_mode === "summary" ? !fields.region.trim() && !record.site_names?.length : !fields.site_name.trim()))
+    throw new Error("请填写国家和地区或潜点 / Enter a country and a region or dive site");
   const draft: OfflineDive = {
     ...fields,
     gas_type: fields.gas_type?.trim() ?? "",
     companions: normalizeCompanions(readCompanions(fields)),
-    entry_time: parseDiveEntryTime(fields.entry_time)?.slice(0, 5) ?? "",
+    entry_time: fields.record_mode === "summary" ? "" : parseDiveEntryTime(fields.entry_time)?.slice(0, 5) ?? "",
     country: fields.country.trim().slice(0, 80),
     region: fields.region.trim().slice(0, 100),
-    site_name: fields.site_name.trim().slice(0, 120),
+    site_name: fields.record_mode === "summary" ? (fields.region.trim() || record.site_names?.[0] || "").slice(0, 120) : fields.site_name.trim().slice(0, 120),
     buddy_name: fields.buddy_name.trim().slice(0, 80),
     notes: fields.notes.trim().slice(0, 2000),
     id: existingId ?? options.requestId ?? crypto.randomUUID(),
@@ -289,14 +302,17 @@ async function performSync(
 
     for (const draft of drafts) {
       await checkAccount();
-      const payload = {
+      let record;
+      try { record = diveRecordFields(draft, optionalNumber(draft.duration_min)); }
+      catch (error) { failures.push(`${draft.site_name}: ${error instanceof Error ? error.message : "Invalid record"}`); onProgress?.(synced, drafts.length); continue; }
+      const payload: DivePayload & { id: string } = {
         id: draft.id,
         user_id: userId,
         country: draft.country,
         region: draft.region || null,
         site_name: draft.site_name,
-        dive_date: draft.dive_date,
-        entry_time: parseDiveEntryTime(draft.entry_time),
+        ...record,
+        entry_time: draft.record_mode === "summary" ? null : parseDiveEntryTime(draft.entry_time),
         gas_type: draft.gas_type?.trim() || null,
         ...diveWeightFields(draft.weight_value, draft.weight_unit),
         weather: draft.weather || null,
@@ -323,7 +339,7 @@ async function performSync(
         const { data: existing, error: lookupError } = await supabase
           .from("dives")
           .select(
-            "id, country, region, site_name, dive_date, entry_time, gas_type, weight_value, weight_unit, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
+            "id, country, region, site_name, dive_date, entry_time, record_mode, dive_count, date_precision, period_end, site_names, total_duration_min, gas_type, weight_value, weight_unit, weather, surface_temp, water_temp, max_depth, duration_min, dive_type, buddy_role, buddy_name, companions, notes",
           )
           .eq("id", draft.id)
           .eq("user_id", userId)
@@ -335,6 +351,7 @@ async function performSync(
           continue;
         }
         const comparableFields = [
+          "record_mode", "dive_count", "date_precision", "period_end", "total_duration_min",
           "country",
           "region",
           "site_name",
@@ -354,6 +371,7 @@ async function performSync(
           "notes",
         ] as const;
         if (
+          JSON.stringify(existing.site_names ?? []) !== JSON.stringify(payload.site_names) ||
           JSON.stringify(readCompanions(existing as unknown as OfflineDiveFields)) !== JSON.stringify(payload.companions) ||
           comparableFields.some((key) => String(existing[key] ?? "") !== String(payload[key] ?? ""))
         ) {

@@ -1,4 +1,5 @@
 import type { Dive } from "@/lib/dives";
+import { diveCount, divePeriodLabel } from "@/lib/dive-record";
 
 export type CardOptions = {
   position: "left" | "center" | "right";
@@ -37,7 +38,7 @@ export function cardLines(
     location: options.location
       ? cardText([dive.country, dive.region].filter(Boolean).join(" · "), 120)
       : "",
-    date: options.date ? cardText(dive.dive_date, 10) : "",
+    date: options.date ? cardText(divePeriodLabel(dive, en), 48) : "",
     note: options.note ? cardText(note, 160) : "",
     signature: options.signature ? cardText(signature, 48) : "",
     stats: options.data
@@ -48,11 +49,11 @@ export function cardLines(
           },
           {
             value: dive.duration_min == null ? "—" : `${dive.duration_min} min`,
-            label: en ? "DIVE TIME" : "潜水时长",
+            label: dive.record_mode === "summary" ? (en ? "LONGEST DIVE" : "最长单次时间") : (en ? "DIVE TIME" : "潜水时长"),
           },
           {
-            value: dive.water_temp == null ? "—" : `${dive.water_temp} °C`,
-            label: en ? "WATER" : "水温",
+            value: dive.record_mode === "summary" ? String(diveCount(dive)) : dive.water_temp == null ? "—" : `${dive.water_temp} °C`,
+            label: dive.record_mode === "summary" ? (en ? "DIVES" : "潜水次数") : (en ? "WATER" : "水温"),
           },
         ]
       : [],

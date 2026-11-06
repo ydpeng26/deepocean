@@ -6,7 +6,7 @@ import { webcrypto } from 'node:crypto';
 import ts from 'typescript';
 function load(path, require) {
   const dependency = require;
-  require = name => name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
+  require = name => name === '@/lib/dive-record' ? load('src/lib/dive-record.ts',()=>({})) : name === '@/lib/dive-weight' ? load('src/lib/dive-weight.ts',()=>({})) : dependency(name);
   const code = ts.transpileModule(fs.readFileSync(new URL('../'+path,import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const module={exports:{}};
   vm.runInNewContext(code,{module,exports:module.exports,require,crypto:webcrypto,Uint8Array,window:{confirm:()=>true},fetch(){throw Error('Network forbidden');}});
@@ -138,3 +138,19 @@ const weightFields=load('src/lib/dive-weight.ts',()=>({})).diveWeightFields;
 for(const invalid of ['-1','NaN','1.234','10000','1e2'])assert.throws(()=>weightFields(invalid,'kg'));
 assert.equal(weightFields('0','lb').weight_value,0);assert.equal(weightFields('6','kg').weight_unit,'kg');
 console.log('PASS: kg/lb weight save, edit, clear, zero and invalid numbers; all gas suggestions and custom mixes persist');
+
+s=formHarness();s.input('country','Philippines');s.input('region','Malapascua');
+const patchRecord=patch=>s.render().find(n=>n.type==='DiveRecordFields').props.onChange(patch);
+patchRecord({record_mode:'summary',dive_count:'12',date_precision:'month',dive_date:'2024-03-01',site_names:'Monad Shoal\nGato Island',total_duration_min:''});
+s.input('duration','60');s.input('depth','30');
+assert(!s.render().some(n=>n.props.id==='site'));assert(!s.render().some(n=>n.props.id==='entry-time'));
+const summarySave=s.submit();await tick();
+assert.equal(s.payload.record_mode,'summary');assert.equal(s.payload.dive_count,12);assert.equal(s.payload.site_name,'Malapascua');
+assert.equal(s.payload.period_end,'2024-03-31');assert.equal(s.payload.site_names.length,2);assert.equal(s.payload.duration_min,60);assert.equal(s.payload.total_duration_min,null);assert.equal(s.payload.count_tank,false);
+s.resolve();await summarySave;
+s=formHarness({...payload,id:'summary-edit',updated_at:'v',record_mode:'summary',dive_count:12,date_precision:'year',dive_date:'2024-01-01',period_end:'2024-12-31',site_names:['A','B'],total_duration_min:600});
+const loaded=s.render().find(n=>n.type==='DiveRecordFields').props.value;assert.equal(loaded.dive_count,'12');assert.equal(loaded.site_names,'A\nB');assert.equal(loaded.total_duration_min,'600');
+patchRecord({record_mode:'precise'});assert.equal(s.render().find(n=>n.props.id==='site').props.value,'');
+s.input('site','Known single site');const converted=s.submit();await tick();assert.equal(s.payload.dive_count,1);assert.equal(s.payload.date_precision,'day');assert.equal(s.payload.period_end,null);assert.equal(s.payload.site_names.length,0);s.resolve();await converted;
+s=formHarness();s.input('country','Philippines');s.input('region','Malapascua');patchRecord({record_mode:'summary',dive_count:'0'});await s.submit();assert.equal(s.calls,0);
+console.log('PASS: actual summary form creates one twelve-dive entry, optional measurements, saved metadata, conversion and invalid count rejection');

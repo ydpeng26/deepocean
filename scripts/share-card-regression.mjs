@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import ts from "typescript";
 const read = (p) => fs.readFileSync(new URL("../" + p, import.meta.url), "utf8");
 function load(path, require = () => ({}), globals = {}) {
+  const dependency = require;
+  require = name => name === '@/lib/dive-record' ? load('src/lib/dive-record.ts') : dependency(name);
   const module = { exports: {} };
   vm.runInNewContext(
     ts.transpileModule(read(path), {

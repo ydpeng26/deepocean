@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { divePeriodLabel } from "@/lib/dive-record";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
@@ -336,7 +337,7 @@ export function OfflineSyncWorkspace() {
                         </span>
                         <span className="do-sync-draft-copy">
                           <small>
-                            {draft.dive_date} · {zh ? "本机草稿" : "Local draft"}
+                            {draft.record_mode === "summary" ? `${divePeriodLabel(draft, !zh)} · ${draft.dive_count} ${zh ? "潜" : "dives"}` : draft.dive_date} · {zh ? "本机草稿" : "Local draft"}
                           </small>
                           <strong>{draft.site_name}</strong>
                           <em>
@@ -354,7 +355,7 @@ export function OfflineSyncWorkspace() {
                       <span>{zh ? "草稿概览" : "Draft overview"}</span>
                       <strong>{active.site_name}</strong>
                       <small>
-                        {active.dive_date} · {active.country}
+                        {divePeriodLabel(active, !zh)} · {active.country}{active.record_mode === "summary" && ` · ${active.dive_count} ${zh ? "潜" : "dives"}`}
                       </small>
                     </div>
                     <div className="do-sync-detail-memory">
