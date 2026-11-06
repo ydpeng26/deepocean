@@ -1,0 +1,27 @@
+.do-passport .do-passport-identity .do-passport-panel-heading {
+  justify-content: space-between;
+}
+.do-passport-profile-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid rgba(132, 197, 238, .3);
+  border-radius: 8px;
+  color: #80d0ff;
+  font-size: 11px;
+  letter-spacing: normal;
+}
+.do-passport-profile-edit:hover { background: rgba(128, 208, 255, .1); color: white; }
+.do-passport-profile-edit:focus-visible { outline: 2px solid #80d0ff; outline-offset: 3px; }
+.do-passport .do-passport-profile-edit svg { width: 14px; height: 14px; }
+.do-passport .do-passport-identity-person .do-passport-profile-avatar {
+  align-self: center;
+  margin-inline: auto;
+  width: min(180px, 100%) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.do-passport .do-passport-identity-person > div:last-child { width: 100%; min-width: 0; }
