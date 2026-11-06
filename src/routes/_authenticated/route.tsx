@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-ro
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MemberHeader } from "@/components/MemberHeader";
+import { BackToTop } from "@/components/BackToTop";
 import { memberSessionGate } from "@/lib/authenticated-session";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuthStorageStatus } from "@/hooks/useAuthStorageStatus";
@@ -134,6 +135,7 @@ function AuthenticatedLayout() {
     <div ref={privateRoot} key={`${user.id}:${session.epoch}`} data-private-member-root>
       <MemberHeader />
       <Outlet />
+      <BackToTop />
     </div>
   );
 }
