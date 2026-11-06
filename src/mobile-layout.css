@@ -1,5 +1,7 @@
 .do-responsive-details > summary { display: none; }
 @media (max-width: 700px) {
+  /* Keep mobile login fields readable without input-focus auto zoom. */
+  .do-auth-form input { font-size: 16px; min-height: 48px; }
   .do-responsive-details > summary {
     display: list-item; min-height: 44px; padding: 12px 4px;
     color: #96d9ff; font-size: 14px; cursor: pointer;
