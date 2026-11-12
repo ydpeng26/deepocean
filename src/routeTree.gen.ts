@@ -33,6 +33,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SavedPreviewRouteImport } from './routes/saved-preview'
 import { Route as SettingsPreviewRouteImport } from './routes/settings-preview'
 import { Route as ShareCardPreviewRouteImport } from './routes/share-card-preview'
+import { Route as AuthenticatedAdminInboxRouteImport } from './routes/_authenticated/admin-inbox'
 import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
 import { Route as AuthenticatedFeedbackRouteImport } from './routes/_authenticated/feedback'
 import { Route as AuthenticatedForumRouteImport } from './routes/_authenticated/forum'
@@ -167,6 +168,11 @@ const ShareCardPreviewRoute = ShareCardPreviewRouteImport.update({
   path: '/share-card-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminInboxRoute = AuthenticatedAdminInboxRouteImport.update({
+  id: '/admin-inbox',
+  path: '/admin-inbox',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCertificatesRoute =
   AuthenticatedCertificatesRouteImport.update({
     id: '/certificates',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/admin-inbox': typeof AuthenticatedAdminInboxRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
   '/forum': typeof AuthenticatedForumRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/admin-inbox': typeof AuthenticatedAdminInboxRoute
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
   '/forum': typeof AuthenticatedForumRoute
@@ -343,6 +351,7 @@ export interface FileRoutesById {
   '/saved-preview': typeof SavedPreviewRoute
   '/settings-preview': typeof SettingsPreviewRoute
   '/share-card-preview': typeof ShareCardPreviewRoute
+  '/_authenticated/admin-inbox': typeof AuthenticatedAdminInboxRoute
   '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
   '/_authenticated/feedback': typeof AuthenticatedFeedbackRoute
   '/_authenticated/forum': typeof AuthenticatedForumRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/admin-inbox'
     | '/certificates'
     | '/feedback'
     | '/forum'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/admin-inbox'
     | '/certificates'
     | '/feedback'
     | '/forum'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/saved-preview'
     | '/settings-preview'
     | '/share-card-preview'
+    | '/_authenticated/admin-inbox'
     | '/_authenticated/certificates'
     | '/_authenticated/feedback'
     | '/_authenticated/forum'
@@ -676,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareCardPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin-inbox': {
+      id: '/_authenticated/admin-inbox'
+      path: '/admin-inbox'
+      fullPath: '/admin-inbox'
+      preLoaderRoute: typeof AuthenticatedAdminInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/certificates': {
       id: '/_authenticated/certificates'
       path: '/certificates'
@@ -778,6 +797,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminInboxRoute: typeof AuthenticatedAdminInboxRoute
   AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
   AuthenticatedFeedbackRoute: typeof AuthenticatedFeedbackRoute
   AuthenticatedForumRoute: typeof AuthenticatedForumRoute
@@ -795,6 +815,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminInboxRoute: AuthenticatedAdminInboxRoute,
   AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
   AuthenticatedFeedbackRoute: AuthenticatedFeedbackRoute,
   AuthenticatedForumRoute: AuthenticatedForumRoute,

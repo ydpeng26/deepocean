@@ -7,6 +7,7 @@ import { accountDeletion, type AccountDeletionState } from "@/lib/account-manage
 import { mountAccountRequestPage } from "@/lib/account-request-fetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AdminInboxLink } from "@/components/AdminInboxLink";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -218,6 +219,7 @@ function AccountSettings() {
           </section>
           <section className="space-y-4 border border-border p-6">
             <h2 className="text-xl">{t("偏好与数据", "Preferences & data")}</h2>
+            <AdminInboxLink showLabel />
             <Button disabled={busy} variant="outline" onClick={toggleLanguage}>
               {t("切换为 English", "切换为中文")}
             </Button>

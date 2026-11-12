@@ -1,0 +1,142 @@
+.do-admin-inbox {
+  max-width: 1040px;
+  margin: auto;
+  padding: 32px 24px 64px;
+  overflow-wrap: anywhere;
+}
+.do-admin-inbox > a {
+  color: #7dd3fc;
+}
+.do-admin-inbox header {
+  margin: 28px 0;
+}
+.do-admin-inbox h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  margin-bottom: 12px;
+}
+.do-admin-inbox header > p:first-child {
+  color: #7dd3fc;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+.do-admin-inbox button,
+.do-admin-inbox input,
+.do-admin-inbox select {
+  min-height: 44px;
+  font-size: 16px;
+  border: 1px solid #3c6179;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #082c43;
+  color: #e5f4ff;
+}
+.do-admin-inbox button {
+  cursor: pointer;
+}
+.do-admin-inbox button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.do-admin-inbox :focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 3px;
+}
+.do-inbox-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+.do-inbox-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.do-inbox-search {
+  flex: 1;
+}
+.do-inbox-list {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+.do-inbox-list article {
+  padding: 20px;
+  border: 1px solid #32536b;
+  border-radius: 16px;
+  background: #062338;
+}
+.do-inbox-list article.is-unread {
+  border-left: 4px solid #38bdf8;
+}
+.do-inbox-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #9db8cd;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.do-inbox-meta strong {
+  color: #7dd3fc;
+}
+.do-inbox-list summary {
+  cursor: pointer;
+  white-space: pre-wrap;
+}
+.do-inbox-list summary span {
+  display: block;
+  color: #7dd3fc;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.do-inbox-body {
+  white-space: pre-wrap;
+  margin: 20px 0;
+  line-height: 1.8;
+}
+.do-inbox-list details p {
+  overflow-wrap: anywhere;
+}
+.do-inbox-list small {
+  display: block;
+  color: #9db8cd;
+  margin-top: 14px;
+}
+.do-inbox-user {
+  color: #9db8cd;
+  font-size: 13px;
+}
+.do-inbox-actions,
+.do-inbox-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.do-inbox-pagination {
+  justify-content: center;
+  margin-top: 28px;
+}
+@media (max-width: 600px) {
+  .do-admin-inbox {
+    padding: 24px 16px 48px;
+  }
+  .do-inbox-filters label {
+    flex: 1 1 calc(50% - 12px);
+  }
+  .do-inbox-filters .do-inbox-search {
+    flex-basis: 100%;
+  }
+  .do-inbox-filters > button {
+    width: 100%;
+  }
+  .do-inbox-list article {
+    padding: 16px;
+  }
+}

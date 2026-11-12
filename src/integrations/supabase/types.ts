@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      guest_contact_messages: {
+        Row: { id: string; category: string; body: string; reply_email: string | null; created_at: string; status: string }
+        Insert: never
+        Update: { status?: string }
+        Relationships: []
+      }
       website_feedback: {
         Row: {
           id: string
@@ -21,6 +27,7 @@ export type Database = {
           category: string
           body: string
           created_at: string
+          status: string
         }
         Insert: {
           id: string
@@ -28,7 +35,7 @@ export type Database = {
           category: string
           body: string
         }
-        Update: never
+        Update: { status?: string }
         Relationships: []
       }
       diver_certificates: {
@@ -263,9 +270,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      feedback_inbox: {
+        Row: { source: string; id: string; user_id: string | null; category: string; body: string; reply_email: string | null; created_at: string; status: string }
+        Relationships: []
+      }
     }
     Functions: {
+      is_feedback_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       get_public_diver_certificates: {
         Args: { target_user_id: string }
         Returns: {

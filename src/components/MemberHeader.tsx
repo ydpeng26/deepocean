@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { supabase } from "@/integrations/supabase/client";
 import "@/components/member-mobile.css";
+import { AdminInboxLink } from "@/components/AdminInboxLink";
 
 export function MemberHeader() {
   const { profile, avatarUrl } = useProfile();
@@ -32,6 +33,7 @@ export function MemberHeader() {
             <CloudOff aria-hidden="true" />
             <span>{english ? "Offline drafts & sync" : "离线草稿与同步"}</span>
           </Link>
+          <AdminInboxLink />
           <button
             type="button"
             className="do-passport-language"
