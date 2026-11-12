@@ -1,0 +1,9 @@
+# Silent background updates
+
+The root registers the offline worker and checks for updates without rendering a notice. After all offline resources have been cached successfully, the new worker uses `skipWaiting()` and claims clients. Existing documents are never reloaded: unsaved form state stays in the current document, and the current form/code version continues until normal navigation/reopening reloads the document. An SPA route change alone does not replace the loaded application bundle.
+
+Activation retains old SupDiver caches whenever any controlled or uncontrolled window exists. Hashed asset requests can fall back to those caches so old tabs can still load their lazy chunks, including while offline. Only activation with no windows removes previous app caches; unrelated caches and IndexedDB are untouched. Cache generations may consequently remain on devices with long-lived windows. Failed installations do not activate or remove the working version. No message forces a waiting legacy worker to activate, and no controller-change handler reloads a live editor.
+
+The previous release's already-loaded banner can remain in a currently open document until that document next loads the new application. The new application has no update prompt. A saved offline draft is preserved; unsaved edits are not newly promised to be autosaved.
+
+Validation: the actual worker and client registration are exercised by `scripts/offline-cache-regression.mjs`, including failed install, live-window old chunk retention, quiet registration failures, no notice, and no reload action. `scripts/cloud-offline-update-lifecycle.mjs` is updated for the silent behavior and can verify legacy migration, two open tabs, unsaved input, offline assets, and saved IndexedDB using the isolated cloud browser workflow. It is not a local browser acceptance result unless actually run.
