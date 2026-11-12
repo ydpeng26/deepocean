@@ -18,8 +18,9 @@ self.addEventListener("install", (event) => {
         "/images/supdiver-wave-mark.svg",
         ...assets,
       ]);
-      // Do not skip waiting: existing tabs may contain unsaved input and still
-      // depend on the old bundle. Activate naturally once those tabs are closed.
+      // Enable the complete cache silently. Activation never reloads documents,
+      // and live windows retain older bundles for their later lazy imports.
+      await self.skipWaiting();
     })(),
   );
 });
